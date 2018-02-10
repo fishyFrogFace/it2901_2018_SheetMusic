@@ -7,7 +7,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {signIn} from '../actions';
+import {signIn, getBands} from '../actions';
 
 const styles = {
     root: {
@@ -15,18 +15,21 @@ const styles = {
     }
 };
 
-
-
 class App extends Component {
     constructor(props) {
         super(props);
         props.signIn();
     }
 
-    render() {
-        const {classes, user} = this.props;
+    componentWillReceiveProps(props) {
+        if (!this.props.user && 'user' in props) {
+            this.props.getBands(props.user);
+        }
+    }
 
-        console.log(user);
+    render() {
+        const {classes, user, bands} = this.props;
+        console.log(bands);
 
         return (
             <div className={classes.root}>
@@ -37,9 +40,16 @@ class App extends Component {
                         </Typography>
                     </Toolbar>
                 </AppBar>
+                <div>
+                    {(bands || []).map(band => band.name)}
+                </div>
             </div>
         );
     }
 }
 
-export default compose(connect(state => ({user: state.user}), {signIn}), withStyles(styles))(App);
+
+export default compose(connect(state => ({
+    user: state.user,
+    bands: state.bands
+}), {signIn, getBands}), withStyles(styles))(App);
