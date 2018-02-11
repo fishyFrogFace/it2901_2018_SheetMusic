@@ -9,34 +9,42 @@ import Typography from 'material-ui/Typography';
 
 import {push} from 'react-router-redux';
 
-import {getArrangements} from "../actions";
+import {signIn, getBands} from '../actions';
 
 const styles = {
     root: {
+        background: '#f9f9f9',
     }
 };
 
-class Band extends Component {
-    componentWillMount() {
-        this.props.dispatch(getArrangements());
+class Home extends Component {
+    constructor(props) {
+        super(props);
+        props.dispatch(signIn());
+    }
+
+    componentWillReceiveProps(props) {
+        if (!this.props.user && 'user' in props) {
+            this.props.dispatch(getBands(props.user));
+        }
     }
 
     render() {
-        const {classes, arrangements} = this.props;
+        const {classes, bands=[]} = this.props;
+
         return (
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="title" color="inherit">
-                            Band
+                            ScoreButler
                         </Typography>
                     </Toolbar>
                 </AppBar>
                 <div>
-                    {(arrangements || []).map(arr =>
-                        <div key={arr.id} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
-                            <div>{arr.title}</div>
-                            <div>{arr.composer}</div>
+                    {bands.map(band =>
+                        <div key={band.id} onClick={() => this.props.dispatch(push(`/band/${band.id}`))}>
+                            {band.name}
                         </div>
                     )}
                 </div>
@@ -45,9 +53,7 @@ class Band extends Component {
     }
 }
 
-
 export default compose(connect(state => ({
     user: state.default.user,
-    arrangements: state.default.arrangements
-})), withStyles(styles))(Band);
-
+    bands: state.default.bands
+})), withStyles(styles))(Home);

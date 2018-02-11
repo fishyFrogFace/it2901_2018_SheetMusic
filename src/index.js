@@ -16,10 +16,10 @@ import green from 'material-ui/colors/green';
 import firebase from 'firebase';
 import 'firebase/firestore'
 
-import Home from './components/Home';
-import Band from './components/Band';
-import Arrangement from './components/Arrangement';
-import Setlist from './components/Setlist';
+import Home from './views/Home';
+import Band from './views/Band';
+import Arrangement from './views/Arrangement';
+import Setlist from './views/Setlist';
 
 import defaultReducer from './reducers';
 
