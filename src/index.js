@@ -13,9 +13,6 @@ import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
 import purple from 'material-ui/colors/purple';
 import green from 'material-ui/colors/green';
 
-import firebase from 'firebase';
-import 'firebase/firestore'
-
 import Home from './views/Home';
 import Band from './views/Band';
 import Arrangement from './views/Arrangement';
@@ -33,17 +30,6 @@ const theme = createMuiTheme({
         primary: purple,
         secondary: green
     }
-});
-
-// Firebase
-
-firebase.initializeApp({
-    apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
-    authDomain: "scores-butler.firebaseapp.com",
-    databaseURL: "https://scores-butler.firebaseio.com",
-    projectId: "scores-butler",
-    storageBucket: "scores-butler.appspot.com",
-    messagingSenderId: "124262758995"
 });
 
 // Redux

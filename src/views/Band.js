@@ -33,8 +33,8 @@ class Band extends Component {
                     </Toolbar>
                 </AppBar>
                 <div>
-                    {arrangements.map(arr =>
-                        <div key={arr.id} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
+                    {arrangements.map((arr, index) =>
+                        <div key={index} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
                             <div>{arr.title}</div>
                             <div>{arr.composer}</div>
                         </div>
