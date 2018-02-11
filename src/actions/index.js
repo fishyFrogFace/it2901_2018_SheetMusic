@@ -1,21 +1,32 @@
 import firebase from 'firebase';
 
 export const signIn = () => async dispatch => {
-    const provider = new firebase.auth.GoogleAuthProvider();
+    let user = await new Promise((resolve, reject) => {
+        let unsubscribe = firebase.auth().onAuthStateChanged(user => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
 
-    try {
-        let result = await firebase.auth().signInWithPopup(provider);
+    if (user) {
+        dispatch({type: 'SIGN_IN_SUCCESS', user: user});
+    } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
 
-        firebase.firestore().doc(`users/${result.user.uid}`).get().then(async userSnapshot => {
+        try {
+            let result = await firebase.auth().signInWithPopup(provider);
+
+            dispatch({type: 'SIGN_IN_SUCCESS', user: result.user});
+
+            let userSnapshot = await firebase.firestore().doc(`users/${result.user.uid}`).get();
+
             if (!userSnapshot.exists) {
                 await userSnapshot.ref.set({name: result.user.displayName});
                 dispatch({type: 'USER_CREATE_SUCCESS', user: result.user});
             }
-        });
-
-        dispatch({type: 'SIGN_IN_SUCCESS', user: result.user});
-    } catch (err) {
-        dispatch({type: 'SIGN_IN_FAILURE', error: err});
+        } catch (err) {
+            dispatch({type: 'SIGN_IN_FAILURE', error: err});
+        }
     }
 };
 
@@ -39,6 +50,5 @@ export const getArrangements = () => async (dispatch, getState) => {
 
     dispatch({type: 'ARRANGEMENTS_FETCH_RESPONSE', arrangements: arrangements})
 };
-
 
 

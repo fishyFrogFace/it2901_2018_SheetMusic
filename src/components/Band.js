@@ -7,41 +7,34 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {signIn, getBands} from '../actions';
-
 const styles = {
     root: {
-        background: '#f9f9f9',
     }
 };
 
-class App extends Component {
-    constructor(props) {
-        super(props);
-        props.signIn();
-    }
-
+class Band extends Component {
     componentWillReceiveProps(props) {
-        if (!this.props.user && 'user' in props) {
-            this.props.getBands(props.user);
-        }
     }
 
     render() {
-        const {classes, user, bands} = this.props;
-        console.log(bands);
+        const {classes, user, arrangements} = this.props;
+        console.log(user, arrangements);
 
         return (
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="title" color="inherit">
-                            ScoreButler
+                            Band
                         </Typography>
                     </Toolbar>
                 </AppBar>
                 <div>
-                    {(bands || []).map(band => band.name)}
+                    {(arrangements || []).map(arr =>
+                        <a key={arr.id} href={`/band/${arr.id}`}>
+                            {arr.name}
+                        </a>
+                    )}
                 </div>
             </div>
         );
@@ -50,6 +43,5 @@ class App extends Component {
 
 
 export default compose(connect(state => ({
-    user: state.user,
-    bands: state.bands
-}), {signIn, getBands}), withStyles(styles))(App);
+    user: state.default.user
+})), withStyles(styles))(Band);
