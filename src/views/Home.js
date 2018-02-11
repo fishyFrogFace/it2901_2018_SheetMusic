@@ -19,7 +19,6 @@ import AddIcon from 'material-ui-icons/Add';
 
 const styles = {
     root: {
-        background: '#f9f9f9',
     },
     flex: {
         flex: 1
@@ -142,7 +141,7 @@ class Home extends Component {
                         <TextField
                             label="Name"
                             margin="normal"
-                            onChange={e => this.setState({'bandName': e.target.value})}
+                            onChange={e => this.setState({bandName: e.target.value})}
                         />
                     </DialogContent>
                     <DialogActions>
@@ -157,7 +156,7 @@ class Home extends Component {
                         <TextField
                             label="Code"
                             margin="normal"
-                            onChange={e => this.setState({'bandCode': e.target.value})}
+                            onChange={e => this.setState({bandCode: e.target.value})}
                         />
                     </DialogContent>
                     <DialogActions>

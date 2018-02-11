@@ -14,6 +14,8 @@ export default (state = {}, action) => {
             return {...state, arrangements: action.arrangements};
         case 'ARRANGEMENT_FETCH_RESPONSE':
             return {...state, arrangement: action.arrangement};
+        case 'ARRANGEMENT_ADD_SUCCESS':
+            return {...state, arrangements: [...state.arrangements, action.arrangement]};
         default:
             return state;
     }

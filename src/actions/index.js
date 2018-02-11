@@ -91,4 +91,24 @@ export const getArrangementDetail = () => async (dispatch, getState) => {
     dispatch({type: 'ARRANGEMENT_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}})
 };
 
+export const addArrangement = (title, composer) => async (dispatch, getState) => {
+    let userId = getState().default.user.uid;
+    let bandId = getState().router.location.pathname.split('/')[2];
+
+    try {
+        const arrangement = {
+            title: title,
+            composer: composer,
+            creator: firestore.doc(`users/${userId}`)
+        };
+
+        let ref = await firestore.collection('arrangements').add(arrangement);
+        await firestore.collection(`bands/${bandId}/arrangements`).add({ref: firestore.doc(`arrangements/${ref.id}`)});
+
+        dispatch({type: 'ARRANGEMENT_ADD_SUCCESS', arrangement: {id: ref.id, ...arrangement}});
+    } catch (err) {
+        dispatch({type: 'ARRANGEMENT_ADD_FAILURE'});
+    }
+};
+
 
