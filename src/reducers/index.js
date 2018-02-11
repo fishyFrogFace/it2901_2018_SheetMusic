@@ -8,6 +8,10 @@ export default (state = {}, action) => {
             return {...state};
         case 'BANDS_FETCH_RESPONSE':
             return {...state, bands: action.bands};
+        case 'ARRANGEMENTS_FETCH_RESPONSE':
+            return {...state, arrangements: action.arrangements};
+        case 'ARRANGEMENT_FETCH_RESPONSE':
+            return {...state, arrangement: action.arrangement};
         default:
             return state;
     }

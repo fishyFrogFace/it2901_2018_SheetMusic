@@ -7,6 +7,8 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
+import {push} from 'react-router-redux';
+
 import {signIn, getBands} from '../actions';
 
 const styles = {
@@ -18,18 +20,17 @@ const styles = {
 class Home extends Component {
     constructor(props) {
         super(props);
-        props.signIn();
+        props.dispatch(signIn());
     }
 
     componentWillReceiveProps(props) {
         if (!this.props.user && 'user' in props) {
-            this.props.getBands(props.user);
+            this.props.dispatch(getBands(props.user));
         }
     }
 
     render() {
-        const {classes, user, bands} = this.props;
-        console.log(user, bands);
+        const {classes, bands} = this.props;
 
         return (
             <div className={classes.root}>
@@ -42,9 +43,9 @@ class Home extends Component {
                 </AppBar>
                 <div>
                     {(bands || []).map(band =>
-                        <a key={band.id} href={`/band/${band.id}`}>
+                        <div key={band.id} onClick={() => this.props.dispatch(push(`/band/${band.id}`))}>
                             {band.name}
-                        </a>
+                        </div>
                     )}
                 </div>
             </div>
@@ -52,8 +53,7 @@ class Home extends Component {
     }
 }
 
-
 export default compose(connect(state => ({
     user: state.default.user,
     bands: state.default.bands
-}), {signIn, getBands}), withStyles(styles))(Home);
+})), withStyles(styles))(Home);

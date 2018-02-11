@@ -7,19 +7,22 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
+import {push} from 'react-router-redux';
+
+import {getArrangements} from "../actions";
+
 const styles = {
     root: {
     }
 };
 
 class Band extends Component {
-    componentWillReceiveProps(props) {
+    componentWillMount() {
+        this.props.dispatch(getArrangements());
     }
 
     render() {
-        const {classes, user, arrangements} = this.props;
-        console.log(user, arrangements);
-
+        const {classes, arrangements} = this.props;
         return (
             <div className={classes.root}>
                 <AppBar position="static">
@@ -31,9 +34,10 @@ class Band extends Component {
                 </AppBar>
                 <div>
                     {(arrangements || []).map(arr =>
-                        <a key={arr.id} href={`/band/${arr.id}`}>
-                            {arr.name}
-                        </a>
+                        <div key={arr.id} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
+                            <div>{arr.title}</div>
+                            <div>{arr.composer}</div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -43,5 +47,7 @@ class Band extends Component {
 
 
 export default compose(connect(state => ({
-    user: state.default.user
+    user: state.default.user,
+    arrangements: state.default.arrangements
 })), withStyles(styles))(Band);
+

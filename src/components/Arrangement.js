@@ -7,6 +7,8 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
+import {getArrangementDetail} from "../actions";
+
 const styles = {
     root: {
     }
@@ -14,12 +16,12 @@ const styles = {
 
 
 class Arrangement extends Component {
-    componentWillReceiveProps(props) {
+    componentWillMount() {
+        this.props.dispatch(getArrangementDetail());
     }
 
     render() {
-        const {classes, user} = this.props;
-        console.log(user);
+        const {classes, arrangement={}} = this.props;
 
         return (
             <div className={classes.root}>
@@ -31,6 +33,8 @@ class Arrangement extends Component {
                     </Toolbar>
                 </AppBar>
                 <div>
+                    <div>{arrangement.title}</div>
+                    <div>{arrangement.composer}</div>
                 </div>
             </div>
         );
@@ -39,5 +43,6 @@ class Arrangement extends Component {
 
 
 export default compose(connect(state => ({
-    user: state.default.user
+    user: state.default.user,
+    arrangement: state.default.arrangement
 })), withStyles(styles))(Arrangement);

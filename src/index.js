@@ -65,14 +65,14 @@ render(
         <ConnectedRouter history={history}>
             <MuiThemeProvider theme={theme}>
                 <Route exact path="/" component={Home}/>
-                <Route exact path="/band" component={Band}/>
-                <Route exact path="/arrangement" component={Arrangement}/>
-                <Route exact path="/setlist" component={Setlist}/>
+                <Route path="/band" component={Band}/>
+                <Route path="/arrangement" component={Arrangement}/>
+                <Route path="/setlist" component={Setlist}/>
             </MuiThemeProvider>
         </ConnectedRouter>
     </Provider>,
     document.querySelector('#root')
 );
 
-
 registerServiceWorker();
+

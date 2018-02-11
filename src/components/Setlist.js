@@ -13,13 +13,12 @@ const styles = {
 };
 
 class Setlist extends Component {
-    componentWillReceiveProps(props) {
-
+    componentWillMount() {
+        console.log(this.props);
     }
 
     render() {
-        const {classes, user} = this.props;
-        console.log(user);
+        const {classes} = this.props;
 
         return (
             <div className={classes.root}>

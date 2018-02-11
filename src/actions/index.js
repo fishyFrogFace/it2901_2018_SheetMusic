@@ -30,8 +30,10 @@ export const signIn = () => async dispatch => {
     }
 };
 
-export const getBands = user => async (dispatch, getState) => {
-    let snapshot = await firebase.firestore().collection(`users/${user.uid}/bands`).get();
+export const getBands = () => async (dispatch, getState) => {
+    let userId = getState().default.user.uid;
+
+    let snapshot = await firebase.firestore().collection(`users/${userId}/bands`).get();
     let bands = await Promise.all(snapshot.docs.map(async doc => {
         const bandDoc = await doc.data().ref.get();
         return {id: bandDoc.id, ...bandDoc.data()};
@@ -41,7 +43,8 @@ export const getBands = user => async (dispatch, getState) => {
 };
 
 export const getArrangements = () => async (dispatch, getState) => {
-    const {bandId} = getState();
+    let bandId = getState().router.location.pathname.split('/')[2];
+
     let snapshot = await firebase.firestore().collection(`bands/${bandId}/arrangements`).get();
     let arrangements = await Promise.all(snapshot.docs.map(async doc => {
         const arrDoc = await doc.data().ref.get();
@@ -49,6 +52,14 @@ export const getArrangements = () => async (dispatch, getState) => {
     }));
 
     dispatch({type: 'ARRANGEMENTS_FETCH_RESPONSE', arrangements: arrangements})
+};
+
+export const getArrangementDetail = () => async (dispatch, getState) => {
+    let arrId = getState().router.location.pathname.split('/')[2];
+
+    let doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
+
+    dispatch({type: 'ARRANGEMENT_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}})
 };
 
 
