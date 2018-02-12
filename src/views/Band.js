@@ -134,7 +134,7 @@ class Band extends Component {
                 <div className={classes.banner}></div>
                 <div className={classes.grid}>
                     {band.arrangements.map((arr, index) =>
-                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
+                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))} elevation={1}>
                             <CardMedia
                                 className={classes.media}
                                 image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"

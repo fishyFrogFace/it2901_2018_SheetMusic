@@ -123,7 +123,7 @@ class Home extends Component {
                 </AppBar>
                 <div className={classes.grid}>
                     {bands.map((band, index) =>
-                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/band/${band.id}`))}>
+                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/band/${band.id}`))} elevation={1}>
                             <CardMedia
                                 className={classes.media}
                                 image="https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg"
