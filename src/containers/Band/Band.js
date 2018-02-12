@@ -39,7 +39,7 @@ const addArrangement = (title, composer) => async (dispatch, getState) => {
 };
 
 
-export const getBandDetail = bandId => async dispatch => {
+const getBandDetail = bandId => async dispatch => {
     let doc = await firebase.firestore().doc(`bands/${bandId}`).get();
 
     let band = doc.data();
