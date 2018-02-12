@@ -8,10 +8,17 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {getArrangementDetail} from "../actions";
+import {MenuItem, Select} from "material-ui";
 
 const styles = {
-    root: {
-    }
+    root: {},
+
+    instrumentSelector: {
+        marginLeft: 25,
+    },
+
+    instrumentSelector__select: {color: 'white'},
+    instrumentSelector__icon: {fill: 'white'}
 };
 
 
@@ -33,21 +40,45 @@ class Arrangement extends Component {
         }
     }
 
+    _onInstrumentSelectChange(e) {
+        console.log(e);
+    }
+
     render() {
-        const {classes, arrangement={}} = this.props;
+        const {classes, arrangement = {}} = this.props;
 
         return (
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="title" color="inherit">
-                            Arrangement
+                            {arrangement.title}
                         </Typography>
+                        <Select
+                            className={classes.instrumentSelector}
+                            classes={{
+                                select: classes.instrumentSelector__select,
+                                icon: classes.instrumentSelector__icon
+                            }}
+                            value={0}
+                            onChange={e => this._onInstrumentSelectChange(e)}
+                            inputProps={{
+                                name: 'age',
+                                id: 'age-simple',
+                            }}
+                            disableUnderline={true}
+                        >
+                            <MenuItem value={0}>Instrument1</MenuItem>
+                            <MenuItem value={1}>Instrument2</MenuItem>
+                            <MenuItem value={2}>Instrument3</MenuItem>
+                            <MenuItem value={2}>Instrument4</MenuItem>
+                            <MenuItem value={2}>Instrument5</MenuItem>
+                            <MenuItem value={2}>Instrument6</MenuItem>
+                            <MenuItem value={2}>Instrument7</MenuItem>
+                        </Select>
                     </Toolbar>
                 </AppBar>
                 <div>
-                    <div>{arrangement.title}</div>
-                    <div>{arrangement.composer}</div>
                 </div>
             </div>
         );
