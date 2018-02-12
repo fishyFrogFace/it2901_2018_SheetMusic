@@ -16,8 +16,21 @@ const styles = {
 
 
 class Arrangement extends Component {
+    requestArrangementDetail() {
+        const arrId = this.props.pathname.split('/')[2];
+        this.props.dispatch(getArrangementDetail(arrId));
+    }
+
     componentWillMount() {
-        this.props.dispatch(getArrangementDetail());
+        if (this.props.user && !this.props.arrangement) {
+            this.requestArrangementDetail();
+        }
+    }
+
+    componentWillReceiveProps(props) {
+        if (props.user && !props.arrangement) {
+            this.requestArrangementDetail();
+        }
     }
 
     render() {
@@ -44,5 +57,6 @@ class Arrangement extends Component {
 
 export default compose(connect(state => ({
     user: state.default.user,
-    arrangement: state.default.arrangement
+    arrangement: state.default.arrangement,
+    pathname: state.router.location.pathname
 })), withStyles(styles))(Arrangement);

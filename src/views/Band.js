@@ -9,9 +9,9 @@ import Typography from 'material-ui/Typography';
 
 import {push} from 'react-router-redux';
 
-import {getArrangements, addArrangement} from "../actions";
+import {addArrangement, getBandDetail, getBands} from "../actions";
 import {
-    Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
+    Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
@@ -26,6 +26,20 @@ const styles = {
     dialogContent: {
         display: 'flex',
         flexDirection: 'column'
+    },
+    card: {
+        width: 300,
+        marginRight: 24,
+        marginBottom: 24,
+        cursor: 'pointer'
+    },
+    media: {
+        height: 200,
+    },
+    grid: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        padding: 24
     }
 };
 
@@ -39,8 +53,21 @@ class Band extends Component {
         setlistName: ''
     };
 
+    requestBandDetail() {
+        let bandId = this.props.pathname.split('/')[2];
+        this.props.dispatch(getBandDetail(bandId));
+    }
+
     componentWillMount() {
-        this.props.dispatch(getArrangements());
+        if (this.props.user && !this.props.band) {
+            this.requestBandDetail();
+        }
+    }
+
+    componentWillReceiveProps(props) {
+        if (props.user && !props.band) {
+            this.requestBandDetail();
+        }
     }
 
     _onAddButtonClick(e) {
@@ -77,14 +104,14 @@ class Band extends Component {
 
     render() {
         const {anchorEl, arrangementDialogOpen} = this.state;
-        const {classes, arrangements=[]} = this.props;
+        const {classes, band={arrangements: []}} = this.props;
 
         return (
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="title" color="inherit" className={classes.flex}>
-                            Band
+                            {band.name}
                         </Typography>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
@@ -99,12 +126,23 @@ class Band extends Component {
                         </Menu>
                     </Toolbar>
                 </AppBar>
-                <div>
-                    {arrangements.map((arr, index) =>
-                        <div key={index} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
-                            <div>{arr.title}</div>
-                            <div>{arr.composer}</div>
-                        </div>
+                <div className={classes.grid}>
+                    {band.arrangements.map((arr, index) =>
+                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>
+                            <CardMedia
+                                className={classes.media}
+                                image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
+                                title=""
+                            />
+                            <CardContent>
+                                <Typography variant="headline" component="h2">
+                                    {arr.title}
+                                </Typography>
+                                <Typography component="p">
+                                    {arr.composer}
+                                </Typography>
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
                 <Dialog open={arrangementDialogOpen} onClose={() => this._onDialogClose('arrangement')}>
@@ -134,6 +172,7 @@ class Band extends Component {
 
 export default compose(connect(state => ({
     user: state.default.user,
-    arrangements: state.default.arrangements
+    band: state.default.band,
+    pathname: state.router.location.pathname
 })), withStyles(styles))(Band);
 

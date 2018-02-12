@@ -41,9 +41,7 @@ export const signIn = () => async dispatch => {
     }
 };
 
-export const getBands = () => async (dispatch, getState) => {
-    let userId = getState().default.user.uid;
-
+export const getBands = (userId) => async dispatch => {
     let snapshot = await firestore.collection(`users/${userId}/bands`).get();
     let bands = await Promise.all(snapshot.docs.map(async doc => {
         const bandDoc = await doc.data().ref.get();
@@ -51,6 +49,21 @@ export const getBands = () => async (dispatch, getState) => {
     }));
 
     dispatch({type: 'BANDS_FETCH_RESPONSE', bands: bands})
+};
+
+export const getBandDetail = bandId => async dispatch => {
+    let doc = await firestore.doc(`bands/${bandId}`).get();
+
+    let band = doc.data();
+
+    let snapshot = await firestore.collection(`bands/${bandId}/arrangements`).get();
+
+    band.arrangements = await Promise.all(snapshot.docs.map(async doc => {
+        const arrDoc = await doc.data().ref.get();
+        return {id: arrDoc.id, ...arrDoc.data()};
+    }));
+
+    dispatch({type: 'BAND_FETCH_RESPONSE', band: band})
 };
 
 export const addBand = name => async (dispatch, getState) => {
@@ -71,23 +84,8 @@ export const addBand = name => async (dispatch, getState) => {
     }
 };
 
-export const getArrangements = () => async (dispatch, getState) => {
-    let bandId = getState().router.location.pathname.split('/')[2];
-
-    let snapshot = await firestore.collection(`bands/${bandId}/arrangements`).get();
-    let arrangements = await Promise.all(snapshot.docs.map(async doc => {
-        const arrDoc = await doc.data().ref.get();
-        return {id: arrDoc.id, ...arrDoc.data()};
-    }));
-
-    dispatch({type: 'ARRANGEMENTS_FETCH_RESPONSE', arrangements: arrangements})
-};
-
-export const getArrangementDetail = () => async (dispatch, getState) => {
-    let arrId = getState().router.location.pathname.split('/')[2];
-
+export const getArrangementDetail = arrId => async dispatch => {
     let doc = await firestore.doc(`arrangements/${arrId}`).get();
-
     dispatch({type: 'ARRANGEMENT_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}})
 };
 

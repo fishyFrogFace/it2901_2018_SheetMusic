@@ -18,6 +18,8 @@ import Band from './views/Band';
 import Arrangement from './views/Arrangement';
 import Setlist from './views/Setlist';
 
+import {signIn} from './actions';
+
 import defaultReducer from './reducers';
 
 import registerServiceWorker from './registerServiceWorker';
@@ -37,7 +39,6 @@ const theme = createMuiTheme({
 const history = createHistory();
 
 const initialState = {
-
 };
 
 const store = createStore(
@@ -59,6 +60,8 @@ render(
     </Provider>,
     document.querySelector('#root')
 );
+
+store.dispatch(signIn());
 
 registerServiceWorker();
 

@@ -9,7 +9,7 @@ import Typography from 'material-ui/Typography';
 
 import {push} from 'react-router-redux';
 
-import {signIn, getBands, addBand} from '../actions';
+import {getBands, addBand} from '../actions';
 
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
@@ -25,8 +25,8 @@ const styles = {
     },
     card: {
         width: 300,
-        marginRight: 20,
-        marginBottom: 20,
+        marginRight: 24,
+        marginBottom: 24,
         cursor: 'pointer'
     },
     media: {
@@ -35,7 +35,7 @@ const styles = {
     grid: {
         display: 'flex',
         flexWrap: 'wrap',
-        padding: 20
+        padding: 24
     }
 };
 
@@ -49,14 +49,19 @@ class Home extends Component {
         bandCode: ''
     };
 
-    constructor(props) {
-        super(props);
-        props.dispatch(signIn());
+    requestBands(user=this.props.user) {
+        this.props.dispatch(getBands(user.uid));
+    }
+
+    componentWillMount() {
+        if (this.props.user && !this.props.bands) {
+            this.requestBands();
+        }
     }
 
     componentWillReceiveProps(props) {
-        if (!this.props.user && 'user' in props) {
-            this.props.dispatch(getBands(props.user));
+        if (props.user && !props.bands) {
+            this.requestBands(props.user);
         }
     }
 
