@@ -95,7 +95,8 @@ store.dispatch(async dispatch => {
 
             if (!userSnapshot.exists) {
                 await userSnapshot.ref.set({name: result.user.displayName});
-                dispatch({type: 'USER_CREATE_SUCCESS', user: result.user});
+                let {displayName} = result.user;
+                dispatch({type: 'USER_CREATE_SUCCESS', user: {displayName: displayName}});
             }
         } catch (err) {
             dispatch({type: 'SIGN_IN_FAILURE', error: err});

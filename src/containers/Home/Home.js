@@ -28,13 +28,14 @@ const getBands = (userId) => async dispatch => {
     dispatch({type: 'BANDS_FETCH_RESPONSE', bands: bands})
 };
 
-export const addBand = name => async (dispatch, getState) => {
+const addBand = name => async (dispatch, getState) => {
     let userId = getState().default.user.uid;
 
     try {
         const band = {
             name: name,
-            creator: firebase.firestore().doc(`users/${userId}`)
+            creator: firebase.firestore().doc(`users/${userId}`),
+            code: Math.random().toString(36).substring(7, 12)
         };
 
         let ref = await firebase.firestore().collection('bands').add(band);
@@ -46,6 +47,23 @@ export const addBand = name => async (dispatch, getState) => {
     }
 };
 
+const joinBand = code => async (dispatch, getState) => {
+    let userId = getState().default.user.uid;
+
+    let snapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
+
+    if (snapshot.docs.length > 0) {
+        let docRef = firebase.firestore().doc(`bands/${snapshot.docs[0].id}`);
+
+        await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
+
+        let doc = await docRef.get();
+
+        dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
+    } else {
+        dispatch({type: 'BAND_JOIN_FAILURE'});
+    }
+};
 
 const styles = {
     root: {
@@ -118,7 +136,7 @@ class Home extends Component {
                 this.props.dispatch(addBand(this.state.bandName));
                 break;
             case 'join':
-                // this.props.dispatch(joinBand(this.state.bandCode));
+                this.props.dispatch(joinBand(this.state.bandCode));
                 break;
             default:
                 break;
@@ -145,7 +163,7 @@ class Home extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
-                        <IconButton color="inherit" onClick={() => this._onAddButtonClick()}>
+                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
                         <Menu

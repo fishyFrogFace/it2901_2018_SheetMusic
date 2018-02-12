@@ -12,6 +12,10 @@ export default (state = {}, action) => {
             return {...state, band: action.band};
         case 'BAND_ADD_SUCCESS':
             return {...state, bands: [...state.bands, action.band]};
+        case 'BAND_JOIN_SUCCESS':
+            return {...state, bands: [...state.bands, action.band]};
+        case 'BAND_JOIN_FAILURE':
+            return state;
         case 'ARRANGEMENT_FETCH_RESPONSE':
             return {...state, arrangement: action.arrangement};
         case 'ARRANGEMENT_ADD_SUCCESS':

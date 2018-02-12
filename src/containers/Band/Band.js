@@ -162,7 +162,7 @@ class Band extends Component {
                             <MenuIcon/>
                         </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
-                            {band.name}
+                            {band.name} {band.code}
                         </Typography>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
