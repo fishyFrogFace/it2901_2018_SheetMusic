@@ -15,6 +15,7 @@ import {
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
+import MenuIcon from 'material-ui-icons/Menu';
 
 const styles = {
     root: {
@@ -107,6 +108,10 @@ class Band extends Component {
         this.setState({[`${type}DialogOpen`]: false});
     }
 
+    _onMenuButtonClick() {
+
+    }
+
     render() {
         const {anchorEl, arrangementDialogOpen} = this.state;
         const {classes, band={arrangements: []}} = this.props;
@@ -115,6 +120,9 @@ class Band extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
+                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
+                            <MenuIcon/>
+                        </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>

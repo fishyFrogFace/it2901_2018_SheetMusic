@@ -16,6 +16,7 @@ import {
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
+import MenuIcon from 'material-ui-icons/Menu';
 
 const styles = {
     root: {
@@ -97,6 +98,10 @@ class Home extends Component {
         this.setState({[`${type}DialogOpen`]: false});
     }
 
+    _onMenuButtonClick() {
+
+    }
+
     render() {
         const {anchorEl, createDialogOpen, joinDialogOpen} = this.state;
         const {classes, bands = []} = this.props;
@@ -105,10 +110,13 @@ class Home extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
+                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
+                            <MenuIcon/>
+                        </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
-                        <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
+                        <IconButton color="inherit" onClick={() => this._onAddButtonClick()}>
                             <AddIcon/>
                         </IconButton>
                         <Menu

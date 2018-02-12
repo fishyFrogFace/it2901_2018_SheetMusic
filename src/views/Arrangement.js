@@ -8,7 +8,8 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {getArrangementDetail} from "../actions";
-import {MenuItem, Select} from "material-ui";
+import {IconButton, MenuItem, Select} from "material-ui";
+import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 
 const styles = {
     root: {},
@@ -41,7 +42,10 @@ class Arrangement extends Component {
     }
 
     _onInstrumentSelectChange(e) {
-        console.log(e);
+    }
+
+    _onArrowBackButtonClick() {
+
     }
 
     render() {
@@ -51,6 +55,9 @@ class Arrangement extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
+                        <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
+                            <ArrowBackIcon/>
+                        </IconButton>
                         <Typography variant="title" color="inherit">
                             {arrangement.title}
                         </Typography>
