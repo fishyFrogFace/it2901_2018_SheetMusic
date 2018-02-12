@@ -9,13 +9,51 @@ import Typography from 'material-ui/Typography';
 
 import {push} from 'react-router-redux';
 
-import {addArrangement, getBandDetail} from "../actions";
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
+
+import firebase from 'firebase';
+
+const addArrangement = (title, composer) => async (dispatch, getState) => {
+    let userId = getState().default.user.uid;
+    let bandId = getState().router.location.pathname.split('/')[2];
+
+    try {
+        const arrangement = {
+            title: title,
+            composer: composer,
+            creator: firebase.firestore().doc(`users/${userId}`)
+        };
+
+        let ref = await firebase.firestore().collection('arrangements').add(arrangement);
+        await firebase.firestore().collection(`bands/${bandId}/arrangements`).add({ref: firebase.firestore.doc(`arrangements/${ref.id}`)});
+
+        dispatch({type: 'ARRANGEMENT_ADD_SUCCESS', arrangement: {id: ref.id, ...arrangement}});
+    } catch (err) {
+        dispatch({type: 'ARRANGEMENT_ADD_FAILURE'});
+    }
+};
+
+
+export const getBandDetail = bandId => async dispatch => {
+    let doc = await firebase.firestore().doc(`bands/${bandId}`).get();
+
+    let band = doc.data();
+
+    let snapshot = await firebase.firestore().collection(`bands/${bandId}/arrangements`).get();
+
+    band.arrangements = await Promise.all(snapshot.docs.map(async doc => {
+        const arrDoc = await doc.data().ref.get();
+        return {id: arrDoc.id, ...arrDoc.data()};
+    }));
+
+    dispatch({type: 'BAND_FETCH_RESPONSE', band: band})
+};
+
 
 const styles = {
     root: {

@@ -9,14 +9,43 @@ import Typography from 'material-ui/Typography';
 
 import {push} from 'react-router-redux';
 
-import {getBands, addBand} from '../actions';
-
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
+
+import firebase from 'firebase';
+
+const getBands = (userId) => async dispatch => {
+    let snapshot = await firebase.firestore().collection(`users/${userId}/bands`).get();
+    let bands = await Promise.all(snapshot.docs.map(async doc => {
+        const bandDoc = await doc.data().ref.get();
+        return {id: bandDoc.id, ...bandDoc.data()};
+    }));
+
+    dispatch({type: 'BANDS_FETCH_RESPONSE', bands: bands})
+};
+
+export const addBand = name => async (dispatch, getState) => {
+    let userId = getState().default.user.uid;
+
+    try {
+        const band = {
+            name: name,
+            creator: firebase.firestore().doc(`users/${userId}`)
+        };
+
+        let ref = await firebase.firestore().collection('bands').add(band);
+        await firebase.firestore().collection(`users/${userId}/bands`).add({ref: firebase.firestore().doc(`bands/${ref.id}`)});
+
+        dispatch({type: 'BAND_ADD_SUCCESS', band: {id: ref.id, ...band}});
+    } catch (err) {
+        dispatch({type: 'BAND_ADD_FAILURE'});
+    }
+};
+
 
 const styles = {
     root: {

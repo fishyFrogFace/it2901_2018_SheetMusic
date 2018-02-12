@@ -7,9 +7,10 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {getArrangementDetail} from "../actions";
 import {IconButton, MenuItem, Select} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
+
+import firebase from 'firebase';
 
 const styles = {
     root: {},
@@ -20,6 +21,11 @@ const styles = {
 
     instrumentSelector__select: {color: 'white'},
     instrumentSelector__icon: {fill: 'white'}
+};
+
+const getArrangementDetail = arrId => async dispatch => {
+    let doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
+    dispatch({type: 'ARRANGEMENT_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}})
 };
 
 

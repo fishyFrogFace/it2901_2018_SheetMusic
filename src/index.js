@@ -13,16 +13,26 @@ import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
 import purple from 'material-ui/colors/purple';
 import green from 'material-ui/colors/green';
 
-import Home from './views/Home';
-import Band from './views/Band';
-import Arrangement from './views/Arrangement';
-import Setlist from './views/Setlist';
+import firebase from 'firebase';
+import 'firebase/firestore';
 
-import {signIn} from './actions';
+import Home from './containers/Home';
+import Band from './containers/Band';
+import Arrangement from './containers/Arrangement';
+import Setlist from './containers/Setlist';
 
 import defaultReducer from './reducers';
 
 import registerServiceWorker from './registerServiceWorker';
+
+firebase.initializeApp({
+    apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
+    authDomain: "scores-butler.firebaseapp.com",
+    databaseURL: "https://scores-butler.firebaseio.com",
+    projectId: "scores-butler",
+    storageBucket: "scores-butler.appspot.com",
+    messagingSenderId: "124262758995"
+});
 
 
 // Material-UI
@@ -61,7 +71,37 @@ render(
     document.querySelector('#root')
 );
 
-store.dispatch(signIn());
+// Sign in
+
+store.dispatch(async dispatch => {
+    let user = await new Promise((resolve, reject) => {
+        let unsubscribe = firebase.auth().onAuthStateChanged(user => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
+
+    if (user) {
+        dispatch({type: 'SIGN_IN_SUCCESS', user: user});
+    } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        try {
+            let result = await firebase.auth().signInWithPopup(provider);
+
+            dispatch({type: 'SIGN_IN_SUCCESS', user: result.user});
+
+            let userSnapshot = await firebase.firestore().doc(`users/${result.user.uid}`).get();
+
+            if (!userSnapshot.exists) {
+                await userSnapshot.ref.set({name: result.user.displayName});
+                dispatch({type: 'USER_CREATE_SUCCESS', user: result.user});
+            }
+        } catch (err) {
+            dispatch({type: 'SIGN_IN_FAILURE', error: err});
+        }
+    }
+});
 
 registerServiceWorker();
 
