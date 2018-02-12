@@ -9,7 +9,7 @@ import Typography from 'material-ui/Typography';
 
 import {push} from 'react-router-redux';
 
-import {addArrangement, getBandDetail, getBands} from "../actions";
+import {addArrangement, getBandDetail} from "../actions";
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
     TextField
@@ -40,6 +40,11 @@ const styles = {
         display: 'flex',
         flexWrap: 'wrap',
         padding: 24
+    },
+    banner: {
+        background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
+        backgroundSize: 'cover',
+        height: 144
     }
 };
 
@@ -59,13 +64,13 @@ class Band extends Component {
     }
 
     componentWillMount() {
-        if (this.props.user && !this.props.band) {
+        if (this.props.user) {
             this.requestBandDetail();
         }
     }
 
     componentWillReceiveProps(props) {
-        if (props.user && !props.band) {
+        if (!this.props.user && props.user) {
             this.requestBandDetail();
         }
     }
@@ -126,6 +131,7 @@ class Band extends Component {
                         </Menu>
                     </Toolbar>
                 </AppBar>
+                <div className={classes.banner}></div>
                 <div className={classes.grid}>
                     {band.arrangements.map((arr, index) =>
                         <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}>

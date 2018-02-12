@@ -22,13 +22,13 @@ class Arrangement extends Component {
     }
 
     componentWillMount() {
-        if (this.props.user && !this.props.arrangement) {
+        if (this.props.user) {
             this.requestArrangementDetail();
         }
     }
 
     componentWillReceiveProps(props) {
-        if (props.user && !props.arrangement) {
+        if (!this.props.user && props.user) {
             this.requestArrangementDetail();
         }
     }

@@ -54,13 +54,13 @@ class Home extends Component {
     }
 
     componentWillMount() {
-        if (this.props.user && !this.props.bands) {
+        if (this.props.user) {
             this.requestBands();
         }
     }
 
     componentWillReceiveProps(props) {
-        if (props.user && !props.bands) {
+        if (!this.props.user && props.user) {
             this.requestBands(props.user);
         }
     }
