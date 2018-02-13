@@ -11,6 +11,7 @@ import {push} from 'react-router-redux';
 
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
+    Snackbar,
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
@@ -18,7 +19,7 @@ import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
 
-const getBands = (userId) => async dispatch => {
+export const getBands = (userId) => async dispatch => {
     let snapshot = await firebase.firestore().collection(`users/${userId}/bands`).get();
     let bands = await Promise.all(snapshot.docs.map(async doc => {
         const bandDoc = await doc.data().ref.get();
@@ -34,7 +35,8 @@ export const addBand = name => async (dispatch, getState) => {
     try {
         const band = {
             name: name,
-            creator: firebase.firestore().doc(`users/${userId}`)
+            creator: firebase.firestore().doc(`users/${userId}`),
+            code: Math.random().toString(36).substring(7, 12)
         };
 
         let ref = await firebase.firestore().collection('bands').add(band);
@@ -42,10 +44,34 @@ export const addBand = name => async (dispatch, getState) => {
 
         dispatch({type: 'BAND_ADD_SUCCESS', band: {id: ref.id, ...band}});
     } catch (err) {
+        console.log(err);
         dispatch({type: 'BAND_ADD_FAILURE'});
     }
 };
 
+export const joinBand = code => async (dispatch, getState) => {
+    let userId = getState().default.user.uid;
+
+    let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
+
+    if (bandSnapshot.docs.length > 0) {
+        let docRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+
+        let userBandSnapshot = await firebase.firestore().collection(`users/${userId}/bands`).where('ref', '==', docRef).get();
+
+        if (userBandSnapshot.docs.length > 0) {
+            dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band already joined!'});
+        } else {
+            await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
+
+            let doc = await docRef.get();
+
+            dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
+        }
+    } else {
+        dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band does not exist!'});
+    }
+};
 
 const styles = {
     root: {
@@ -118,7 +144,7 @@ class Home extends Component {
                 this.props.dispatch(addBand(this.state.bandName));
                 break;
             case 'join':
-                // this.props.dispatch(joinBand(this.state.bandCode));
+                this.props.dispatch(joinBand(this.state.bandCode));
                 break;
             default:
                 break;
@@ -133,7 +159,7 @@ class Home extends Component {
 
     render() {
         const {anchorEl, createDialogOpen, joinDialogOpen} = this.state;
-        const {classes, bands = []} = this.props;
+        const {classes, bands = [], message} = this.props;
 
         return (
             <div className={classes.root}>
@@ -145,7 +171,7 @@ class Home extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
-                        <IconButton color="inherit" onClick={() => this._onAddButtonClick()}>
+                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
                         <Menu
@@ -206,6 +232,16 @@ class Home extends Component {
                         <Button color="primary" onClick={() => this._onDialogSubmit('join')} autoFocus>Join</Button>
                     </DialogActions>
                 </Dialog>
+                <Snackbar
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left',
+                    }}
+                    open={Boolean(message)}
+                    autoHideDuration={3000}
+                    onClose={() => this.props.dispatch({type: 'MESSAGE_HIDE'})}
+                    message={message}
+                />
             </div>
         );
     }
@@ -214,5 +250,6 @@ class Home extends Component {
 
 export default compose(connect(state => ({
     user: state.default.user,
-    bands: state.default.bands
+    bands: state.default.bands,
+    message: state.default.message
 })), withStyles(styles))(Home);

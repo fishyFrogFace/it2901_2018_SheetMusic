@@ -18,7 +18,7 @@ import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
 
-const addArrangement = (title, composer) => async (dispatch, getState) => {
+export const addArrangement = (title, composer) => async (dispatch, getState) => {
     let userId = getState().default.user.uid;
     let bandId = getState().router.location.pathname.split('/')[2];
 
@@ -30,7 +30,7 @@ const addArrangement = (title, composer) => async (dispatch, getState) => {
         };
 
         let ref = await firebase.firestore().collection('arrangements').add(arrangement);
-        await firebase.firestore().collection(`bands/${bandId}/arrangements`).add({ref: firebase.firestore.doc(`arrangements/${ref.id}`)});
+        await firebase.firestore().collection(`bands/${bandId}/arrangements`).add({ref: firebase.firestore().doc(`arrangements/${ref.id}`)});
 
         dispatch({type: 'ARRANGEMENT_ADD_SUCCESS', arrangement: {id: ref.id, ...arrangement}});
     } catch (err) {
@@ -39,7 +39,7 @@ const addArrangement = (title, composer) => async (dispatch, getState) => {
 };
 
 
-const getBandDetail = bandId => async dispatch => {
+export const getBandDetail = bandId => async dispatch => {
     let doc = await firebase.firestore().doc(`bands/${bandId}`).get();
 
     let band = doc.data();
@@ -162,7 +162,7 @@ class Band extends Component {
                             <MenuIcon/>
                         </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
-                            {band.name}
+                            {band.name} {band.code}
                         </Typography>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>

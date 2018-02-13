@@ -1,2 +1,1 @@
-import Arrangment from './Arrangement';
-export default Arrangment;
+export {default} from './Arrangement';
