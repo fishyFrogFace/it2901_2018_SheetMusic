@@ -1,2 +1,1 @@
-import Band from './Band';
-export default Band;
+export default from 'Band';

@@ -1,2 +1,1 @@
-import Setlist from './Setlist';
-export default Setlist;
+export default from 'Setlist';

@@ -23,7 +23,7 @@ const styles = {
     instrumentSelector__icon: {fill: 'white'}
 };
 
-const getArrangementDetail = arrId => async dispatch => {
+export const getArrangementDetail = arrId => async dispatch => {
     let doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
     dispatch({type: 'ARRANGEMENT_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}})
 };

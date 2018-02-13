@@ -19,7 +19,7 @@ import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
 
-const getBands = (userId) => async dispatch => {
+export const getBands = (userId) => async dispatch => {
     let snapshot = await firebase.firestore().collection(`users/${userId}/bands`).get();
     let bands = await Promise.all(snapshot.docs.map(async doc => {
         const bandDoc = await doc.data().ref.get();
@@ -29,7 +29,7 @@ const getBands = (userId) => async dispatch => {
     dispatch({type: 'BANDS_FETCH_RESPONSE', bands: bands})
 };
 
-const addBand = name => async (dispatch, getState) => {
+export const addBand = name => async (dispatch, getState) => {
     let userId = getState().default.user.uid;
 
     try {
@@ -44,21 +44,22 @@ const addBand = name => async (dispatch, getState) => {
 
         dispatch({type: 'BAND_ADD_SUCCESS', band: {id: ref.id, ...band}});
     } catch (err) {
+        console.log(err);
         dispatch({type: 'BAND_ADD_FAILURE'});
     }
 };
 
-const joinBand = code => async (dispatch, getState) => {
+export const joinBand = code => async (dispatch, getState) => {
     let userId = getState().default.user.uid;
 
-    let snapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
+    let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
-    if (snapshot.docs.length > 0) {
-        let docRef = firebase.firestore().doc(`bands/${snapshot.docs[0].id}`);
+    if (bandSnapshot.docs.length > 0) {
+        let docRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
-        let snapshot2 = await firebase.firestore().collection(`users/${userId}/bands`).where('ref', '==', docRef).get();
+        let userBandSnapshot = await firebase.firestore().collection(`users/${userId}/bands`).where('ref', '==', docRef).get();
 
-        if (snapshot2.docs.length > 0) {
+        if (userBandSnapshot.docs.length > 0) {
             dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band already joined!'});
         } else {
             await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
