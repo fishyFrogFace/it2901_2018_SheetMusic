@@ -1,1 +1,1 @@
-export default from 'Setlist';
+export {default} from './Setlist';

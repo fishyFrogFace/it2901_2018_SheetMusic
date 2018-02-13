@@ -19,7 +19,7 @@ export default (state = {}, action) => {
         case 'ARRANGEMENT_FETCH_RESPONSE':
             return {...state, arrangement: action.arrangement};
         case 'ARRANGEMENT_ADD_SUCCESS':
-            return {...state, arrangements: [...state.arrangements, action.arrangement]};
+            return {...state, band: {...state.band, arrangements: [...state.band.arrangements, action.arrangement]}};
         case 'MESSAGE_HIDE':
             return {...state, message: undefined};
         default:

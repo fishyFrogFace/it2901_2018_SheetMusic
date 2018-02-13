@@ -1,1 +1,1 @@
-export default from 'Arrangement';
+export {default} from './Arrangement';

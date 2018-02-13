@@ -1,1 +1,1 @@
-export default from 'Band';
+export {default} from './Band';
