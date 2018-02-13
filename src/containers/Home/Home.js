@@ -11,6 +11,7 @@ import {push} from 'react-router-redux';
 
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
+    Snackbar,
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
@@ -55,13 +56,19 @@ const joinBand = code => async (dispatch, getState) => {
     if (snapshot.docs.length > 0) {
         let docRef = firebase.firestore().doc(`bands/${snapshot.docs[0].id}`);
 
-        await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
+        let snapshot2 = await firebase.firestore().collection(`users/${userId}/bands`).where('ref', '==', docRef).get();
 
-        let doc = await docRef.get();
+        if (snapshot2.docs.length > 0) {
+            dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band already joined!'});
+        } else {
+            await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
 
-        dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
+            let doc = await docRef.get();
+
+            dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
+        }
     } else {
-        dispatch({type: 'BAND_JOIN_FAILURE'});
+        dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band does not exist!'});
     }
 };
 
@@ -151,7 +158,7 @@ class Home extends Component {
 
     render() {
         const {anchorEl, createDialogOpen, joinDialogOpen} = this.state;
-        const {classes, bands = []} = this.props;
+        const {classes, bands = [], message} = this.props;
 
         return (
             <div className={classes.root}>
@@ -224,6 +231,16 @@ class Home extends Component {
                         <Button color="primary" onClick={() => this._onDialogSubmit('join')} autoFocus>Join</Button>
                     </DialogActions>
                 </Dialog>
+                <Snackbar
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left',
+                    }}
+                    open={Boolean(message)}
+                    autoHideDuration={3000}
+                    onClose={() => this.props.dispatch({type: 'MESSAGE_HIDE'})}
+                    message={message}
+                />
             </div>
         );
     }
@@ -232,5 +249,6 @@ class Home extends Component {
 
 export default compose(connect(state => ({
     user: state.default.user,
-    bands: state.default.bands
+    bands: state.default.bands,
+    message: state.default.message
 })), withStyles(styles))(Home);
