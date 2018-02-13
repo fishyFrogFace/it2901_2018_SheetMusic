@@ -1,4 +1,4 @@
-import {getBands, addBand, joinBand} from "./Home";
+import {getBands, addBand, joinBand} from "../containers/Home";
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 import firebase from "firebase";

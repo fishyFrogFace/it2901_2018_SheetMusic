@@ -1,6 +1,6 @@
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
-import {getArrangementDetail} from "./Arrangement";
+import {getArrangementDetail} from "../containers/Arrangement";
 import firebase from "firebase";
 
 jest.mock('firebase');
