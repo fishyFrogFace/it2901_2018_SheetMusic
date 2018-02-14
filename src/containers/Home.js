@@ -36,7 +36,7 @@ export const addBand = name => async (dispatch, getState) => {
         const band = {
             name: name,
             creator: firebase.firestore().doc(`users/${userId}`),
-            code: Math.random().toString(36).substring(7, 12)
+            code: Math.random().toString(36).substring(2, 7)
         };
 
         let ref = await firebase.firestore().collection('bands').add(band);
