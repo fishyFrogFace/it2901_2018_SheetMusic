@@ -73,6 +73,11 @@ export const joinBand = code => async (dispatch, getState) => {
     }
 };
 
+export const signOut = async () => {
+    await firebase.auth().signOut();
+    window.location.reload();
+};
+
 const styles = {
     root: {
     },
@@ -171,6 +176,7 @@ class Home extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
+                        <Button onClick={() => signOut()} style={{color: 'white'}}>Sign Out</Button>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
