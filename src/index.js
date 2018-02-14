@@ -1,12 +1,12 @@
 import React from 'react';
 import {render} from 'react-dom';
 
-import {Provider} from 'react-redux';
+import {Provider, connect} from 'react-redux';
 import {applyMiddleware, createStore, combineReducers} from 'redux';
 
 import createHistory from 'history/createBrowserHistory'
-import {Route} from 'react-router'
-import {ConnectedRouter, routerReducer, routerMiddleware} from 'react-router-redux'
+import {Route, Switch} from 'react-router'
+import {ConnectedRouter, routerReducer, routerMiddleware, push} from 'react-router-redux'
 import thunk from 'redux-thunk';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
@@ -20,10 +20,12 @@ import Home from './containers/Home';
 import Band from './containers/Band';
 import Arrangement from './containers/Arrangement';
 import Setlist from './containers/Setlist';
+import SignIn from "./containers/SignIn";
 
 import defaultReducer from './reducers';
 
 import registerServiceWorker from './registerServiceWorker';
+import {Redirect} from "react-router-dom";
 
 firebase.initializeApp({
     apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
@@ -44,65 +46,75 @@ const theme = createMuiTheme({
     }
 });
 
-// Redux
-
 const history = createHistory();
-
-const initialState = {
-};
 
 const store = createStore(
     combineReducers({default: defaultReducer, router: routerReducer}),
-    initialState,
+    {},
     applyMiddleware(thunk, routerMiddleware(history))
 );
+
+class CustomRouteContainer extends React.Component {
+    render() {
+        const {authStateLoaded, user, component: Component, location, ...props} = this.props;
+
+        return (
+            <Route
+                {...props}
+                render={props => {
+                    if (!authStateLoaded) {
+                        return <div>Loading</div>;
+                    }
+
+                    if (user) {
+                        if (location.pathname === '/signin') {
+                            return <Redirect to={{pathname: '/', state: {from: props.location}}}/>
+                        } else {
+                            return <Component {...props} />
+                        }
+                    } else {
+                        if (location.pathname === '/signin') {
+                            return <Component {...props} />
+                        } else {
+                            return <Redirect to={{pathname: '/signin', state: {from: props.location}}}/>
+                        }
+                    }
+                }}
+            />
+        )
+    }
+}
+
+const CustomRoute = connect(state => ({
+    authStateLoaded: state.default.authStateLoaded,
+    user: state.default.user
+}))(CustomRouteContainer);
 
 render(
     <Provider store={store}>
         <ConnectedRouter history={history}>
             <MuiThemeProvider theme={theme}>
-                <Route exact path="/" component={Home}/>
-                <Route path="/band" component={Band}/>
-                <Route path="/arrangement" component={Arrangement}/>
-                <Route path="/setlist" component={Setlist}/>
+                <Switch>
+                    <CustomRoute exact path="/" component={Home}/>
+                    <CustomRoute path='/signin' component={SignIn}/>
+                    <CustomRoute path="/band" component={Band}/>
+                    <CustomRoute path="/arrangement" component={Arrangement}/>
+                    <CustomRoute path="/setlist" component={Setlist}/>
+                </Switch>
             </MuiThemeProvider>
         </ConnectedRouter>
     </Provider>,
     document.querySelector('#root')
 );
 
-// Sign in
-
-store.dispatch(async dispatch => {
-    let user = await new Promise((resolve, reject) => {
-        let unsubscribe = firebase.auth().onAuthStateChanged(user => {
-            unsubscribe();
-            resolve(user);
-        });
+const getAuthState = () => dispatch => {
+    let unsubscribe = firebase.auth().onAuthStateChanged(user => {
+        dispatch({type: 'AUTH_STATE_LOAD_SUCCESS', user: user});
+        unsubscribe();
     });
+};
 
-    if (user) {
-        dispatch({type: 'SIGN_IN_SUCCESS', user: user});
-    } else {
-        const provider = new firebase.auth.GoogleAuthProvider();
-
-        try {
-            let result = await firebase.auth().signInWithPopup(provider);
-
-            dispatch({type: 'SIGN_IN_SUCCESS', user: result.user});
-
-            let userSnapshot = await firebase.firestore().doc(`users/${result.user.uid}`).get();
-
-            if (!userSnapshot.exists) {
-                await userSnapshot.ref.set({name: result.user.displayName});
-                let {displayName} = result.user;
-                dispatch({type: 'USER_CREATE_SUCCESS', user: {displayName: displayName}});
-            }
-        } catch (err) {
-            dispatch({type: 'SIGN_IN_FAILURE', error: err});
-        }
-    }
-});
+store.dispatch(getAuthState());
 
 registerServiceWorker();
 
