@@ -66,19 +66,15 @@ class CustomRouteContainer extends React.Component {
                         return <div>Loading</div>;
                     }
 
-                    if (user) {
-                        if (location.pathname === '/signin') {
-                            return <Redirect to={{pathname: '/', state: {from: props.location}}}/>
-                        } else {
-                            return <Component {...props} />
-                        }
-                    } else {
-                        if (location.pathname === '/signin') {
-                            return <Component {...props} />
-                        } else {
-                            return <Redirect to={{pathname: '/signin', state: {from: props.location}}}/>
-                        }
+                    if (user && location.pathname === '/signin') {
+                        return <Redirect to={{pathname: '/', state: {from: props.location}}}/>
                     }
+
+                    if (!user && location.pathname !== '/signin') {
+                        return <Redirect to={{pathname: '/signin', state: {from: props.location}}}/>
+                    }
+
+                    return <Component {...props} />
                 }}
             />
         )
