@@ -36,7 +36,7 @@ export const addBand = name => async (dispatch, getState) => {
         const band = {
             name: name,
             creator: firebase.firestore().doc(`users/${userId}`),
-            code: Math.random().toString(36).substring(7, 12)
+            code: Math.random().toString(36).substring(2, 7)
         };
 
         let ref = await firebase.firestore().collection('bands').add(band);
@@ -71,6 +71,11 @@ export const joinBand = code => async (dispatch, getState) => {
     } else {
         dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band does not exist!'});
     }
+};
+
+export const signOut = async () => {
+    await firebase.auth().signOut();
+    window.location.reload();
 };
 
 const styles = {
@@ -171,6 +176,7 @@ class Home extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
+                        <Button onClick={() => signOut()} style={{color: 'white'}}>Sign Out</Button>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
