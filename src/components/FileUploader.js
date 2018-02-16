@@ -1,6 +1,8 @@
 import React, {Component} from 'react';
 import {
-    AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slide, Snackbar, TextField,
+    AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Slide,
+    Snackbar,
+    TextField,
     Toolbar,
     Typography
 } from "material-ui";
@@ -12,6 +14,8 @@ import AddIcon from 'material-ui-icons/Add';
 import CloseIcon from 'material-ui-icons/Close';
 import Selectable from "./Selectable";
 import FormDialog from "./FormDialog";
+
+import firebase from 'firebase';
 
 const styles = {
     root: {},
@@ -28,7 +32,8 @@ const styles = {
 
     sheetContainer: {
         width: 700,
-        margin: '0 auto'
+        margin: '0 auto',
+        paddingTop: 20
     },
 
     selectable: {
@@ -39,7 +44,8 @@ const styles = {
     content: {
         paddingTop: 64,
         height: 'calc(100% - 64px)',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        background: '#f7f7f7'
     },
 
     chip: {
@@ -55,8 +61,16 @@ function Transition(props) {
 class FileUploader extends Component {
     state = {
         pages: [],
-        instruments: []
+        groups: [],
+        instruments: [],
+        selectedInstrument: 0
     };
+
+    async componentWillMount() {
+        let snapshot = await firebase.firestore().collection('instruments').get();
+        let instruments = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        this.setState({instruments: instruments});
+    }
 
     _onDialogClose() {
         this.setState({pages: []});
@@ -115,20 +129,33 @@ class FileUploader extends Component {
 
     async _onAddInstrument() {
         let selectedPages = this.state.pages.filter(page => page.selected).map(page => page.index);
-        let instruments = [...this.state.instruments];
+        let groups = [...this.state.groups];
 
-        let {Name} = await this.nameDialog.open();
+        let {instrument} = await this.instrumentDialog.open();
 
-        instruments.push({name: Name, pages: selectedPages});
+        groups.push({instrument: this.state.instruments[instrument], pages: selectedPages});
 
-        this.setState({instruments: instruments, pages: this.state.pages.map(page => ({...page, selected: false}))});
+        this.setState({groups: groups, pages: this.state.pages.map(page => ({...page, selected: false}))});
+    }
+
+    _onInstrumentChange(e) {
+        this.setState({selectedInstrument: e.target.value})
+    }
+
+    _onUploadClick() {
+        this.props.onUpload(
+            this.state.groups.map(group => ({
+                instrument: group.instrument.id,
+                pages: group.pages.map(page => this.state.pages[page].images)
+            }))
+        );
     }
 
     render() {
         const {classes} = this.props;
-        const {pages, instruments} = this.state;
+        const {pages, groups, instruments, selectedInstrument} = this.state;
 
-        let instrumentsFlat = [].concat(...instruments.map(instrument => instrument.pages));
+        let groupsFlat = [].concat(...groups.map(group => group.pages));
 
         return <Dialog
             fullScreen
@@ -171,7 +198,7 @@ class FileUploader extends Component {
 
             <div className={classes.content}>
                 <div className={classes.sheetContainer}>
-                    {pages.filter(page => !instrumentsFlat.includes(page.index)).map(page =>
+                    {pages.filter(page => !groupsFlat.includes(page.index)).map(page =>
                         <Selectable
                             classes={{root: classes.selectable}}
                             key={page.index}
@@ -183,9 +210,9 @@ class FileUploader extends Component {
             </div>
             <Snackbar
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right',}}
-                open={Boolean(instruments.length)}
-                message={instruments.map((instrument, index) => <Chip className={classes.chip} key={index} label={instrument.name}/>)}
-                action={<Button color="primary">Upload</Button>}
+                open={Boolean(groups.length)}
+                message={groups.map((group, index) => <Chip className={classes.chip} key={index} label={group.instrument.name}/>)}
+                action={<Button color="primary" onClick={() => this._onUploadClick()}>Upload</Button>}
             />
             <input
                 ref={input => this.fileBrowser = input}
@@ -193,12 +220,17 @@ class FileUploader extends Component {
                 style={{display: 'none'}}
                 onChange={e => this._onFileChange(e)}
             />
-            <FormDialog title='Create instrument' onRef={ref => this.nameDialog = ref}>
-                <TextField label="Name" margin="normal"/>
+            <FormDialog title='Create instrument' onRef={ref => this.instrumentDialog = ref}>
+                <Select
+                    name='instrument'
+                    value={selectedInstrument}
+                    onChange={e => this._onInstrumentChange(e)}
+                >
+                    {instruments.map((instrument, index) => <MenuItem key={index} value={index}>{instrument.name}</MenuItem>)}
+                </Select>
             </FormDialog>
         </Dialog>;
     }
 }
-
 
 export default withStyles(styles)(FileUploader);

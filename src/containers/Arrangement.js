@@ -78,6 +78,10 @@ class Arrangement extends Component {
         this.setState({fileUploaderOpen: false});
     }
 
+    _onFileUploaderUpload(e) {
+        this.setState({fileUploaderOpen: false});
+    }
+
     render() {
         const {classes, arrangement = {}} = this.props;
 
@@ -119,7 +123,11 @@ class Arrangement extends Component {
                         </IconButton>
                     </Toolbar>
                 </AppBar>
-                <FileUploader open={this.state.fileUploaderOpen} onClose={() => this._onFileUploaderClose()}/>
+                <FileUploader
+                    open={this.state.fileUploaderOpen}
+                    onClose={() => this._onFileUploaderClose()}
+                    onUpload={e => this._onFileUploaderUpload(e)}
+                />
             </div>
         );
     }

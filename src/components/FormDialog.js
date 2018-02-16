@@ -23,10 +23,6 @@ class FormDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
-    _onInputChange(label, e) {
-        this.inputs[label] = e.target.value;
-    }
-
     open() {
         this.setState({open: true});
         return new Promise((resolve, reject) => {
@@ -41,7 +37,14 @@ class FormDialog extends React.Component {
     }
 
     _onConfirmClick() {
-        this.__resolve(this.inputs);
+        let children = typeof this.props.children === 'object' ? [this.props.children] : this.props.children;
+
+        let data = {};
+        for (let child of children) {
+            data[child.props.name] = child.props.value;
+        }
+
+        this.__resolve(data);
         this.setState({open: false})
     }
 
@@ -49,17 +52,10 @@ class FormDialog extends React.Component {
         const {classes, title='Dialog'} = this.props;
         const {open} = this.state;
 
-        let children = (typeof this.props.children === 'object' ? [this.props.children] : this.props.children).map((child, index) => {
-            return React.cloneElement(child, {
-                key: index,
-                onChange: e => this._onInputChange(child.props.label, e),
-            })
-        });
-
         return <Dialog open={open}>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
-                {children}
+                {this.props.children}
             </DialogContent>
             <DialogActions>
                 <Button color="primary" onClick={() => this._onCancelClick()}>Cancel</Button>
