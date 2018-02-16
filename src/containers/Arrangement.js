@@ -9,18 +9,29 @@ import Typography from 'material-ui/Typography';
 
 import {IconButton, MenuItem, Select} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
+import FileUploadIcon from 'material-ui-icons/FileUpload';
 
 import firebase from 'firebase';
+import FileUploader from "../components/FileUploader";
 
 const styles = {
     root: {},
 
     instrumentSelector: {
-        marginLeft: 25,
+        marginLeft: 25
     },
 
-    instrumentSelector__select: {color: 'white'},
-    instrumentSelector__icon: {fill: 'white'}
+    instrumentSelector__select: {
+        color: 'white'
+    },
+    instrumentSelector__icon: {
+        fill: 'white'
+    },
+
+    flex: {
+        flex: 1
+    }
+
 };
 
 export const getArrangementDetail = arrId => async dispatch => {
@@ -30,6 +41,10 @@ export const getArrangementDetail = arrId => async dispatch => {
 
 
 class Arrangement extends Component {
+    state = {
+        fileUploaderOpen: false
+    };
+
     requestArrangementDetail() {
         const arrId = this.props.pathname.split('/')[2];
         this.props.dispatch(getArrangementDetail(arrId));
@@ -48,10 +63,19 @@ class Arrangement extends Component {
     }
 
     _onInstrumentSelectChange(e) {
+
     }
 
     _onArrowBackButtonClick() {
 
+    }
+
+    _onFileUploadButtonClick() {
+        this.setState({fileUploaderOpen: true});
+    }
+
+    _onFileUploaderClose() {
+        this.setState({fileUploaderOpen: false});
     }
 
     render() {
@@ -89,10 +113,13 @@ class Arrangement extends Component {
                             <MenuItem value={2}>Instrument6</MenuItem>
                             <MenuItem value={2}>Instrument7</MenuItem>
                         </Select>
+                        <div className={classes.flex}></div>
+                        <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
+                            <FileUploadIcon/>
+                        </IconButton>
                     </Toolbar>
                 </AppBar>
-                <div>
-                </div>
+                <FileUploader open={this.state.fileUploaderOpen} onClose={() => this._onFileUploaderClose()}/>
             </div>
         );
     }

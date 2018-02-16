@@ -15,6 +15,8 @@ import {
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
+import FileUploadIcon from 'material-ui-icons/FileUpload';
+import AssistantIcon from 'material-ui-icons/Assistant';
 
 import firebase from 'firebase';
 
@@ -150,6 +152,10 @@ class Band extends Component {
 
     }
 
+    _onFileUploadButtonClick() {
+
+    }
+
     render() {
         const {anchorEl, arrangementDialogOpen} = this.state;
         const {classes, band={arrangements: []}} = this.props;
@@ -164,7 +170,7 @@ class Band extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name} {band.code}
                         </Typography>
-                        <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
+                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
                         <Menu
