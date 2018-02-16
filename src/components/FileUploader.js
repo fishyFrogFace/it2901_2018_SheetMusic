@@ -1,14 +1,17 @@
 import React, {Component} from 'react';
 import {
-    AppBar, Button, Dialog, IconButton, Slide, Toolbar,
+    AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slide, Snackbar, TextField,
+    Toolbar,
     Typography
 } from "material-ui";
+
+import {withStyles} from "material-ui/styles";
 
 import AssistantIcon from 'material-ui-icons/Assistant';
 import AddIcon from 'material-ui-icons/Add';
 import CloseIcon from 'material-ui-icons/Close';
-import {withStyles} from "material-ui/styles";
 import Selectable from "./Selectable";
+import FormDialog from "./FormDialog";
 
 const styles = {
     root: {},
@@ -23,7 +26,7 @@ const styles = {
         flex: 1
     },
 
-    grid: {
+    sheetContainer: {
         width: 700,
         margin: '0 auto'
     },
@@ -37,6 +40,11 @@ const styles = {
         paddingTop: 64,
         height: 'calc(100% - 64px)',
         overflowY: 'auto'
+    },
+
+    chip: {
+        marginRight: 10,
+        marginBottom: 10
     }
 };
 
@@ -46,11 +54,12 @@ function Transition(props) {
 
 class FileUploader extends Component {
     state = {
-        pages: []
+        pages: [],
+        instruments: []
     };
 
     _onDialogClose() {
-        this.setState({images: []});
+        this.setState({pages: []});
         this.props.onClose();
     }
 
@@ -61,6 +70,8 @@ class FileUploader extends Component {
     async _onFileChange(e) {
         // https://reactjs.org/docs/events.html#event-pooling
         e.persist();
+
+        if  (!e.target.files.length) return;
 
         const PDFJS = await import('pdfjs-dist');
 
@@ -86,7 +97,7 @@ class FileUploader extends Component {
                 return canvas.toDataURL();
             }));
 
-            this.setState({pages: images.map(image => ({image: image, selected: false}))});
+            this.setState({pages: images.map((image, index) => ({image: image, selected: false, index: index}))});
         });
 
         reader.readAsArrayBuffer(e.target.files[0]);
@@ -98,9 +109,26 @@ class FileUploader extends Component {
         this.setState({pages: pages});
     }
 
+    _onSelectionClose() {
+        this.setState({pages: this.state.pages.map(page => ({...page, selected: false}))});
+    }
+
+    async _onAddInstrument() {
+        let selectedPages = this.state.pages.filter(page => page.selected).map(page => page.index);
+        let instruments = [...this.state.instruments];
+
+        let {Name} = await this.nameDialog.open();
+
+        instruments.push({name: Name, pages: selectedPages});
+
+        this.setState({instruments: instruments, pages: this.state.pages.map(page => ({...page, selected: false}))});
+    }
+
     render() {
         const {classes} = this.props;
-        const {pages} = this.state;
+        const {pages, instruments} = this.state;
+
+        let instrumentsFlat = [].concat(...instruments.map(instrument => instrument.pages));
 
         return <Dialog
             fullScreen
@@ -114,59 +142,61 @@ class FileUploader extends Component {
                         <CloseIcon/>
                     </IconButton>
                     <Typography variant="title" color="inherit" className={classes.flex}>
-                        Sound
+                        Upload instruments
                     </Typography>
                     <Button color="inherit" onClick={() => this._onSelectFileClick()}>
                         select file
                     </Button>
-                    {/*<IconButton color="inherit" onClick={e => this._onFileUploadButtonClick(e)}>*/}
-                    {/*<AssistantIcon/>*/}
-                    {/*</IconButton>*/}
-                    {/*<Button color="inherit" onClick={() => this._onDialogClose()}>*/}
-                    {/*save*/}
-                    {/*</Button>*/}
+                    <IconButton disabled={!pages.length} color="inherit">
+                        <AssistantIcon/>
+                    </IconButton>
                 </Toolbar>
             </AppBar>
-            {/*{*/}
-                {/*selectedPages.size > 0 ?*/}
-                    {/*<AppBar className={classes.appBar}>*/}
-                        {/*<Toolbar>*/}
-                            {/*<IconButton color="inherit" onClick={() => this._onDialogClose()}>*/}
-                                {/*<CloseIcon/>*/}
-                            {/*</IconButton>*/}
-                            {/*<Typography variant="title" color="inherit" className={classes.flex}>*/}
-                                {/*{selectedPages.size} selected*/}
-                            {/*</Typography>*/}
-                            {/*<IconButton color="inherit">*/}
-                                {/*<AddIcon/>*/}
-                            {/*</IconButton>*/}
-                            {/*/!*<Button color="inherit" onClick={() => this._onDialogClose()}>*!/*/}
-                            {/*/!*save*!/*/}
-                            {/*/!*</Button>*!/*/}
-                        {/*</Toolbar>*/}
-                    {/*</AppBar> : ''*/}
-            {/*}*/}
+            {
+                pages.filter(page => page.selected).length > 0 ?
+                    <AppBar className={classes.appBar}>
+                        <Toolbar>
+                            <IconButton color="inherit" onClick={() => this._onSelectionClose()}>
+                                <CloseIcon/>
+                            </IconButton>
+                            <Typography variant="title" color="inherit" className={classes.flex}>
+                                {pages.filter(page => page.selected).length} selected
+                            </Typography>
+                            <IconButton color="inherit" onClick={() => this._onAddInstrument()}>
+                                <AddIcon/>
+                            </IconButton>
+                        </Toolbar>
+                    </AppBar> : ''
+            }
 
             <div className={classes.content}>
-                <div className={classes.grid}>
-                    {pages.map((page, index) =>
+                <div className={classes.sheetContainer}>
+                    {pages.filter(page => !instrumentsFlat.includes(page.index)).map(page =>
                         <Selectable
                             classes={{root: classes.selectable}}
-                            key={index}
+                            key={page.index}
                             imageURL={page.image}
                             selected={page.selected}
-                            onClick={(i => () => this._onSelectableClick(i))(index)}
+                            onClick={(i => () => this._onSelectableClick(i))(page.index)}
                         />)}
                 </div>
             </div>
+            <Snackbar
+                anchorOrigin={{vertical: 'bottom', horizontal: 'right',}}
+                open={Boolean(instruments.length)}
+                message={instruments.map((instrument, index) => <Chip className={classes.chip} key={index} label={instrument.name}/>)}
+                action={<Button color="primary">Upload</Button>}
+            />
             <input
                 ref={input => this.fileBrowser = input}
                 type='file'
                 style={{display: 'none'}}
-                onChange={e => this._onFileChange(e)}/>
+                onChange={e => this._onFileChange(e)}
+            />
+            <FormDialog title='Create instrument' onRef={ref => this.nameDialog = ref}>
+                <TextField label="Name" margin="normal"/>
+            </FormDialog>
         </Dialog>;
-
-
     }
 }
 
