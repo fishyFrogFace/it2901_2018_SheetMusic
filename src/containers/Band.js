@@ -15,8 +15,6 @@ import {
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
-import FileUploadIcon from 'material-ui-icons/FileUpload';
-import AssistantIcon from 'material-ui-icons/Assistant';
 
 import firebase from 'firebase';
 

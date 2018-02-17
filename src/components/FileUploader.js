@@ -143,12 +143,12 @@ class FileUploader extends Component {
     }
 
     _onUploadClick() {
-        this.props.onUpload(
-            this.state.groups.map(group => ({
-                instrument: group.instrument.id,
-                pages: group.pages.map(page => this.state.pages[page].images)
-            }))
-        );
+        let instrumentData = this.state.groups.map(group => ({
+            id: group.instrument.id,
+            sheets: group.pages.map(page => this.state.pages[page].image)
+        }));
+
+        this.props.onUpload(instrumentData);
     }
 
     render() {

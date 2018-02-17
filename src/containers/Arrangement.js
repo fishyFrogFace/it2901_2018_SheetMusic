@@ -12,7 +12,47 @@ import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import FileUploadIcon from 'material-ui-icons/FileUpload';
 
 import firebase from 'firebase';
+import 'firebase/storage';
+
 import FileUploader from "../components/FileUploader";
+
+const addInstruments = (arrId, instruments) => async dispatch => {
+    const instrumentCollectionRef = firebase.firestore().collection(`arrangements/${arrId}/instruments`);
+
+    for (let instrument of instruments) {
+        let docRef = firebase.firestore().doc(`instruments/${instrument.id}`);
+        let querySnapshot = await instrumentCollectionRef.where('instrument', '==', docRef).get();
+
+        const tasks = Promise.all(
+            instrument.sheets.map((sheet, index) =>
+                firebase.storage().ref(`arrangement/${arrId}/instrument/${instrument.id}/${index}`).putString(sheet))
+        );
+
+        if (querySnapshot.docs.length > 0) {
+            // TODO create dialog asking whether to overwrite or not
+            const taskSnapshots = await tasks;
+            await querySnapshot.docs[0].ref.update({sheets: taskSnapshots.map(snap => snap.downloadURL)})
+        } else {
+            const taskSnapshots = await tasks;
+            await instrumentCollectionRef.add({instrument: docRef, sheets: taskSnapshots.map(snap => snap.downloadURL)})
+        }
+    }
+
+    dispatch({type: 'INSTRUMENTS_ADD_SUCCESS'});
+};
+
+export const getArrangementDetail = arrId => async dispatch => {
+    const doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
+    dispatch({type: 'ARRANGEMENT_DETAIL_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}});
+
+    const snapshot = await firebase.firestore().collection(`arrangements/${arrId}/instruments`).get();
+
+    const instruments = await Promise.all(
+        snapshot.docs.map(async doc => ({...doc.data(), instrumentName: (await doc.data().instrument.get()).data().name}))
+    );
+
+    dispatch({type: 'ARRANGEMENT_INSTRUMENTS_FETCH_RESPONSE', instruments: instruments});
+};
 
 const styles = {
     root: {},
@@ -34,15 +74,10 @@ const styles = {
 
 };
 
-export const getArrangementDetail = arrId => async dispatch => {
-    let doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
-    dispatch({type: 'ARRANGEMENT_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}})
-};
-
-
 class Arrangement extends Component {
     state = {
-        fileUploaderOpen: false
+        fileUploaderOpen: false,
+        selectedInstrument: 0
     };
 
     requestArrangementDetail() {
@@ -63,7 +98,7 @@ class Arrangement extends Component {
     }
 
     _onInstrumentSelectChange(e) {
-
+        this.setState({selectedInstrument: e.target.value});
     }
 
     _onArrowBackButtonClick() {
@@ -78,12 +113,15 @@ class Arrangement extends Component {
         this.setState({fileUploaderOpen: false});
     }
 
-    _onFileUploaderUpload(e) {
+    _onFileUploaderUpload(instruments) {
+        const arrId = this.props.pathname.split('/')[2];
+        this.props.dispatch(addInstruments(arrId, instruments));
         this.setState({fileUploaderOpen: false});
     }
 
     render() {
-        const {classes, arrangement = {}} = this.props;
+        const {classes, arrangement = {instruments: []}} = this.props;
+        const {selectedInstrument, fileUploaderOpen} = this.state;
 
         return (
             <div className={classes.root}>
@@ -101,21 +139,11 @@ class Arrangement extends Component {
                                 select: classes.instrumentSelector__select,
                                 icon: classes.instrumentSelector__icon
                             }}
-                            value={0}
+                            value={selectedInstrument}
                             onChange={e => this._onInstrumentSelectChange(e)}
-                            inputProps={{
-                                name: 'age',
-                                id: 'age-simple',
-                            }}
                             disableUnderline={true}
                         >
-                            <MenuItem value={0}>Instrument1</MenuItem>
-                            <MenuItem value={1}>Instrument2</MenuItem>
-                            <MenuItem value={2}>Instrument3</MenuItem>
-                            <MenuItem value={2}>Instrument4</MenuItem>
-                            <MenuItem value={2}>Instrument5</MenuItem>
-                            <MenuItem value={2}>Instrument6</MenuItem>
-                            <MenuItem value={2}>Instrument7</MenuItem>
+                            {arrangement.instruments.map((instrument, index) => <MenuItem key={index} value={index}>{instrument.instrumentName}</MenuItem>)}
                         </Select>
                         <div className={classes.flex}></div>
                         <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
@@ -124,7 +152,7 @@ class Arrangement extends Component {
                     </Toolbar>
                 </AppBar>
                 <FileUploader
-                    open={this.state.fileUploaderOpen}
+                    open={fileUploaderOpen}
                     onClose={() => this._onFileUploaderClose()}
                     onUpload={e => this._onFileUploaderUpload(e)}
                 />
