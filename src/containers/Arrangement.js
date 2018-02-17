@@ -38,7 +38,7 @@ const addInstruments = (arrId, instruments) => async dispatch => {
         }
     }
 
-    dispatch({type: 'INSTRUMENTS_ADD_SUCCESS'});
+    dispatch(getArrangementDetail(arrId));
 };
 
 
