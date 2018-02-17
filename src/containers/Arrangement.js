@@ -7,7 +7,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {IconButton, MenuItem, Select} from "material-ui";
+import {IconButton, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import FileUploadIcon from 'material-ui-icons/FileUpload';
 
@@ -19,7 +19,12 @@ import FileUploader from "../components/FileUploader";
 const addInstruments = (arrId, instruments) => async dispatch => {
     const instrumentCollectionRef = firebase.firestore().collection(`arrangements/${arrId}/instruments`);
 
-    for (let instrument of instruments) {
+    dispatch({type: 'MESSAGE_SHOW', message: 'Starting upload...'});
+
+
+    for (let i = 0; i < instruments.length; i++) {
+        let instrument = instruments[i];
+
         let docRef = firebase.firestore().doc(`instruments/${instrument.id}`);
         let querySnapshot = await instrumentCollectionRef.where('instrument', '==', docRef).get();
 
@@ -27,6 +32,8 @@ const addInstruments = (arrId, instruments) => async dispatch => {
             instrument.sheets.map((sheet, index) =>
                 firebase.storage().ref(`sheets/${arrId}/${instrument.id}/${index}`).putString(sheet, 'data_url', {contentType: 'image/png'}))
         );
+
+        dispatch({type: 'MESSAGE_SHOW', message: `Uploading instrument ${i + 1}/${instruments.length}...`});
 
         if (querySnapshot.docs.length > 0) {
             // TODO create dialog asking whether to overwrite or not
@@ -37,6 +44,8 @@ const addInstruments = (arrId, instruments) => async dispatch => {
             await instrumentCollectionRef.add({instrument: docRef, sheets: taskSnapshots.map(snap => snap.downloadURL)})
         }
     }
+
+    dispatch({type: 'MESSAGE_SHOW', message: 'Loading instruments...'});
 
     dispatch(getArrangementDetail(arrId));
 };
@@ -56,6 +65,7 @@ export const getArrangementDetail = arrId => async dispatch => {
     );
 
     dispatch({type: 'ARRANGEMENT_INSTRUMENTS_FETCH_RESPONSE', instruments: instruments});
+    dispatch({type: 'MESSAGE_HIDE'});
 };
 
 const styles = {
@@ -130,7 +140,7 @@ class Arrangement extends Component {
     }
 
     render() {
-        const {classes, arrangement = {instruments: []}} = this.props;
+        const {classes, arrangement = {instruments: []}, message} = this.props;
         const {selectedInstrument, fileUploaderOpen} = this.state;
 
         const hasInstruments = Boolean(arrangement.instruments.length);
@@ -180,6 +190,11 @@ class Arrangement extends Component {
                     onClose={() => this._onFileUploaderClose()}
                     onUpload={e => this._onFileUploaderUpload(e)}
                 />
+                <Snackbar
+                    anchorOrigin={{vertical: 'bottom', horizontal: 'right',}}
+                    open={Boolean(message)}
+                    message={message}
+                />
             </div>
         );
     }
@@ -189,5 +204,6 @@ class Arrangement extends Component {
 export default compose(connect(state => ({
     user: state.default.user,
     arrangement: state.default.arrangement,
+    message: state.default.message,
     pathname: state.router.location.pathname
 })), withStyles(styles))(Arrangement);
