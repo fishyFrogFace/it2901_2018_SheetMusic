@@ -7,9 +7,14 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {IconButton, MenuItem, Select, Snackbar} from "material-ui";
+import {
+    Button,
+    Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Select, Snackbar,
+    TextField
+} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import FileUploadIcon from 'material-ui-icons/FileUpload';
+import MoreVertIcon  from 'material-ui-icons/MoreVert';
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -97,7 +102,8 @@ const styles = {
 class Arrangement extends Component {
     state = {
         fileUploaderOpen: false,
-        selectedInstrument: 0
+        selectedInstrument: 0,
+        anchorEl: null
     };
 
     requestArrangementDetail() {
@@ -139,9 +145,26 @@ class Arrangement extends Component {
         this.setState({fileUploaderOpen: false});
     }
 
+    _onMenuClose() {
+        this.setState({anchorEl: null});
+    }
+
+    _onMoreVertClick(e) {
+        this.setState({anchorEl: e.currentTarget});
+    }
+
+    _onMenuClick(type) {
+        switch (type) {
+            case 'download':
+                break;
+        }
+
+        this.setState({anchorEl: null});
+    }
+
     render() {
         const {classes, arrangement = {instruments: []}, message} = this.props;
-        const {selectedInstrument, fileUploaderOpen} = this.state;
+        const {selectedInstrument, fileUploaderOpen, anchorEl} = this.state;
 
         const hasInstruments = Boolean(arrangement.instruments.length);
 
@@ -175,6 +198,16 @@ class Arrangement extends Component {
                         <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
                             <FileUploadIcon/>
                         </IconButton>
+                        <IconButton color="inherit" onClick={e => this._onMoreVertClick(e)}>
+                            <MoreVertIcon/>
+                        </IconButton>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={() => this._onMenuClose()}
+                        >
+                            <MenuItem onClick={() => this._onMenuClick('download')}>Download Instrument</MenuItem>
+                        </Menu>
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
@@ -195,6 +228,16 @@ class Arrangement extends Component {
                     open={Boolean(message)}
                     message={message}
                 />
+                <Dialog open={true}>
+                    <DialogTitle>Download Instrument</DialogTitle>
+                    <DialogContent>
+                        HMMM
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="primary">Cancel</Button>
+                        <Button color="primary" autoFocus>Download</Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         );
     }

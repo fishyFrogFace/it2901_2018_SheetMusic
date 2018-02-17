@@ -67,11 +67,13 @@ export const joinBand = code => async (dispatch, getState) => {
             let doc = await docRef.get();
 
             dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
-            dispatch({type: 'MESSAGE_HIDE'})
         }
     } else {
         dispatch({type: 'MESSAGE_SHOW', message: 'Band does not exist!'});
     }
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    dispatch({type: 'MESSAGE_HIDE'});
 };
 
 export const signOut = async () => {
