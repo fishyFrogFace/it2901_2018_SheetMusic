@@ -25,7 +25,7 @@ const addInstruments = (arrId, instruments) => async dispatch => {
 
         const tasks = Promise.all(
             instrument.sheets.map((sheet, index) =>
-                firebase.storage().ref(`arrangement/${arrId}/instrument/${instrument.id}/${index}`).putString(sheet))
+                firebase.storage().ref(`sheets/${arrId}/${instrument.id}/${index}`).putString(sheet, 'data_url', {contentType: 'image/png'}))
         );
 
         if (querySnapshot.docs.length > 0) {
@@ -41,6 +41,7 @@ const addInstruments = (arrId, instruments) => async dispatch => {
     dispatch({type: 'INSTRUMENTS_ADD_SUCCESS'});
 };
 
+
 export const getArrangementDetail = arrId => async dispatch => {
     const doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
     dispatch({type: 'ARRANGEMENT_DETAIL_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}});
@@ -48,7 +49,10 @@ export const getArrangementDetail = arrId => async dispatch => {
     const snapshot = await firebase.firestore().collection(`arrangements/${arrId}/instruments`).get();
 
     const instruments = await Promise.all(
-        snapshot.docs.map(async doc => ({...doc.data(), instrumentName: (await doc.data().instrument.get()).data().name}))
+        snapshot.docs.map(async doc => ({
+            ...doc.data(),
+            instrumentName: (await doc.data().instrument.get()).data().name
+        }))
     );
 
     dispatch({type: 'ARRANGEMENT_INSTRUMENTS_FETCH_RESPONSE', instruments: instruments});
@@ -70,8 +74,14 @@ const styles = {
 
     flex: {
         flex: 1
-    }
+    },
 
+    sheetContainer: {
+    },
+
+    sheet: {
+        width: '100%'
+    }
 };
 
 class Arrangement extends Component {
@@ -123,6 +133,8 @@ class Arrangement extends Component {
         const {classes, arrangement = {instruments: []}} = this.props;
         const {selectedInstrument, fileUploaderOpen} = this.state;
 
+        const hasInstruments = Boolean(arrangement.instruments.length);
+
         return (
             <div className={classes.root}>
                 <AppBar position="static">
@@ -133,24 +145,36 @@ class Arrangement extends Component {
                         <Typography variant="title" color="inherit">
                             {arrangement.title}
                         </Typography>
-                        <Select
-                            className={classes.instrumentSelector}
-                            classes={{
-                                select: classes.instrumentSelector__select,
-                                icon: classes.instrumentSelector__icon
-                            }}
-                            value={selectedInstrument}
-                            onChange={e => this._onInstrumentSelectChange(e)}
-                            disableUnderline={true}
-                        >
-                            {arrangement.instruments.map((instrument, index) => <MenuItem key={index} value={index}>{instrument.instrumentName}</MenuItem>)}
-                        </Select>
+                        {
+                            hasInstruments ?
+                                <Select
+                                    className={classes.instrumentSelector}
+                                    classes={{
+                                        select: classes.instrumentSelector__select,
+                                        icon: classes.instrumentSelector__icon
+                                    }}
+                                    value={selectedInstrument}
+                                    onChange={e => this._onInstrumentSelectChange(e)}
+                                    disableUnderline={true}
+                                >
+                                    {arrangement.instruments.map((instrument, index) => <MenuItem key={index}
+                                                                                                  value={index}>{instrument.instrumentName}</MenuItem>)}
+                                </Select> : ''
+                        }
                         <div className={classes.flex}></div>
                         <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
                             <FileUploadIcon/>
                         </IconButton>
                     </Toolbar>
                 </AppBar>
+                <div className={classes.sheetContainer}>
+                    {
+                        hasInstruments ?
+                            arrangement.instruments[selectedInstrument].sheets.map((sheet, index) =>
+                                <img key={index} className={classes.sheet} src={sheet}/>
+                            ) : ''
+                    }
+                </div>
                 <FileUploader
                     open={fileUploaderOpen}
                     onClose={() => this._onFileUploaderClose()}
