@@ -49,7 +49,7 @@ class FormDialog extends React.Component {
     }
 
     render() {
-        const {classes, title='Dialog'} = this.props;
+        const {classes, title='Dialog', confirmText='Confirm'} = this.props;
         const {open} = this.state;
 
         return <Dialog open={open}>
@@ -59,7 +59,7 @@ class FormDialog extends React.Component {
             </DialogContent>
             <DialogActions>
                 <Button color="primary" onClick={() => this._onCancelClick()}>Cancel</Button>
-                <Button color="primary" onClick={() => this._onConfirmClick()} autoFocus>Create</Button>
+                <Button color="primary" onClick={() => this._onConfirmClick()} autoFocus>{confirmText}</Button>
             </DialogActions>
         </Dialog>
     }

@@ -7,11 +7,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {
-    Button,
-    Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Select, Snackbar,
-    TextField
-} from "material-ui";
+import {IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import FileUploadIcon from 'material-ui-icons/FileUpload';
 import MoreVertIcon  from 'material-ui-icons/MoreVert';
@@ -20,6 +16,8 @@ import firebase from 'firebase';
 import 'firebase/storage';
 
 import FileUploader from "../components/FileUploader";
+import FormDialog from "../components/FormDialog";
+import SelectDialog from "../components/dialogs/SelectDialog";
 
 const addInstruments = (arrId, instruments) => async dispatch => {
     const instrumentCollectionRef = firebase.firestore().collection(`arrangements/${arrId}/instruments`);
@@ -58,14 +56,17 @@ const addInstruments = (arrId, instruments) => async dispatch => {
 
 export const getArrangementDetail = arrId => async dispatch => {
     const doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
-    dispatch({type: 'ARRANGEMENT_DETAIL_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}});
+    dispatch({
+        type: 'ARRANGEMENT_DETAIL_FETCH_RESPONSE',
+        arrangement: {id: doc.id, ...doc.data()}
+    });
 
     const snapshot = await firebase.firestore().collection(`arrangements/${arrId}/instruments`).get();
 
     const instruments = await Promise.all(
         snapshot.docs.map(async doc => ({
             ...doc.data(),
-            instrumentName: (await doc.data().instrument.get()).data().name
+            name: (await doc.data().instrument.get()).data().name
         }))
     );
 
@@ -153,9 +154,10 @@ class Arrangement extends Component {
         this.setState({anchorEl: e.currentTarget});
     }
 
-    _onMenuClick(type) {
+    async _onMenuClick(type) {
         switch (type) {
             case 'download':
+                const instrument = await this.instrumentDialog.open();
                 break;
         }
 
@@ -190,8 +192,11 @@ class Arrangement extends Component {
                                     onChange={e => this._onInstrumentSelectChange(e)}
                                     disableUnderline={true}
                                 >
-                                    {arrangement.instruments.map((instrument, index) => <MenuItem key={index}
-                                                                                                  value={index}>{instrument.instrumentName}</MenuItem>)}
+                                    {
+                                        arrangement.instruments.map((instrument, index) =>
+                                            <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
+                                        )
+                                    }
                                 </Select> : ''
                         }
                         <div className={classes.flex}></div>
@@ -228,16 +233,12 @@ class Arrangement extends Component {
                     open={Boolean(message)}
                     message={message}
                 />
-                <Dialog open={true}>
-                    <DialogTitle>Download Instrument</DialogTitle>
-                    <DialogContent>
-                        HMMM
-                    </DialogContent>
-                    <DialogActions>
-                        <Button color="primary">Cancel</Button>
-                        <Button color="primary" autoFocus>Download</Button>
-                    </DialogActions>
-                </Dialog>
+                <SelectDialog
+                    items={arrangement.instruments}
+                    confirmText='Download'
+                    title='Download Instrument'
+                    onRef={ref => this.instrumentDialog = ref}
+                />
             </div>
         );
     }

@@ -16,6 +16,7 @@ import Selectable from "./Selectable";
 import FormDialog from "./FormDialog";
 
 import firebase from 'firebase';
+import SelectDialog from "./dialogs/SelectDialog";
 
 const styles = {
     root: {},
@@ -62,8 +63,7 @@ class FileUploader extends Component {
     state = {
         pages: [],
         groups: [],
-        instruments: [],
-        selectedInstrument: 0
+        instruments: []
     };
 
     async componentWillMount() {
@@ -131,15 +131,11 @@ class FileUploader extends Component {
         let selectedPages = this.state.pages.filter(page => page.selected).map(page => page.index);
         let groups = [...this.state.groups];
 
-        let {instrument} = await this.instrumentDialog.open();
+        let instrument = await this.instrumentDialog.open();
 
         groups.push({instrument: this.state.instruments[instrument], pages: selectedPages});
 
         this.setState({groups: groups, pages: this.state.pages.map(page => ({...page, selected: false}))});
-    }
-
-    _onInstrumentChange(e) {
-        this.setState({selectedInstrument: e.target.value})
     }
 
     _onUploadClick() {
@@ -153,7 +149,7 @@ class FileUploader extends Component {
 
     render() {
         const {classes} = this.props;
-        const {pages, groups, instruments, selectedInstrument} = this.state;
+        const {pages, groups, instruments} = this.state;
 
         let groupsFlat = [].concat(...groups.map(group => group.pages));
 
@@ -220,15 +216,12 @@ class FileUploader extends Component {
                 style={{display: 'none'}}
                 onChange={e => this._onFileChange(e)}
             />
-            <FormDialog title='Create instrument' onRef={ref => this.instrumentDialog = ref}>
-                <Select
-                    name='instrument'
-                    value={selectedInstrument}
-                    onChange={e => this._onInstrumentChange(e)}
-                >
-                    {instruments.map((instrument, index) => <MenuItem key={index} value={index}>{instrument.name}</MenuItem>)}
-                </Select>
-            </FormDialog>
+            <SelectDialog
+                items={instruments}
+                title='Create instrument'
+                confirmText='Create'
+                onRef={ref => this.instrumentDialog = ref}
+            />
         </Dialog>;
     }
 }
