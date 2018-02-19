@@ -12,6 +12,7 @@ import thunk from 'redux-thunk';
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
 import purple from 'material-ui/colors/purple';
 import green from 'material-ui/colors/green';
+import cyan from 'material-ui/colors/cyan'
 
 import firebase from 'firebase';
 import 'firebase/firestore';
@@ -41,7 +42,7 @@ firebase.initializeApp({
 
 const theme = createMuiTheme({
     palette: {
-        primary: purple,
+        primary: cyan,
         secondary: green
     }
 });
@@ -113,4 +114,3 @@ const getAuthState = () => dispatch => {
 store.dispatch(getAuthState());
 
 registerServiceWorker();
-
