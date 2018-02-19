@@ -60,16 +60,17 @@ export const joinBand = code => async (dispatch, getState) => {
         let userBandSnapshot = await firebase.firestore().collection(`users/${userId}/bands`).where('ref', '==', docRef).get();
 
         if (userBandSnapshot.docs.length > 0) {
-            dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band already joined!'});
+            dispatch({type: 'MESSAGE_SHOW', message: 'Band already joined!'});
         } else {
             await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
 
             let doc = await docRef.get();
 
             dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
+            dispatch({type: 'MESSAGE_HIDE'})
         }
     } else {
-        dispatch({type: 'BAND_JOIN_FAILURE', message: 'Band does not exist!'});
+        dispatch({type: 'MESSAGE_SHOW', message: 'Band does not exist!'});
     }
 };
 
@@ -244,8 +245,6 @@ class Home extends Component {
                         horizontal: 'left',
                     }}
                     open={Boolean(message)}
-                    autoHideDuration={3000}
-                    onClose={() => this.props.dispatch({type: 'MESSAGE_HIDE'})}
                     message={message}
                 />
             </div>

@@ -150,6 +150,10 @@ class Band extends Component {
 
     }
 
+    _onFileUploadButtonClick() {
+
+    }
+
     render() {
         const {anchorEl, arrangementDialogOpen} = this.state;
         const {classes, band={arrangements: []}} = this.props;
@@ -164,7 +168,7 @@ class Band extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name} {band.code}
                         </Typography>
-                        <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
+                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
                         <Menu
