@@ -155,13 +155,52 @@ class Arrangement extends Component {
     }
 
     async _onMenuClick(type) {
+        this.setState({anchorEl: null});
+
         switch (type) {
             case 'download':
-                const instrument = await this.instrumentDialog.open();
+                try {
+                    const instrument = await this.instrumentDialog.open();
+
+                    const jsPDF = await import('jspdf');
+
+                    const sheets = this.props.arrangement.instruments[instrument].sheets;
+
+                    const {width, height} = await new Promise(resolve => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.src = sheets[0];
+                    });
+
+                    const doc = new jsPDF('p', 'px', [width, height]);
+
+                    for (let i = 0; i < sheets.length; i++) {
+                        if (i > 0) {
+                            doc.addPage();
+                        }
+
+                        const url = sheets[i];
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+
+                        const imageData = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+
+                        doc.addImage(imageData, 'PNG', 0, 0, width, height);
+                    }
+
+                    doc.save('test');
+                } catch (err) {
+                    // Cancelled
+                }
+
                 break;
         }
 
-        this.setState({anchorEl: null});
     }
 
     render() {
