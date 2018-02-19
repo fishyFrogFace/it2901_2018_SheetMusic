@@ -9,6 +9,8 @@ import loggingImg from '../img/logging.png';
 import personalImg from '../img/personal.png';
 import setlistImg from '../img/setlist.png';
 import sheetImg from '../img/sheet1.png';
+import g_logo from '../img/google-logo-icon-PNG-Transparent-Background.png';
+import f_logo from '../img/facebook-flat-vector-logo.png';
 
 import MenuIcon from 'material-ui-icons/Menu';
 
@@ -51,6 +53,17 @@ const styles = {
       marginRight: 20,
       color: 'rgb(255,255,255)'
     },
+    googleLogo: {
+      width: '18px',
+      paddingLeft: '1px',
+      paddingRight: '8px',
+    },
+    facebookLogo: {
+      width: '18px',
+      paddingLeft: '1px',
+      paddingRight: '8px',
+
+    },
     header: {
       background: 'rgb(0,188,212)',
       height: '40em',
@@ -75,9 +88,7 @@ const styles = {
       margin: '5px',
       background: 'rgb(255,255,255)',
       color: 'rgb(0,188,212)',
-        ':hover': {
-          background: 'rgb(238,238,238)',
-        },
+      height: '40px'
     },
     midPart: {
       background: 'rgb(238, 238, 238)',
@@ -138,17 +149,19 @@ class SignIn extends Component {
                 <Grid item xs={12} alignItems={'center'} className={classes.header}>
                   <div className={classes.captionBox}>
                     <h1 className={classes.caption}>Score Butler</h1>
-                    <p className={classes.slogan}>The best way to store adfadfadsfsa</p>
+                    <p className={classes.slogan}>The best way to store your sheets</p>
                     <Button
                       variant='raised'
                       className={classes.button}
                       onClick={() => this._onSignIn('google')}>
+                      <img src={g_logo} className={classes.googleLogo}/>
                       Sign in with Google
                     </Button>
                     <Button
                       variant='raised'
                       className={classes.button}
                       onClick={() => this._onSignIn('facebook')}>
+                      <img src={f_logo} className={classes.facebookLogo}/>
                       Sign in with Facebook
                     </Button>
                   </div>
