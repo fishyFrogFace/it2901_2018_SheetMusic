@@ -127,7 +127,7 @@ class SignIn extends Component {
 
         return (
             <div className={classes.root}>
-              <AppBar position="static">
+              <AppBar position='static'>
                 <Toolbar>
                   <IconButton className={classes.menuButton} color="inherit" aria-label="Menu">
                     <MenuIcon />
@@ -141,14 +141,12 @@ class SignIn extends Component {
                     <p className={classes.slogan}>The best way to store adfadfadsfsa</p>
                     <Button
                       variant='raised'
-                      color='primary'
                       className={classes.button}
                       onClick={() => this._onSignIn('google')}>
                       Sign in with Google
                     </Button>
                     <Button
                       variant='raised'
-                      color='primary'
                       className={classes.button}
                       onClick={() => this._onSignIn('facebook')}>
                       Sign in with Facebook
