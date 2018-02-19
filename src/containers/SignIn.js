@@ -22,8 +22,14 @@ import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 import Copyright from 'material-ui-icons/Copyright'
 
-export const signIn = provider => async dispatch => {
-    const provider = new firebase.auth.GoogleAuthProvider();
+export const signIn = prov => async dispatch => {
+  let provider;
+
+  if(prov === 'google'){
+    provider = new firebase.auth.GoogleAuthProvider();
+  } else if(prov === 'facebook') {
+    provider = new firebase.auth.FacebookAuthProvider();
+  }
 
     try {
         let result = await firebase.auth().signInWithPopup(provider);
@@ -111,7 +117,7 @@ class SignIn extends Component {
     }
 
     _onSignIn(provider) {
-        this.props.dispatch(signIn('google'));
+        this.props.dispatch(signIn(provider));
     }
 
     render() {
@@ -134,7 +140,8 @@ class SignIn extends Component {
                     <Button
                       variant='raised'
                       color='primary'
-                      className={classes.button}>
+                      className={classes.button}
+                      onClick={() => this._onSignIn('facebook')}>
                       Sign in with Facebook
                     </Button>
                   </div>
