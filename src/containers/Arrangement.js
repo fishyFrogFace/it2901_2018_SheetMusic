@@ -160,26 +160,30 @@ class Arrangement extends Component {
         switch (type) {
             case 'download':
                 try {
-                    const instrument = await this.instrumentDialog.open();
+                    const instrumentIndex = await this.instrumentDialog.open();
 
                     const jsPDF = await import('jspdf');
 
-                    const sheets = this.props.arrangement.instruments[instrument].sheets;
+                    const arrangement = this.props.arrangement;
+                    const instrument = arrangement.instruments[instrumentIndex];
+                    const band = (await arrangement.band.get()).data();
+
+                    const dateString = new Date().toLocaleDateString();
 
                     const {width, height} = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
-                        img.src = sheets[0];
+                        img.src = instrument.sheets[0];
                     });
 
                     const doc = new jsPDF('p', 'px', [width, height]);
 
-                    for (let i = 0; i < sheets.length; i++) {
+                    for (let i = 0; i < instrument.sheets.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = sheets[i];
+                        const url = instrument.sheets[i];
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -191,10 +195,16 @@ class Arrangement extends Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
+
+                        doc.text(instrument.name, width - 140, height - 100);
+                        doc.text(band.name, width - 140, height - 80);
+                        doc.text(this.props.user.displayName, width - 140, height - 60);
+                        doc.text(dateString, width - 140, height - 40);
                     }
 
                     doc.save('test');
                 } catch (err) {
+                    console.log(err);
                     // Cancelled
                 }
 
