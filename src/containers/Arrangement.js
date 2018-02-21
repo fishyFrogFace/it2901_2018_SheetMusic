@@ -195,14 +195,10 @@ class Arrangement extends Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-
-                        doc.text(instrument.name, width - 140, height - 100);
-                        doc.text(band.name, width - 140, height - 80);
-                        doc.text(this.props.user.displayName, width - 140, height - 60);
-                        doc.text(dateString, width - 140, height - 40);
+                        doc.text(`${band.name}     ${dateString}     ${arrangement.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${instrument.sheets.length}`, 20, height - 20);
                     }
 
-                    doc.save('test');
+                    doc.save(`${arrangement.title}.pdf`);
                 } catch (err) {
                     console.log(err);
                     // Cancelled
