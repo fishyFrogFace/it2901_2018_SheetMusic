@@ -1,63 +1,16 @@
 import React, {Component} from 'react';
-import {compose} from 'redux';
-import {connect} from 'react-redux';
 import {withStyles} from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {push} from 'react-router-redux';
-
-import {
-    Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
-    Paper,
-    Tab,
-    Tabs,
-    TextField
-} from "material-ui";
+import {Card, CardContent, CardMedia, IconButton, Menu, MenuItem, Paper, Tab, Tabs,} from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
-
-export const addArrangement = (title, composer) => async (dispatch, getState) => {
-    let userId = getState().default.user.uid;
-    let bandId = getState().router.location.pathname.split('/')[2];
-
-    try {
-        const arrangement = {
-            title: title,
-            composer: composer,
-            creator: firebase.firestore().doc(`users/${userId}`),
-            band: firebase.firestore().doc(`bands/${bandId}`)
-        };
-
-        let ref = await firebase.firestore().collection('arrangements').add(arrangement);
-        await firebase.firestore().collection(`bands/${bandId}/arrangements`).add({ref: firebase.firestore().doc(`arrangements/${ref.id}`)});
-
-        dispatch({type: 'ARRANGEMENT_ADD_SUCCESS', arrangement: {id: ref.id, ...arrangement}});
-    } catch (err) {
-        dispatch({type: 'ARRANGEMENT_ADD_FAILURE'});
-    }
-};
-
-
-export const getBandDetail = bandId => async dispatch => {
-    let doc = await firebase.firestore().doc(`bands/${bandId}`).get();
-
-    let band = doc.data();
-
-    let snapshot = await firebase.firestore().collection(`bands/${bandId}/arrangements`).get();
-
-    band.arrangements = await Promise.all(snapshot.docs.map(async doc => {
-        const arrDoc = await doc.data().ref.get();
-        return {id: arrDoc.id, ...arrDoc.data()};
-    }));
-
-    dispatch({type: 'BAND_FETCH_RESPONSE', band: band})
-};
-
+import TextFieldDialog from "../components/dialogs/TextFieldDialog";
 
 const styles = {
     root: {},
@@ -101,29 +54,29 @@ const styles = {
 class Band extends Component {
     state = {
         anchorEl: null,
-        arrangementDialogOpen: false,
-        setlistDialogOpen: false,
-        arrangementTitle: '',
-        arrangementComposer: '',
-        setlistName: '',
-        selectedPage: 1
+        selectedPage: 0,
+        band: {}
     };
 
-    requestBandDetail() {
-        let bandId = this.props.pathname.split('/')[2];
-        this.props.dispatch(getBandDetail(bandId));
-    }
-
     componentWillMount() {
-        if (this.props.user) {
-            this.requestBandDetail();
-        }
+        const bandId = this.props.detail;
+
+        firebase.firestore().doc(`bands/${bandId}`).get().then(doc => {
+            this.setState({band: doc.data()});
+        });
+
+        this.unsubscribe = firebase.firestore().collection(`bands/${bandId}/scores`).onSnapshot(async snapshot => {
+            const scores = await Promise.all(snapshot.docs.map(async doc => {
+                const arrDoc = await doc.data().ref.get();
+                return {id: arrDoc.id, ...arrDoc.data()};
+            }));
+
+            this.setState({band: {...this.state.band, scores: scores}});
+        });
     }
 
-    componentWillReceiveProps(props) {
-        if (!this.props.user && props.user) {
-            this.requestBandDetail();
-        }
+    componentWillUnmount() {
+        this.unsubscribe();
     }
 
     _onAddButtonClick(e) {
@@ -134,62 +87,74 @@ class Band extends Component {
         this.setState({anchorEl: null});
     }
 
-    _onMenuClick(type) {
-        this.setState({[`${type}DialogOpen`]: true});
+    _onMenuButtonClick() {
+
+    }
+
+    async _onMenuClick(type) {
+        let uid = this.props.user.uid;
+        let bandId = this.props.detail;
+
         this.setState({anchorEl: null});
-    }
 
-    _onDialogClose(type) {
-        this.setState({[`${type}DialogOpen`]: false});
-    }
-
-    _onDialogSubmit(type) {
         switch (type) {
-            case 'arrangement':
-                this.props.dispatch(addArrangement(this.state.arrangementTitle, this.state.arrangementComposer));
+            case 'score':
+                const [title, composer] = await this.scoreDialog.open();
+
+                try {
+                    const score = {
+                        title: title,
+                        composer: composer,
+                        creator: firebase.firestore().doc(`users/${uid}`),
+                        band: firebase.firestore().doc(`bands/${bandId}`)
+                    };
+
+                    let ref = await firebase.firestore().collection('scores').add(score);
+
+                    await firebase.firestore().collection(`bands/${bandId}/scores`).add({
+                        ref: firebase.firestore().doc(`scores/${ref.id}`)
+                    });
+                    window.location.hash = `#/score/${ref.id}`;
+                } catch (err) {
+                    console.log(err);
+                }
                 break;
             case 'setlist':
-                // this.props.dispatch(joinBand(this.state.bandCode));
+                const [name] = await this.setlistDialog.open();
                 break;
             default:
                 break;
         }
-
-        this.setState({[`${type}DialogOpen`]: false});
-    }
-
-    _onMenuButtonClick() {
-
     }
 
     _onTabsChange(e, value) {
         this.setState({selectedPage: value});
     }
 
-
     render() {
-        const {anchorEl, arrangementDialogOpen, selectedPage} = this.state;
-        const {classes, band = {arrangements: []}} = this.props;
+        const {anchorEl, selectedPage, band} = this.state;
+
+        const {classes} = this.props;
 
         return (
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon style={{color:'white'}}/>
+                            <MenuIcon/>
                         </IconButton>
-                        <Typography variant="title" style={{color:'white'}} color="inherit" className={classes.flex}>
-                            {band.name} {band.code}
+                        <Typography variant="title" color="inherit" className={classes.flex}>
+                            {band.name}
                         </Typography>
-                        <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon style={{color:'white'}}/>
+                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
+                            <AddIcon/>
                         </IconButton>
                         <Menu
                             anchorEl={anchorEl}
                             open={Boolean(anchorEl)}
                             onClose={() => this._onMenuClose()}
                         >
-                            <MenuItem onClick={() => this._onMenuClick('arrangement')}>Create Arrangement</MenuItem>
+                            <MenuItem onClick={() => this._onMenuClick('score')}>Create Score</MenuItem>
                             <MenuItem onClick={() => this._onMenuClick('setlist')}>Create Setlist</MenuItem>
                         </Menu>
                     </Toolbar>
@@ -214,9 +179,9 @@ class Band extends Component {
                                 </div>;
                             case 1:
                                 return <div className={classes.grid}>
-                                    {band.arrangements.map((arr, index) =>
+                                    {band.scores && band.scores.map((arr, index) =>
                                         <Card key={index} className={classes.card}
-                                              onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}
+                                              onClick={() => window.location.hash = `#/score/${arr.id}`}
                                               elevation={1}>
                                             <CardMedia
                                                 className={classes.media}
@@ -250,35 +215,22 @@ class Band extends Component {
                         }
                     })()}
                 </div>
-
-                <Dialog open={arrangementDialogOpen} onClose={() => this._onDialogClose('arrangement')}>
-                    <DialogTitle>Create Score</DialogTitle>
-                    <DialogContent className={classes.dialogContent}>
-                        <TextField
-                            label="Title"
-                            margin="normal"
-                            onChange={e => this.setState({arrangementTitle: e.target.value})}
-                        />
-                        <TextField
-                            label="Composer"
-                            margin="normal"
-                            onChange={e => this.setState({arrangementComposer: e.target.value})}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button color="primary" onClick={() => this._onDialogClose('arrangement')}>Cancel</Button>
-                        <Button color="primary" onClick={() => this._onDialogSubmit('arrangement')}
-                                autoFocus>Create</Button>
-                    </DialogActions>
-                </Dialog>
+                <TextFieldDialog
+                    labels={['Title', 'Composer']}
+                    confirmText='Create'
+                    onRef={ref => this.scoreDialog = ref}
+                    title='Create Score'
+                />
+                <TextFieldDialog
+                    labels={['Name']}
+                    confirmText='Create'
+                    onRef={ref => this.setlistDialog = ref}
+                    title='Create Setlist'
+                />
             </div>
         );
     }
 }
 
 
-export default compose(connect(state => ({
-    user: state.default.user,
-    band: state.default.band,
-    pathname: state.router.location.pathname
-})), withStyles(styles))(Band);
+export default withStyles(styles)(Band);

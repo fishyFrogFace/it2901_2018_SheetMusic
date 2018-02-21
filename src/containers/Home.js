@@ -1,80 +1,16 @@
 import React, {Component} from 'react';
-import {compose} from 'redux';
-import {connect} from 'react-redux';
 import {withStyles} from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {push} from 'react-router-redux';
-
-import {
-    Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
-    Snackbar,
-    TextField
-} from "material-ui";
+import {Button, Card, CardContent, CardMedia, IconButton, Menu, MenuItem, Snackbar,} from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
-
-export const getBands = (userId) => async dispatch => {
-    let snapshot = await firebase.firestore().collection(`users/${userId}/bands`).get();
-    let bands = await Promise.all(snapshot.docs.map(async doc => {
-        const bandDoc = await doc.data().ref.get();
-        return {id: bandDoc.id, ...bandDoc.data()};
-    }));
-
-    dispatch({type: 'BANDS_FETCH_RESPONSE', bands: bands})
-};
-
-export const addBand = name => async (dispatch, getState) => {
-    let userId = getState().default.user.uid;
-
-    try {
-        const band = {
-            name: name,
-            creator: firebase.firestore().doc(`users/${userId}`),
-            code: Math.random().toString(36).substring(2, 7)
-        };
-
-        let ref = await firebase.firestore().collection('bands').add(band);
-        await firebase.firestore().collection(`users/${userId}/bands`).add({ref: firebase.firestore().doc(`bands/${ref.id}`)});
-
-        dispatch({type: 'BAND_ADD_SUCCESS', band: {id: ref.id, ...band}});
-    } catch (err) {
-        console.log(err);
-        dispatch({type: 'BAND_ADD_FAILURE'});
-    }
-};
-
-export const joinBand = code => async (dispatch, getState) => {
-    let userId = getState().default.user.uid;
-
-    let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
-
-    if (bandSnapshot.docs.length > 0) {
-        let docRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
-
-        let userBandSnapshot = await firebase.firestore().collection(`users/${userId}/bands`).where('ref', '==', docRef).get();
-
-        if (userBandSnapshot.docs.length > 0) {
-            dispatch({type: 'MESSAGE_SHOW', message: 'Band already joined!'});
-        } else {
-            await firebase.firestore().collection(`users/${userId}/bands`).add({ref: docRef});
-
-            let doc = await docRef.get();
-
-            dispatch({type: 'BAND_JOIN_SUCCESS', band: {id: doc.id, ...doc.data()}});
-        }
-    } else {
-        dispatch({type: 'MESSAGE_SHOW', message: 'Band does not exist!'});
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    dispatch({type: 'MESSAGE_HIDE'});
-};
+import TextFieldDialog from "../components/dialogs/TextFieldDialog";
 
 export const signOut = async () => {
     await firebase.auth().signOut();
@@ -82,8 +18,7 @@ export const signOut = async () => {
 };
 
 const styles = {
-    root: {
-    },
+    root: {},
     flex: {
         flex: 1
     },
@@ -107,26 +42,23 @@ const styles = {
 class Home extends Component {
     state = {
         anchorEl: null,
-        createDialogOpen: false,
-        joinDialogOpen: false,
-        bandName: '',
-        bandCode: ''
+        bands: [],
+        message: null
     };
 
-    requestBands(user=this.props.user) {
-        this.props.dispatch(getBands(user.uid));
-    }
-
     componentWillMount() {
-        if (this.props.user) {
-            this.requestBands();
-        }
+        this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
+            const bands = await Promise.all(snapshot.docs.map(async doc => {
+                const bandDoc = await doc.data().ref.get();
+                return {id: bandDoc.id, ...bandDoc.data()};
+            }));
+
+            this.setState({bands: bands});
+        });
     }
 
-    componentWillReceiveProps(props) {
-        if (!this.props.user && props.user) {
-            this.requestBands(props.user);
-        }
+    componentWillUnmount() {
+        this.unsubscribe();
     }
 
     _onAddButtonClick(e) {
@@ -137,28 +69,53 @@ class Home extends Component {
         this.setState({anchorEl: null});
     }
 
-    _onMenuClick(type) {
-        this.setState({[`${type}DialogOpen`]: true});
+    async _onMenuClick(type) {
+        const uid = this.props.user.uid;
+
         this.setState({anchorEl: null});
-    }
 
-    _onDialogClose(type) {
-        this.setState({[`${type}DialogOpen`]: false});
-    }
-
-    _onDialogSubmit(type) {
         switch (type) {
             case 'create':
-                this.props.dispatch(addBand(this.state.bandName));
+                const [name] = await this.createDialog.open();
+
+                try {
+                    const band = {
+                        name: name,
+                        creator: firebase.firestore().doc(`users/${uid}`),
+                        code: Math.random().toString(36).substring(2, 7)
+                    };
+
+                    let ref = await firebase.firestore().collection('bands').add(band);
+
+                    await firebase.firestore().collection(`users/${uid}/bands`).add({
+                        ref: firebase.firestore().doc(`bands/${ref.id}`)
+                    });
+                    window.location.hash = `#/band/${ref.id}`;
+                } catch (err) {
+                    console.log(err);
+                }
                 break;
             case 'join':
-                this.props.dispatch(joinBand(this.state.bandCode));
-                break;
-            default:
+                const [code] = await this.joinDialog.open();
+
+                let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
+
+                if (bandSnapshot.docs.length > 0) {
+                    let docRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+
+                    let userBandSnapshot = await firebase.firestore().collection(`users/${uid}/bands`).where('ref', '==', docRef).get();
+
+                    if (userBandSnapshot.docs.length > 0) {
+                        this.setState({message: 'Band already joined!'});
+                    } else {
+                        await firebase.firestore().collection(`users/${uid}/bands`).add({ref: docRef});
+                        window.location.hash = `#/band/${docRef.id}`;
+                    }
+                } else {
+                    this.setState({message: 'Band does not exist!'});
+                }
                 break;
         }
-
-        this.setState({[`${type}DialogOpen`]: false});
     }
 
     _onMenuButtonClick() {
@@ -166,22 +123,22 @@ class Home extends Component {
     }
 
     render() {
-        const {anchorEl, createDialogOpen, joinDialogOpen} = this.state;
-        const {classes, bands = [], message} = this.props;
+        const {anchorEl, bands, message} = this.state;
+        const {classes} = this.props;
 
         return (
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <IconButton color='white' onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon style={{color: 'white'}}/>
+                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
+                            <MenuIcon/>
                         </IconButton>
-                        <Typography variant="title" color="inherit" style={{color:'white'}} className={classes.flex}>
+                        <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
                         <Button onClick={() => signOut()} style={{color: 'white'}}>Sign Out</Button>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon style={{color:'white'}}/>
+                            <AddIcon/>
                         </IconButton>
                         <Menu
                             anchorEl={anchorEl}
@@ -195,7 +152,8 @@ class Home extends Component {
                 </AppBar>
                 <div className={classes.grid}>
                     {bands.map((band, index) =>
-                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/band/${band.id}`))} elevation={1}>
+                        <Card key={index} className={classes.card}
+                              onClick={() => window.location.hash = `#/band/${band.id}`} elevation={1}>
                             <CardMedia
                                 className={classes.media}
                                 image="https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg"
@@ -212,35 +170,8 @@ class Home extends Component {
                         </Card>
                     )}
                 </div>
-                <Dialog open={createDialogOpen} onClose={() => this._onDialogClose('create')}>
-                    <DialogTitle>Create Band</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            label="Name"
-                            margin="normal"
-                            onChange={e => this.setState({bandName: e.target.value})}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button color="primary" onClick={() => this._onDialogClose('create')}>Cancel</Button>
-                        <Button color="primary" onClick={() => this._onDialogSubmit('create')} autoFocus>Create</Button>
-                    </DialogActions>
-                </Dialog>
-
-                <Dialog open={joinDialogOpen} onClose={() => this._onDialogClose('join')}>
-                    <DialogTitle>Join Band</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            label="Code"
-                            margin="normal"
-                            onChange={e => this.setState({bandCode: e.target.value})}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button color="primary" onClick={() => this._onDialogClose('join')}>Cancel</Button>
-                        <Button color="primary" onClick={() => this._onDialogSubmit('join')} autoFocus>Join</Button>
-                    </DialogActions>
-                </Dialog>
+                <TextFieldDialog labels={['Name']} onRef={ref => this.createDialog = ref} title='Create Band' confirmText='create'/>
+                <TextFieldDialog labels={['Code']} onRef={ref => this.joinDialog = ref} title='Join Band' confirmText='join'/>
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
@@ -248,6 +179,8 @@ class Home extends Component {
                     }}
                     open={Boolean(message)}
                     message={message}
+                    autoHideDuration={3000}
+                    onClose={() => this.setState({message: null})}
                 />
             </div>
         );
@@ -255,8 +188,4 @@ class Home extends Component {
 }
 
 
-export default compose(connect(state => ({
-    user: state.default.user,
-    bands: state.default.bands,
-    message: state.default.message
-})), withStyles(styles))(Home);
+export default withStyles(styles)(Home);
