@@ -10,8 +10,7 @@ import {ConnectedRouter, routerReducer, routerMiddleware, push} from 'react-rout
 import thunk from 'redux-thunk';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
-import purple from 'material-ui/colors/purple';
-import green from 'material-ui/colors/green';
+import cyan from 'material-ui/colors/cyan'
 
 import firebase from 'firebase';
 import 'firebase/firestore';
@@ -39,10 +38,21 @@ firebase.initializeApp({
 
 // Material-UI
 
+console.log(cyan[700]);
+
 const theme = createMuiTheme({
     palette: {
-        primary: purple,
-        secondary: green
+        primary: {
+         light: 'rgb(0,188,212)',
+         main: 'rgb(0,188,212)',
+         contrastText: '#fff',
+       },
+        secondary: {
+          light: 'rgb(0,151,170)',
+          main: 'rgb(0,151,170)',
+          contrastText: '#fff',
+        },
+        // secondary: cyan.A700
     }
 });
 
@@ -113,4 +123,3 @@ const getAuthState = () => dispatch => {
 store.dispatch(getAuthState());
 
 registerServiceWorker();
-

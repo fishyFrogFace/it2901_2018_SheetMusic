@@ -24,7 +24,7 @@ class Setlist extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <Typography variant="title" color="inherit">
+                        <Typography variant="title" color="inherit" style={{color:'white'}}>
                             Setlist
                         </Typography>
                     </Toolbar>

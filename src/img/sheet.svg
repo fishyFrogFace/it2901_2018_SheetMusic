@@ -1,0 +1,37 @@
+<svg width="179px" height="176px" viewBox="0 0 146 176" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 48.2 (47327) - http://www.bohemiancoding.com/sketch -->
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <filter x="-5.1%" y="-3.0%" width="110.1%" height="108.3%" filterUnits="objectBoundingBox" id="filter-1">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="2" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.5 0" type="matrix" in="shadowBlurOuter1" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+        <rect id="path-2" x="0" y="0" width="138" height="168" rx="8"></rect>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Sheet" filter="url(#filter-1)" transform="translate(4.000000, 2.000000)">
+            <g id="Rectangle">
+                <use fill="#00BCD8" fill-rule="evenodd" xlink:href="#path-2"></use>
+                <rect stroke="#0897AA" stroke-width="1" x="0.5" y="0.5" width="137" height="167" rx="8"></rect>
+            </g>
+            <path d="M60,19.5 L124.398148,19.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M60,50.5 L123.396226,50.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M16.5989011,66.5 L124.401099,66.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M16.5989011,82.5 L124.401099,82.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M16.5989011,144.5 L124.401099,144.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M14.5989011,129.5 L122.401099,129.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M16.5989011,97.5 L124.401099,97.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M14.5989011,113.5 L122.401099,113.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <path d="M60,35.5 L123.396226,35.5" id="Line" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square"></path>
+            <g id="ic_music_note_white_24px" transform="translate(5.000000, 10.000000)">
+                <polygon id="Shape" points="0 0 52 0 52 47 0 47"></polygon>
+                <path d="M25.3953488,5.5952381 L25.3953488,27.2394841 C24.0872868,26.5419444 22.5796899,26.1111111 20.9612403,26.1111111 C16.0615504,26.1111111 12.0930233,29.7834524 12.0930233,34.3174603 C12.0930233,38.8514683 16.0615504,42.5238095 20.9612403,42.5238095 C25.8609302,42.5238095 29.8294574,38.8514683 29.8294574,34.3174603 L29.8294574,13.8015873 L38.6976744,13.8015873 L38.6976744,5.5952381 L25.3953488,5.5952381 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero"></path>
+            </g>
+        </g>
+    </g>
+</svg>

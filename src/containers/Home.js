@@ -173,15 +173,15 @@ class Home extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
+                        <IconButton color='white' onClick={() => this._onMenuButtonClick()}>
+                            <MenuIcon style={{color: 'white'}}/>
                         </IconButton>
-                        <Typography variant="title" color="inherit" className={classes.flex}>
+                        <Typography variant="title" color="inherit" style={{color:'white'}} className={classes.flex}>
                             ScoreButler
                         </Typography>
                         <Button onClick={() => signOut()} style={{color: 'white'}}>Sign Out</Button>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon/>
+                            <AddIcon style={{color:'white'}}/>
                         </IconButton>
                         <Menu
                             anchorEl={anchorEl}
