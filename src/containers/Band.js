@@ -106,7 +106,7 @@ class Band extends Component {
         arrangementTitle: '',
         arrangementComposer: '',
         setlistName: '',
-        selectedPage: 0
+        selectedPage: 1
     };
 
     requestBandDetail() {
@@ -252,7 +252,7 @@ class Band extends Component {
                 </div>
 
                 <Dialog open={arrangementDialogOpen} onClose={() => this._onDialogClose('arrangement')}>
-                    <DialogTitle>Create Band</DialogTitle>
+                    <DialogTitle>Create Score</DialogTitle>
                     <DialogContent className={classes.dialogContent}>
                         <TextField
                             label="Title"
