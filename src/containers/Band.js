@@ -176,13 +176,21 @@ class Band extends Component {
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
+                            <MenuIcon style={{color:'white'}}/>
                         </IconButton>
+<<<<<<< HEAD
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
+=======
+                        <Typography variant="title" style={{color:'white'}} color="inherit" className={classes.flex}>
+                            {band.name} {band.code}
+                        </Typography>
+                        <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
+                            <AddIcon style={{color:'white'}}/>
+>>>>>>> Made the signin page more mobile friendly, and added new illustrations.
                         </IconButton>
                         <Menu
                             anchorEl={anchorEl}
@@ -282,4 +290,3 @@ export default compose(connect(state => ({
     band: state.default.band,
     pathname: state.router.location.pathname
 })), withStyles(styles))(Band);
-

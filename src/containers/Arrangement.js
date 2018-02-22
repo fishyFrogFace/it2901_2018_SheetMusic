@@ -219,10 +219,10 @@ class Arrangement extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                            <ArrowBackIcon/>
+                        <IconButton onClick={() => this._onArrowBackButtonClick()}>
+                            <ArrowBackIcon style={{color:'white'}}/>
                         </IconButton>
-                        <Typography variant="title" color="inherit">
+                        <Typography variant="title" color="inherit" style={{color:'white'}}>
                             {arrangement.title}
                         </Typography>
                         {

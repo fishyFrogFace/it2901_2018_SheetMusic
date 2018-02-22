@@ -3,16 +3,18 @@ import {compose} from 'redux';
 import {connect} from 'react-redux';
 import {withStyles} from 'material-ui/styles';
 import firebase from "firebase";
+import style from './signin.css';
 
-import archiveImg from '../img/archive.png';
-import loggingImg from '../img/logging.png';
-import personalImg from '../img/personal.png';
-import setlistImg from '../img/setlist.png';
-import sheetImg from '../img/sheet1.png';
+import download from '../img/Sheetmusic_illustrations_logging.svg';
+import setlist from '../img/setlist.svg';
+import arrangement from '../img/arrangement.svg';
+import sheet from '../img/sheet.svg';
 import g_logo from '../img/google-logo-icon-PNG-Transparent-Background.png';
 import f_logo from '../img/facebook-flat-vector-logo.png';
 
 import MenuIcon from 'material-ui-icons/Menu';
+
+import MediaQuery from 'react-responsive';
 
 import {
     Button, Grid, AppBar, Toolbar, IconButton
@@ -44,86 +46,14 @@ export const signIn = prov => async dispatch => {
 };
 
 const styles = {
-    root: {
-      fontFamily: 'Roboto',
-      fontWeight: '300'
-    },
-    menuButton: {
-      marginLeft: -12,
-      marginRight: 20,
-      color: 'rgb(255,255,255)'
-    },
-    googleLogo: {
-      width: '18px',
-      paddingLeft: '1px',
-      paddingRight: '8px',
-    },
-    facebookLogo: {
-      width: '18px',
-      paddingLeft: '1px',
-      paddingRight: '8px',
-
-    },
-    header: {
-      background: 'rgb(0,188,212)',
-      height: '40em',
-      textAlign: 'center',
-    },
-    captionBox: {
-      paddingTop: '18em',
-      color: 'rgb(255,255,255)'
-    },
-    caption: {
-      fontWeight: '300',
-      fontSize: '56px',
-    },
-    slogan: {
-      fontWeight: '300',
-      fontSize: '24px',
-      lineHeight: '28px',
-      marginBottom: '12px',
-      letterSpacing: '0px',
-    },
-    button: {
-      margin: '5px',
-      background: 'rgb(255,255,255)',
-      color: 'rgb(0,188,212)',
-      height: '40px'
-    },
-    midPart: {
-      background: 'rgb(238, 238, 238)',
-      height: '15em',
-      textAlign: 'center',
-    },
-    description: {
-      padding: '15px 200px 15px 200px',
-      fontWeight: '300',
-      fontSize: '24px',
-      lineHeight: '28px',
-    },
-    bottomPart: {
-      background: 'rgb(255,255,255)',
-      height: '23em',
-      textAlign: 'center',
-    },
-    image: {
-      paddingTop: '40px'
-    },
-    imageSpecial: {
-      paddingTop: '40px',
-      paddingBottom: '20px'
-    },
-    imageText: {
-      padding: '15px'
-    },
-    footer: {
-      background: 'rgb(0,188,212)',
-      color: 'rgb(255,255,255)',
-      textAlign: 'center',
-      fontWeight: '300',
-      fontSize: '12px'
-    }
-  };
+  button: {
+    margin: '5px',
+    background: 'rgb(255,255,255)',
+    color: 'rgb(0,188,212)',
+    height: '40px',
+    width: '220px',
+  }
+}
 
 class SignIn extends Component {
     componentWillMount() {
@@ -137,90 +67,76 @@ class SignIn extends Component {
         const {classes} = this.props;
 
         return (
-            <div className={classes.root}>
+            <div className={style.root}>
               <AppBar position='static'>
                 <Toolbar>
-                  <IconButton className={classes.menuButton} color="inherit" aria-label="Menu">
+                  <IconButton className={style.menuButton} color="inherit" aria-label="Menu">
                     <MenuIcon />
                   </IconButton>
                 </Toolbar>
               </AppBar>
-              <Grid container spacing={8} alignItems={'center'} className={classes.header}>
-                <Grid item xs={12} alignItems={'center'} className={classes.header}>
-                  <div className={classes.captionBox}>
-                    <h1 className={classes.caption}>Score Butler</h1>
-                    <p className={classes.slogan}>The best way to store your sheets</p>
+              <Grid container spacing={8}>
+                <Grid item xs={12} alignItems={'center'} className={style.header}>
+                  <div className={style.captionBox}>
+                    <h1 className={style.caption}>Score Butler</h1>
+                    <p className={style.slogan}>The best way to store your sheets</p>
                     <Button
                       variant='raised'
                       className={classes.button}
                       onClick={() => this._onSignIn('google')}>
-                      <img src={g_logo} className={classes.googleLogo}/>
+                      <img src={g_logo} className={style.googleLogo}/>
                       Sign in with Google
                     </Button>
-                    <Button
+                    {/* <Button
                       variant='raised'
                       className={classes.button}
                       onClick={() => this._onSignIn('facebook')}>
-                      <img src={f_logo} className={classes.facebookLogo}/>
+                      <img src={f_logo} className={style.facebookLogo}/>
                       Sign in with Facebook
-                    </Button>
+                    </Button> */}
                   </div>
                 </Grid>
-              </Grid>
-              <Grid container spacing={8} className={classes.midPart}>
-                <Grid item xs={12} className={classes.midPart}>
-                  <p className={classes.description}>
-                    ScoreButler is a tool which allows ensembles to upload
-                    and archive all their scores.
+                <Grid item xs={12} className={style.midPart}>
+                    <div className={style.midPart}>
+                      <p className={style.description}>
+                        ScoreButler is a tool which allows ensembles to upload
+                        and archive all their scores.
 
-                    It helps the band easily create arrangements and setlists
-                    containing detailed information about the entire event.
-                  </p>
-                  <p className={classes.description}>
-                    Get started today, with the #1 online score manager.
-                  </p>
+                        It helps the band easily create arrangements and setlists
+                        containing detailed information about the entire event.
+                      </p>
+                      <p className={style.description}>
+                        Get started today, with the #1 online score manager.
+                      </p>
+                    </div>
                 </Grid>
-              </Grid>
-              <Grid container spacing={12} className={classes.bottomPart}>
-                <Grid item xs={1} className={classes.bottomPart}></Grid>
-                <Grid item xs={2} className={classes.bottomPart}>
-                  <img src={archiveImg} className={classes.image} />
-                  <p className={classes.imageText}>
-                    Get a list of detailed information about all your bands
-                    arrangements.
-                  </p>
-                </Grid>
-                <Grid item xs={2} className={classes.bottomPart}>
-                  <img src={loggingImg} className={classes.image} />
-                  <p className={classes.imageText}>
-                    Track who downloads the sets.
-                  </p>
-                </Grid>
-                <Grid item xs={2} className={classes.bottomPart}>
-                  <img src={personalImg} className={classes.image} />
-                  <p className={classes.imageText}>
-                    Download setlists containing only your *stemme* for all
-                    instruments.
-                  </p>
-                </Grid>
-                <Grid item xs={2} className={classes.bottomPart}>
-                  <img src={setlistImg} className={classes.imageSpecial} />
-                  <p className={classes.imageText}>
-                    Create setlists for your band which contain arrangements and
-                    other events during a set, in a chronological order.
-                  </p>
-                </Grid>
-                <Grid item xs={2} className={classes.bottomPart}>
-                  <img src={sheetImg} className={classes.image} />
-                  <p className={classes.imageText}>
+                <Grid item xs={6} sm={3} className={style.bottomPart}>
+                  <img src={sheet} className={style.image} />
+                  <p className={style.imageText}>
                     Upload your scores, arrange and sort them into instrument
                     specific documents.
-                  </p>
+                </p>
                 </Grid>
-                <Grid item xs={1} className={classes.bottomPart}></Grid>
-              </Grid>
-              <Grid container spacing={8} className={classes.footer}>
-                <Grid item xs={12} className={classes.footer}>
+                <Grid item xs={6} sm={3} className={style.bottomPart}>
+                <img src={arrangement} className={style.image} />
+                <p className={style.imageText}>
+                  Archive all your bands scores, and access them everywhere.
+                </p>
+                </Grid>
+                <Grid item xs={6} sm={3} className={style.bottomPart}>
+                  <img src={setlist} className={style.image} />
+                  <p className={style.imageText}>
+                    Create setlists for your band which contain arrangements
+                    and other events during a set, in a chronological order.
+                </p>
+                </Grid>
+                <Grid item xs={6} sm={3} className={style.bottomPart}>
+                  <img src={download} className={style.image} />
+                  <p className={style.imageText}>
+                    Download your part of the set.
+                </p>
+                </Grid>
+                <Grid item xs={12} className={style.footer}>
                   <p>
                     Copyright &copy; 2018 Bouvet AS - All rights reserved
                   </p>
