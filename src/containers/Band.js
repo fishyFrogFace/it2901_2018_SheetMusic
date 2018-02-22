@@ -26,7 +26,8 @@ export const addArrangement = (title, composer) => async (dispatch, getState) =>
         const arrangement = {
             title: title,
             composer: composer,
-            creator: firebase.firestore().doc(`users/${userId}`)
+            creator: firebase.firestore().doc(`users/${userId}`),
+            band: firebase.firestore().doc(`bands/${bandId}`)
         };
 
         let ref = await firebase.firestore().collection('arrangements').add(arrangement);

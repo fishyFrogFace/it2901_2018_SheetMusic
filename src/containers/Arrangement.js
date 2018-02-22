@@ -7,14 +7,17 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {IconButton, MenuItem, Select, Snackbar} from "material-ui";
+import {IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import FileUploadIcon from 'material-ui-icons/FileUpload';
+import MoreVertIcon  from 'material-ui-icons/MoreVert';
 
 import firebase from 'firebase';
 import 'firebase/storage';
 
 import FileUploader from "../components/FileUploader";
+import FormDialog from "../components/FormDialog";
+import SelectDialog from "../components/dialogs/SelectDialog";
 
 const addInstruments = (arrId, instruments) => async dispatch => {
     const instrumentCollectionRef = firebase.firestore().collection(`arrangements/${arrId}/instruments`);
@@ -53,14 +56,17 @@ const addInstruments = (arrId, instruments) => async dispatch => {
 
 export const getArrangementDetail = arrId => async dispatch => {
     const doc = await firebase.firestore().doc(`arrangements/${arrId}`).get();
-    dispatch({type: 'ARRANGEMENT_DETAIL_FETCH_RESPONSE', arrangement: {id: doc.id, ...doc.data()}});
+    dispatch({
+        type: 'ARRANGEMENT_DETAIL_FETCH_RESPONSE',
+        arrangement: {id: doc.id, ...doc.data()}
+    });
 
     const snapshot = await firebase.firestore().collection(`arrangements/${arrId}/instruments`).get();
 
     const instruments = await Promise.all(
         snapshot.docs.map(async doc => ({
             ...doc.data(),
-            instrumentName: (await doc.data().instrument.get()).data().name
+            name: (await doc.data().instrument.get()).data().name
         }))
     );
 
@@ -97,7 +103,8 @@ const styles = {
 class Arrangement extends Component {
     state = {
         fileUploaderOpen: false,
-        selectedInstrument: 0
+        selectedInstrument: 0,
+        anchorEl: null
     };
 
     requestArrangementDetail() {
@@ -139,9 +146,72 @@ class Arrangement extends Component {
         this.setState({fileUploaderOpen: false});
     }
 
+    _onMenuClose() {
+        this.setState({anchorEl: null});
+    }
+
+    _onMoreVertClick(e) {
+        this.setState({anchorEl: e.currentTarget});
+    }
+
+    async _onMenuClick(type) {
+        this.setState({anchorEl: null});
+
+        switch (type) {
+            case 'download':
+                try {
+                    const instrumentIndex = await this.instrumentDialog.open();
+
+                    const jsPDF = await import('jspdf');
+
+                    const arrangement = this.props.arrangement;
+                    const instrument = arrangement.instruments[instrumentIndex];
+                    const band = (await arrangement.band.get()).data();
+
+                    const dateString = new Date().toLocaleDateString();
+
+                    const {width, height} = await new Promise(resolve => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.src = instrument.sheets[0];
+                    });
+
+                    const doc = new jsPDF('p', 'px', [width, height]);
+
+                    for (let i = 0; i < instrument.sheets.length; i++) {
+                        if (i > 0) {
+                            doc.addPage();
+                        }
+
+                        const url = instrument.sheets[i];
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+
+                        const imageData = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+
+                        doc.addImage(imageData, 'PNG', 0, 0, width, height);
+                        doc.text(`${band.name}     ${dateString}     ${arrangement.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${instrument.sheets.length}`, 20, height - 20);
+                    }
+
+                    doc.save(`${arrangement.title}.pdf`);
+                } catch (err) {
+                    console.log(err);
+                    // Cancelled
+                }
+
+                break;
+        }
+
+    }
+
     render() {
         const {classes, arrangement = {instruments: []}, message} = this.props;
-        const {selectedInstrument, fileUploaderOpen} = this.state;
+        const {selectedInstrument, fileUploaderOpen, anchorEl} = this.state;
 
         const hasInstruments = Boolean(arrangement.instruments.length);
 
@@ -167,14 +237,27 @@ class Arrangement extends Component {
                                     onChange={e => this._onInstrumentSelectChange(e)}
                                     disableUnderline={true}
                                 >
-                                    {arrangement.instruments.map((instrument, index) => <MenuItem key={index}
-                                                                                                  value={index}>{instrument.instrumentName}</MenuItem>)}
+                                    {
+                                        arrangement.instruments.map((instrument, index) =>
+                                            <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
+                                        )
+                                    }
                                 </Select> : ''
                         }
                         <div className={classes.flex}></div>
                         <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
                             <FileUploadIcon/>
                         </IconButton>
+                        <IconButton color="inherit" onClick={e => this._onMoreVertClick(e)}>
+                            <MoreVertIcon/>
+                        </IconButton>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={() => this._onMenuClose()}
+                        >
+                            <MenuItem onClick={() => this._onMenuClick('download')}>Download Instrument</MenuItem>
+                        </Menu>
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
@@ -194,6 +277,12 @@ class Arrangement extends Component {
                     anchorOrigin={{vertical: 'bottom', horizontal: 'right',}}
                     open={Boolean(message)}
                     message={message}
+                />
+                <SelectDialog
+                    items={arrangement.instruments}
+                    confirmText='Download'
+                    title='Download Instrument'
+                    onRef={ref => this.instrumentDialog = ref}
                 />
             </div>
         );
