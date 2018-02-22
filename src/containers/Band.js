@@ -178,19 +178,11 @@ class Band extends Component {
                         <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
                             <MenuIcon style={{color:'white'}}/>
                         </IconButton>
-<<<<<<< HEAD
-                        <Typography variant="title" color="inherit" className={classes.flex}>
-                            {band.name}
-                        </Typography>
-                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon/>
-=======
                         <Typography variant="title" style={{color:'white'}} color="inherit" className={classes.flex}>
                             {band.name} {band.code}
                         </Typography>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon style={{color:'white'}}/>
->>>>>>> Made the signin page more mobile friendly, and added new illustrations.
                         </IconButton>
                         <Menu
                             anchorEl={anchorEl}
