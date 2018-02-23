@@ -11,6 +11,9 @@ import {push} from 'react-router-redux';
 
 import {
     Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
+    Paper,
+    Tab,
+    Tabs,
     TextField
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
@@ -18,7 +21,7 @@ import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
 
-const addArrangement = (title, composer) => async (dispatch, getState) => {
+export const addArrangement = (title, composer) => async (dispatch, getState) => {
     let userId = getState().default.user.uid;
     let bandId = getState().router.location.pathname.split('/')[2];
 
@@ -26,11 +29,12 @@ const addArrangement = (title, composer) => async (dispatch, getState) => {
         const arrangement = {
             title: title,
             composer: composer,
-            creator: firebase.firestore().doc(`users/${userId}`)
+            creator: firebase.firestore().doc(`users/${userId}`),
+            band: firebase.firestore().doc(`bands/${bandId}`)
         };
 
         let ref = await firebase.firestore().collection('arrangements').add(arrangement);
-        await firebase.firestore().collection(`bands/${bandId}/arrangements`).add({ref: firebase.firestore.doc(`arrangements/${ref.id}`)});
+        await firebase.firestore().collection(`bands/${bandId}/arrangements`).add({ref: firebase.firestore().doc(`arrangements/${ref.id}`)});
 
         dispatch({type: 'ARRANGEMENT_ADD_SUCCESS', arrangement: {id: ref.id, ...arrangement}});
     } catch (err) {
@@ -39,7 +43,7 @@ const addArrangement = (title, composer) => async (dispatch, getState) => {
 };
 
 
-const getBandDetail = bandId => async dispatch => {
+export const getBandDetail = bandId => async dispatch => {
     let doc = await firebase.firestore().doc(`bands/${bandId}`).get();
 
     let band = doc.data();
@@ -56,10 +60,13 @@ const getBandDetail = bandId => async dispatch => {
 
 
 const styles = {
-    root: {
-    },
+    root: {},
     flex: {
         flex: 1
+    },
+
+    appBar: {
+        flexWrap: 'wrap',
     },
 
     dialogContent: {
@@ -84,6 +91,10 @@ const styles = {
         background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
         backgroundSize: 'cover',
         height: 144
+    },
+
+    content: {
+        paddingTop: 112
     }
 };
 
@@ -94,7 +105,8 @@ class Band extends Component {
         setlistDialogOpen: false,
         arrangementTitle: '',
         arrangementComposer: '',
-        setlistName: ''
+        setlistName: '',
+        selectedPage: 1
     };
 
     requestBandDetail() {
@@ -150,22 +162,27 @@ class Band extends Component {
 
     }
 
+    _onTabsChange(e, value) {
+        this.setState({selectedPage: value});
+    }
+
+
     render() {
-        const {anchorEl, arrangementDialogOpen} = this.state;
-        const {classes, band={arrangements: []}} = this.props;
+        const {anchorEl, arrangementDialogOpen, selectedPage} = this.state;
+        const {classes, band = {arrangements: []}} = this.props;
 
         return (
             <div className={classes.root}>
-                <AppBar position="static">
+                <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
+                            <MenuIcon style={{color:'white'}}/>
                         </IconButton>
-                        <Typography variant="title" color="inherit" className={classes.flex}>
-                            {band.name}
+                        <Typography variant="title" style={{color:'white'}} color="inherit" className={classes.flex}>
+                            {band.name} {band.code}
                         </Typography>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon/>
+                            <AddIcon style={{color:'white'}}/>
                         </IconButton>
                         <Menu
                             anchorEl={anchorEl}
@@ -176,29 +193,66 @@ class Band extends Component {
                             <MenuItem onClick={() => this._onMenuClick('setlist')}>Create Setlist</MenuItem>
                         </Menu>
                     </Toolbar>
+                    <Tabs
+                        centered
+                        value={selectedPage}
+                        onChange={(e, value) => this._onTabsChange(e, value)}
+                        indicatorColor='white'
+                    >
+                        <Tab label='Home'/>
+                        <Tab label='Scores'/>
+                        <Tab label='Setlists'/>
+                        <Tab label='Members'/>
+                    </Tabs>
                 </AppBar>
-                <div className={classes.banner}></div>
-                <div className={classes.grid}>
-                    {band.arrangements.map((arr, index) =>
-                        <Card key={index} className={classes.card} onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))} elevation={1}>
-                            <CardMedia
-                                className={classes.media}
-                                image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
-                                title=""
-                            />
-                            <CardContent>
-                                <Typography variant="headline" component="h2">
-                                    {arr.title}
-                                </Typography>
-                                <Typography component="p">
-                                    {arr.composer}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    )}
+                <div className={classes.content}>
+                    {(() => {
+                        switch (selectedPage) {
+                            case 0:
+                                return <div>
+                                    <div className={classes.banner}></div>
+                                </div>;
+                            case 1:
+                                return <div className={classes.grid}>
+                                    {band.arrangements.map((arr, index) =>
+                                        <Card key={index} className={classes.card}
+                                              onClick={() => this.props.dispatch(push(`/arrangement/${arr.id}`))}
+                                              elevation={1}>
+                                            <CardMedia
+                                                className={classes.media}
+                                                image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
+                                                title=""
+                                            />
+                                            <CardContent>
+                                                <Typography variant="headline" component="h2">
+                                                    {arr.title}
+                                                </Typography>
+                                                <Typography component="p">
+                                                    {arr.composer}
+                                                </Typography>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>;
+                            case 2:
+                                return <div>Setlists</div>;
+                            case 3:
+                                return <div>
+                                    <Paper style={{display: 'flex', justifyContent: 'space-between', margin: 20, padding: '15px 25px', width: 150}}>
+                                        <Typography variant='body1'>
+                                            Band code
+                                        </Typography>
+                                        <Typography variant='body1'>
+                                            <b>{band.code}</b>
+                                        </Typography>
+                                    </Paper>
+                                </div>;
+                        }
+                    })()}
                 </div>
+
                 <Dialog open={arrangementDialogOpen} onClose={() => this._onDialogClose('arrangement')}>
-                    <DialogTitle>Create Band</DialogTitle>
+                    <DialogTitle>Create Score</DialogTitle>
                     <DialogContent className={classes.dialogContent}>
                         <TextField
                             label="Title"
@@ -213,7 +267,8 @@ class Band extends Component {
                     </DialogContent>
                     <DialogActions>
                         <Button color="primary" onClick={() => this._onDialogClose('arrangement')}>Cancel</Button>
-                        <Button color="primary" onClick={() => this._onDialogSubmit('arrangement')} autoFocus>Create</Button>
+                        <Button color="primary" onClick={() => this._onDialogSubmit('arrangement')}
+                                autoFocus>Create</Button>
                     </DialogActions>
                 </Dialog>
             </div>
@@ -227,4 +282,3 @@ export default compose(connect(state => ({
     band: state.default.band,
     pathname: state.router.location.pathname
 })), withStyles(styles))(Band);
-

@@ -1,5 +1,7 @@
 export default (state = {}, action) => {
     switch (action.type) {
+        case 'AUTH_STATE_LOAD_SUCCESS':
+            return {...state, user: action.user, authStateLoaded: true};
         case 'SIGN_IN_SUCCESS':
             return {...state, user: action.user};
         case 'SIGN_IN_FAILURE':
@@ -12,10 +14,20 @@ export default (state = {}, action) => {
             return {...state, band: action.band};
         case 'BAND_ADD_SUCCESS':
             return {...state, bands: [...state.bands, action.band]};
-        case 'ARRANGEMENT_FETCH_RESPONSE':
-            return {...state, arrangement: action.arrangement};
+        case 'BAND_JOIN_SUCCESS':
+            return {...state, bands: [...state.bands, action.band]};
+        case 'ARRANGEMENT_DETAIL_FETCH_RESPONSE':
+            return {...state, arrangement: {...action.arrangement, instruments: []}};
+        case 'ARRANGEMENT_INSTRUMENTS_FETCH_RESPONSE':
+            return {...state, arrangement: {...state.arrangement, instruments: action.instruments}};
         case 'ARRANGEMENT_ADD_SUCCESS':
-            return {...state, arrangements: [...state.arrangements, action.arrangement]};
+            return {...state, band: {...state.band, arrangements: [...state.band.arrangements, action.arrangement]}};
+        case 'MESSAGE_SHOW':
+            return {...state, message: action.message};
+        case 'MESSAGE_HIDE':
+            return {...state, message: undefined};
+        case 'INSTRUMENTS_ADD_SUCCESS':
+            return state;
         default:
             return state;
     }
