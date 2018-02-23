@@ -27,13 +27,13 @@ const styles = {
         flexDirection: 'column'
     },
     card: {
-        width: 300,
+        width: 270,
         marginRight: 24,
         marginBottom: 24,
         cursor: 'pointer'
     },
     media: {
-        height: 200,
+        height: 150,
     },
     grid: {
         display: 'flex',

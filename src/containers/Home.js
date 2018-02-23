@@ -23,13 +23,13 @@ const styles = {
         flex: 1
     },
     card: {
-        width: 300,
+        width: 270,
         marginRight: 24,
         marginBottom: 24,
         cursor: 'pointer'
     },
     media: {
-        height: 200,
+        height: 150,
     },
     grid: {
         display: 'flex',
@@ -162,9 +162,6 @@ class Home extends Component {
                             <CardContent>
                                 <Typography variant="headline" component="h2">
                                     {band.name}
-                                </Typography>
-                                <Typography component="p">
-                                    Ba. ha ba ba. Ha ba ba ga da.
                                 </Typography>
                             </CardContent>
                         </Card>
