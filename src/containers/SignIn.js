@@ -57,7 +57,8 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         borderRadius: 2,
-        width: 200
+        width: 200,
+        cursor: 'pointer'
     },
 
     buttonIcon: {
