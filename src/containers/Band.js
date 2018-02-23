@@ -54,7 +54,7 @@ const styles = {
 class Band extends Component {
     state = {
         anchorEl: null,
-        selectedPage: 0,
+        selectedPage: 1,
         band: {}
     };
 
