@@ -70,7 +70,7 @@ class Score extends Component {
 
             this.setState({
                 score: {...this.state.score, sheetMusic: sheetMusicSorted},
-                selectedInstrument: sheetMusicSorted[0].id
+                selectedInstrument: sheetMusicSorted.length > 0 ? sheetMusicSorted[0].id : null
             });
         });
     }
