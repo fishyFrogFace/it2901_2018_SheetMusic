@@ -109,6 +109,7 @@ class Home extends Component {
                         this.setState({message: 'Band already joined!'});
                     } else {
                         await firebase.firestore().collection(`users/${uid}/bands`).add({ref: docRef});
+                        await docRef.collection('members').add({ref: firebase.firestore().doc(`users/${uid}`)});
                         window.location.hash = `#/band/${docRef.id}`;
                     }
                 } else {

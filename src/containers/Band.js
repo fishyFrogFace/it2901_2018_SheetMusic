@@ -5,7 +5,10 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {Card, CardContent, CardMedia, IconButton, Menu, MenuItem, Paper, Tab, Tabs,} from "material-ui";
+import {
+    Avatar, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Paper, Tab,
+    Tabs,
+} from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 
@@ -35,11 +38,6 @@ const styles = {
     media: {
         height: 150,
     },
-    grid: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        padding: 24
-    },
     banner: {
         background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
         backgroundSize: 'cover',
@@ -48,6 +46,12 @@ const styles = {
 
     content: {
         paddingTop: 112
+    },
+
+    pageContainer: {
+        display: 'flex',
+        paddingTop: 20,
+        justifyContent: 'center'
     }
 };
 
@@ -65,7 +69,7 @@ class Band extends Component {
             this.setState({band: doc.data()});
         });
 
-        this.unsubscribe = firebase.firestore().collection(`bands/${bandId}/scores`).onSnapshot(async snapshot => {
+        this._unsubscribeScores = firebase.firestore().collection(`bands/${bandId}/scores`).onSnapshot(async snapshot => {
             const scores = await Promise.all(snapshot.docs.map(async doc => {
                 const arrDoc = await doc.data().ref.get();
                 return {id: arrDoc.id, ...arrDoc.data()};
@@ -73,10 +77,20 @@ class Band extends Component {
 
             this.setState({band: {...this.state.band, scores: scores}});
         });
+
+        this._unsubscribeMembers = firebase.firestore().collection(`bands/${bandId}/members`).onSnapshot(async snapshot => {
+            const members = await Promise.all(snapshot.docs.map(async doc => {
+                const memberDoc = await doc.data().ref.get();
+                return {id: memberDoc.id, ...memberDoc.data()};
+            }));
+
+            this.setState({band: {...this.state.band, members: members}});
+        });
     }
 
     componentWillUnmount() {
-        this.unsubscribe();
+        this._unsubscribeScores();
+        this._unsubscribeMembers();
     }
 
     _onAddButtonClick(e) {
@@ -178,39 +192,59 @@ class Band extends Component {
                                     <div className={classes.banner}></div>
                                 </div>;
                             case 1:
-                                return <div className={classes.grid}>
-                                    {band.scores && band.scores.map((arr, index) =>
-                                        <Card key={index} className={classes.card}
-                                              onClick={() => window.location.hash = `#/score/${arr.id}`}
-                                              elevation={1}>
-                                            <CardMedia
-                                                className={classes.media}
-                                                image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
-                                                title=""
-                                            />
-                                            <CardContent>
-                                                <Typography variant="headline" component="h2">
-                                                    {arr.title}
-                                                </Typography>
-                                                <Typography component="p">
-                                                    {arr.composer}
-                                                </Typography>
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                                return <div className={classes.pageContainer}>
+                                    <div style={{display: 'flex', width: 600, flexWrap: 'wrap'}}>
+                                        {band.scores && band.scores.map((arr, index) =>
+                                            <Card key={index} className={classes.card}
+                                                  onClick={() => window.location.hash = `#/score/${arr.id}`}
+                                                  elevation={1}>
+                                                <CardMedia
+                                                    className={classes.media}
+                                                    image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
+                                                    title=""
+                                                />
+                                                <CardContent>
+                                                    <Typography variant="headline" component="h2">
+                                                        {arr.title}
+                                                    </Typography>
+                                                    <Typography component="p">
+                                                        {arr.composer}
+                                                    </Typography>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </div>
                                 </div>;
                             case 2:
-                                return <div>Setlists</div>;
+                                return <div className={classes.pageContainer}>Setlists</div>;
                             case 3:
-                                return <div>
-                                    <Paper style={{display: 'flex', justifyContent: 'space-between', margin: 20, padding: '15px 25px', width: 150}}>
-                                        <Typography variant='body1'>
-                                            Band code
-                                        </Typography>
-                                        <Typography variant='body1'>
-                                            <b>{band.code}</b>
-                                        </Typography>
-                                    </Paper>
+                                return <div className={classes.pageContainer}>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', width: 600}}>
+                                        <Paper style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0 15px',
+                                            width: 150,
+                                            height: 50
+                                        }}>
+                                            <Typography variant='body1'>
+                                                Band code
+                                            </Typography>
+                                            <Typography variant='body1'>
+                                                <b>{band.code}</b>
+                                            </Typography>
+                                        </Paper>
+                                        <Paper style={{width: 400}}>
+                                            <List>
+                                                {band.members && band.members.map((member, index) =>
+                                                    <ListItem key={index} dense button>
+                                                        <Avatar alt="Remy Sharp" src={member.photoURL}/>
+                                                        <ListItemText primary={member.displayName}/>
+                                                    </ListItem>)}
+                                            </List>
+                                        </Paper>
+                                    </div>
                                 </div>;
                         }
                     })()}
