@@ -25,7 +25,7 @@ class AsyncDialog extends React.Component {
     }
 
     _onCancelClick() {
-        this.__reject();
+        this.__reject("Dialog canceled");
         this.setState({open: false});
     }
 

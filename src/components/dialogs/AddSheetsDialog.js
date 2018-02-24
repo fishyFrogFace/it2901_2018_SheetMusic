@@ -6,7 +6,7 @@ import AsyncDialog from "./AsyncDialog";
 class AddSheetsDialog extends React.Component {
     state = {
         selectedInstrument: 0,
-        selectedNumber: -1
+        selectedNumber: 0
     };
 
     componentDidMount() {
@@ -19,7 +19,12 @@ class AddSheetsDialog extends React.Component {
 
     async open() {
         await this.dialog.open();
-        return {instrument: this.props.instruments[this.state.selectedInstrument], number: this.state.selectedNumber}
+        const {selectedInstrument, selectedNumber} = this.state;
+
+        return {
+            instrument: this.props.instruments[selectedInstrument],
+            instrumentNumber: selectedNumber
+        }
     }
 
     _onInstrumentChange(e) {
@@ -54,7 +59,7 @@ class AddSheetsDialog extends React.Component {
                     value={selectedNumber}
                     onChange={e => this._onNumberChange(e)}
                 >
-                    <MenuItem value={-1}>None</MenuItem>
+                    <MenuItem value={0}>None</MenuItem>
                     {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
                 </Select>
             </FormControl>

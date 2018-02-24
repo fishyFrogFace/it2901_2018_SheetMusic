@@ -8,7 +8,7 @@ import Typography from 'material-ui/Typography';
 import {IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import FileUploadIcon from 'material-ui-icons/FileUpload';
-import MoreVertIcon  from 'material-ui-icons/MoreVert';
+import MoreVertIcon from 'material-ui-icons/MoreVert';
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -34,8 +34,7 @@ const styles = {
         flex: 1
     },
 
-    sheetContainer: {
-    },
+    sheetContainer: {},
 
     sheet: {
         width: '100%'
@@ -45,7 +44,7 @@ const styles = {
 class Score extends Component {
     state = {
         fileUploaderOpen: false,
-        selectedInstrument: 0,
+        selectedInstrument: null,
         anchorEl: null,
         score: {}
     };
@@ -57,15 +56,22 @@ class Score extends Component {
             this.setState({score: doc.data()});
         });
 
-        this.unsubscribe = firebase.firestore().collection(`scores/${scoreId}/instruments`).onSnapshot(async snapshot => {
-            const instruments = await Promise.all(
+        this.unsubscribe = firebase.firestore().collection(`scores/${scoreId}/sheetMusic`).onSnapshot(async snapshot => {
+            const sheetMusic = await Promise.all(
                 snapshot.docs.map(async doc => ({
                     ...doc.data(),
-                    name: (await doc.data().instrument.get()).data().name
+                    id: doc.id,
+                    instrument: (await doc.data().instrument.get()).data()
                 }))
             );
 
-            this.setState({score: {...this.state.score, instruments: instruments}});
+            const sheetMusicSorted = sheetMusic
+                .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
+
+            this.setState({
+                score: {...this.state.score, sheetMusic: sheetMusicSorted},
+                selectedInstrument: sheetMusicSorted[0].id
+            });
         });
     }
 
@@ -82,26 +88,29 @@ class Score extends Component {
     }
 
     async _onFileUploadButtonClick() {
-        const instruments = await this.uploadDialog.open();
+        const sheetGroups = await this.uploadDialog.open();
 
         const scoreId = this.props.detail;
 
-        const instrumentCollectionRef = firebase.firestore().collection(`scores/${scoreId}/instruments`);
+        const sheetMusicRef = firebase.firestore().collection(`scores/${scoreId}/sheetMusic`);
 
         this.setState({message: 'Starting upload...'});
 
-        for (let i = 0; i < instruments.length; i++) {
-            let instrument = instruments[i];
+        for (let i = 0; i < sheetGroups.length; i++) {
+            let group = sheetGroups[i];
 
-            let docRef = firebase.firestore().doc(`instruments/${instrument.id}`);
-            let querySnapshot = await instrumentCollectionRef.where('instrument', '==', docRef).get();
+            let instrumentRef = firebase.firestore().doc(`instruments/${group.instrument.id}`);
+            let querySnapshot = await sheetMusicRef
+                .where('instrument', '==', instrumentRef)
+                .where('instrumentNumber', '==', group.instrumentNumber)
+                .get();
 
             const tasks = Promise.all(
-                instrument.sheets.map((sheet, index) =>
-                    firebase.storage().ref(`sheets/${scoreId}/${instrument.id}/${index}`).putString(sheet, 'data_url', {contentType: 'image/png'}))
+                group.sheets.map((sheet, index) =>
+                    firebase.storage().ref(`sheets/${scoreId}/${group.instrument.id}/${group.instrumentNumber}/${index}`).putString(sheet.image, 'data_url', {contentType: 'image/png'}))
             );
 
-            this.setState({message: `Uploading instrument ${i + 1}/${instruments.length}...`});
+            this.setState({message: `Uploading instrument ${i + 1}/${sheetGroups.length}...`});
 
             if (querySnapshot.docs.length > 0) {
                 // TODO create dialog asking whether to overwrite or not
@@ -109,9 +118,15 @@ class Score extends Component {
                 await querySnapshot.docs[0].ref.update({sheets: taskSnapshots.map(snap => snap.downloadURL)})
             } else {
                 const taskSnapshots = await tasks;
-                await instrumentCollectionRef.add({instrument: docRef, sheets: taskSnapshots.map(snap => snap.downloadURL)})
+                await sheetMusicRef.add({
+                    instrument: instrumentRef,
+                    instrumentNumber: group.instrumentNumber,
+                    sheets: taskSnapshots.map(snap => snap.downloadURL),
+                })
             }
         }
+
+        this.setState({message: null});
     }
 
     _onMenuClose() {
@@ -128,11 +143,13 @@ class Score extends Component {
         switch (type) {
             case 'download':
                 try {
-                    const {instrument, number} = await this.downloadDialog.open();
+                    const {} = await this.downloadDialog.open();
 
                     const jsPDF = await import('jspdf');
 
-                    const score = this.state.score;
+                    const {score, selectedInstrument} = this.state;
+
+                    const instrument = score.sheetMusic.find(s => s.id === selectedInstrument);
 
                     const band = (await score.band.get()).data();
 
@@ -181,7 +198,7 @@ class Score extends Component {
         const {classes} = this.props;
         const {selectedInstrument, anchorEl, score, message} = this.state;
 
-        const hasInstruments = Boolean(score.instruments && score.instruments.length);
+        const hasSheetMusic = Boolean(score.sheetMusic && score.sheetMusic.length);
 
         return (
             <div className={classes.root}>
@@ -194,7 +211,7 @@ class Score extends Component {
                             {score.title}
                         </Typography>
                         {
-                            hasInstruments &&
+                            hasSheetMusic &&
                             <Select
                                 className={classes.instrumentSelector}
                                 classes={{
@@ -206,8 +223,8 @@ class Score extends Component {
                                 disableUnderline={true}
                             >
                                 {
-                                    score.instruments.map((instrument, index) =>
-                                        <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
+                                    score.sheetMusic.map((s, index) =>
+                                        <MenuItem key={index} value={s.id}>{s.instrument.name} {s.instrumentNumber > 0 ? s.instrumentNumber : ''}</MenuItem>
                                     )
                                 }
                             </Select>
@@ -230,13 +247,14 @@ class Score extends Component {
                 </AppBar>
                 <div className={classes.sheetContainer}>
                     {
-                        hasInstruments &&
-                        score.instruments[selectedInstrument].sheets.map((sheet, index) =>
+                        hasSheetMusic &&
+                        score.sheetMusic.find(s => s.id === selectedInstrument).sheets.map((sheet, index) =>
                             <img key={index} className={classes.sheet} src={sheet}/>
                         )
                     }
                 </div>
                 <UploadSheetsDialog onRef={ref => this.uploadDialog = ref}/>
+                <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref}/>
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
@@ -244,12 +262,6 @@ class Score extends Component {
                     }}
                     open={Boolean(message)}
                     message={message}
-                    autoHideDuration={3000}
-                    onClose={() => this.setState({message: null})}
-                />
-                <DownloadSheetsDialog
-                    instruments={score.instruments || []}
-                    onRef={ref => this.downloadDialog = ref}
                 />
             </div>
         );
