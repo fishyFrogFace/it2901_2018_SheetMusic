@@ -13,8 +13,8 @@ import MoreVertIcon  from 'material-ui-icons/MoreVert';
 import firebase from 'firebase';
 import 'firebase/storage';
 
-import FileUploader from "../components/FileUploader";
-import SelectDialog from "../components/dialogs/SelectDialog";
+import UploadSheetsDialog from "../components/dialogs/UploadSheetsDialog";
+import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 
 const styles = {
     root: {},
@@ -82,7 +82,7 @@ class Score extends Component {
     }
 
     async _onFileUploadButtonClick() {
-        const instruments = await this.fileUploadDialog.open();
+        const instruments = await this.uploadDialog.open();
 
         const scoreId = this.props.detail;
 
@@ -128,13 +128,12 @@ class Score extends Component {
         switch (type) {
             case 'download':
                 try {
-                    const instrumentIndex = await this.instrumentDialog.open();
+                    const {instrument, number} = await this.downloadDialog.open();
 
                     const jsPDF = await import('jspdf');
 
                     const score = this.state.score;
 
-                    const instrument = score.instruments[instrumentIndex];
                     const band = (await score.band.get()).data();
 
                     const dateString = new Date().toLocaleDateString();
@@ -237,7 +236,7 @@ class Score extends Component {
                         )
                     }
                 </div>
-                <FileUploader onRef={ref => this.fileUploadDialog = ref}/>
+                <UploadSheetsDialog onRef={ref => this.uploadDialog = ref}/>
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
@@ -248,11 +247,9 @@ class Score extends Component {
                     autoHideDuration={3000}
                     onClose={() => this.setState({message: null})}
                 />
-                <SelectDialog
-                    items={score.instruments || []}
-                    confirmText='Download'
-                    title='Download Instrument'
-                    onRef={ref => this.instrumentDialog = ref}
+                <DownloadSheetsDialog
+                    instruments={score.instruments || []}
+                    onRef={ref => this.downloadDialog = ref}
                 />
             </div>
         );

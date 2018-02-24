@@ -13,7 +13,8 @@ import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
-import TextFieldDialog from "../components/dialogs/TextFieldDialog";
+import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
+import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
 
 const styles = {
     root: {},
@@ -113,7 +114,7 @@ class Band extends Component {
 
         switch (type) {
             case 'score':
-                const [title, composer] = await this.scoreDialog.open();
+                const {title, composer} = await this.scoreDialog.open();
 
                 try {
                     const score = {
@@ -134,7 +135,7 @@ class Band extends Component {
                 }
                 break;
             case 'setlist':
-                const [name] = await this.setlistDialog.open();
+                const {name} = await this.setlistDialog.open();
                 break;
             default:
                 break;
@@ -249,18 +250,8 @@ class Band extends Component {
                         }
                     })()}
                 </div>
-                <TextFieldDialog
-                    labels={['Title', 'Composer']}
-                    confirmText='Create'
-                    onRef={ref => this.scoreDialog = ref}
-                    title='Create Score'
-                />
-                <TextFieldDialog
-                    labels={['Name']}
-                    confirmText='Create'
-                    onRef={ref => this.setlistDialog = ref}
-                    title='Create Setlist'
-                />
+                <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
+                <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
             </div>
         );
     }

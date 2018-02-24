@@ -1,10 +1,6 @@
 import React, {Component} from 'react';
 import {
-    AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Slide,
-    Snackbar,
-    TextField,
-    Toolbar,
-    Typography
+    AppBar, Button, Chip, Dialog, IconButton, Slide, Snackbar, Toolbar, Typography
 } from "material-ui";
 
 import {withStyles} from "material-ui/styles";
@@ -12,10 +8,10 @@ import {withStyles} from "material-ui/styles";
 import AssistantIcon from 'material-ui-icons/Assistant';
 import AddIcon from 'material-ui-icons/Add';
 import CloseIcon from 'material-ui-icons/Close';
-import Selectable from "./Selectable";
+import Selectable from "../Selectable";
 
 import firebase from 'firebase';
-import SelectDialog from "./dialogs/SelectDialog";
+import AddSheetsDialog from "./AddSheetsDialog";
 
 const styles = {
     root: {},
@@ -58,7 +54,7 @@ function Transition(props) {
     return <Slide direction="up" {...props} />;
 }
 
-class FileUploader extends Component {
+class UploadSheetsDialog extends Component {
     state = {
         pages: [],
         groups: [],
@@ -147,9 +143,9 @@ class FileUploader extends Component {
         let selectedPages = this.state.pages.filter(page => page.selected).map(page => page.index);
         let groups = [...this.state.groups];
 
-        let instrument = await this.instrumentDialog.open();
+        let {instrument, number} = await this.addSheetsDialog.open();
 
-        groups.push({instrument: this.state.instruments[instrument], pages: selectedPages});
+        groups.push({instrument: instrument, number: number, pages: selectedPages});
 
         this.setState({groups: groups, pages: this.state.pages.map(page => ({...page, selected: false}))});
     }
@@ -234,14 +230,9 @@ class FileUploader extends Component {
                 style={{display: 'none'}}
                 onChange={e => this._onFileChange(e)}
             />
-            <SelectDialog
-                items={instruments}
-                title='Create instrument'
-                confirmText='Create'
-                onRef={ref => this.instrumentDialog = ref}
-            />
+            <AddSheetsDialog instruments={instruments} onRef={ref => this.addSheetsDialog = ref}/>
         </Dialog>;
     }
 }
 
-export default withStyles(styles)(FileUploader);
+export default withStyles(styles)(UploadSheetsDialog);
