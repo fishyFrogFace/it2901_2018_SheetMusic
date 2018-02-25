@@ -159,32 +159,30 @@ class Score extends Component {
         switch (type) {
             case 'download':
                 try {
-                    const {} = await this.downloadDialog.open();
-
-                    const jsPDF = await import('jspdf');
-
                     const {score, selectedInstrument} = this.state;
 
-                    const instrument = score.sheetMusic.find(s => s.id === selectedInstrument);
+                    const sheetMusic = score.sheetMusic.find(s => s.id === selectedInstrument);
 
-                    const band = (await score.band.get()).data();
+                    const {} = await this.downloadDialog.open(sheetMusic.instrument);
+
+                    const jsPDF = await import('jspdf');
 
                     const dateString = new Date().toLocaleDateString();
 
                     const {width, height} = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
-                        img.src = instrument.sheets[0];
+                        img.src = sheetMusic.sheets[0];
                     });
 
                     const doc = new jsPDF('p', 'px', [width, height]);
 
-                    for (let i = 0; i < instrument.sheets.length; i++) {
+                    for (let i = 0; i < sheetMusic.sheets.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = instrument.sheets[i];
+                        const url = sheetMusic.sheets[i];
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -196,7 +194,7 @@ class Score extends Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${band.name}     ${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${instrument.sheets.length}`, 20, height - 20);
+                        doc.text(`${score.band.name}     ${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${sheetMusic.sheets.length}`, 20, height - 20);
                     }
 
                     doc.save(`${score.title}.pdf`);

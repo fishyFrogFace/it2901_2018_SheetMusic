@@ -4,8 +4,6 @@ import AsyncDialog from "./AsyncDialog";
 
 class DownloadSheetsDialog extends React.Component {
     state = {
-        selectedInstrument: 0,
-        selectedNumber: -1
     };
 
     componentDidMount() {
@@ -16,13 +14,16 @@ class DownloadSheetsDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
-    async open() {
+    async open(instrument) {
+        this.setState({instrument: instrument});
         await this.dialog.open();
         return {}
     }
 
     render() {
-        return <AsyncDialog title='Download Sheet?' confirmText='Download' onRef={ref => this.dialog = ref}>
+        const {instrument} = this.state;
+
+        return <AsyncDialog title={`Download sheets for ${instrument && instrument.name}?`} confirmText='Download' onRef={ref => this.dialog = ref}>
         </AsyncDialog>
     }
 }
