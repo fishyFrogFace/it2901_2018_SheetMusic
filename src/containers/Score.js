@@ -53,14 +53,6 @@ class Score extends Component {
     async componentWillMount() {
         const scoreId = this.props.detail;
 
-        firebase.firestore().doc(`scores/${scoreId}`).get().then(async doc => {
-            const band = await doc.data().band.get();
-
-            this.setState({
-                score: {...this.state.score, ...doc.data(), band: {...band.data(), id: band.id}}
-            });
-        });
-
         this.unsubscribe = firebase.firestore().collection(`scores/${scoreId}/sheetMusic`).onSnapshot(async snapshot => {
             const sheetMusic = await Promise.all(
                 snapshot.docs.map(async doc => ({
@@ -78,6 +70,17 @@ class Score extends Component {
                 selectedInstrument: sheetMusicSorted.length > 0 ? sheetMusicSorted[0].id : null
             });
         });
+
+        // Score
+
+        const scoreDoc = await firebase.firestore().doc(`scores/${scoreId}`).get();
+        const band = await scoreDoc.data().band.get();
+
+        this.setState({
+            score: {...this.state.score, ...scoreDoc.data(), band: {...band.data(), id: band.id}}
+        });
+
+        // Instruments
 
         const snapshot = await firebase.firestore().collection('instruments').get();
 
