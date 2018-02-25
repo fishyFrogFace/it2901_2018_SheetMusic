@@ -53,8 +53,12 @@ class Score extends Component {
     async componentWillMount() {
         const scoreId = this.props.detail;
 
-        firebase.firestore().doc(`scores/${scoreId}`).get().then(doc => {
-            this.setState({score: doc.data()});
+        firebase.firestore().doc(`scores/${scoreId}`).get().then(async doc => {
+            const band = await doc.data().band.get();
+
+            this.setState({
+                score: {...this.state.score, ...doc.data(), band: {...band.data(), id: band.id}}
+            });
         });
 
         this.unsubscribe = firebase.firestore().collection(`scores/${scoreId}/sheetMusic`).onSnapshot(async snapshot => {
@@ -93,7 +97,7 @@ class Score extends Component {
     }
 
     async _onArrowBackButtonClick() {
-        window.location.hash = `#/band/${(await this.state.score.band.get()).id}`;
+        window.location.hash = `#/band/${this.state.score.band.id}`;
     }
 
     async _onFileUploadButtonClick() {
