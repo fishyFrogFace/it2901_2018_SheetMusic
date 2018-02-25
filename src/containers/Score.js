@@ -46,10 +46,11 @@ class Score extends Component {
         fileUploaderOpen: false,
         selectedInstrument: null,
         anchorEl: null,
-        score: {}
+        score: {},
+        instruments: []
     };
 
-    componentWillMount() {
+    async componentWillMount() {
         const scoreId = this.props.detail;
 
         firebase.firestore().doc(`scores/${scoreId}`).get().then(doc => {
@@ -73,6 +74,14 @@ class Score extends Component {
                 selectedInstrument: sheetMusicSorted.length > 0 ? sheetMusicSorted[0].id : null
             });
         });
+
+        const snapshot = await firebase.firestore().collection('instruments').get();
+
+        const instrumentsSorted = snapshot.docs
+            .map(doc => ({id: doc.id, ...doc.data()}))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        this.setState({instruments: instrumentsSorted});
     }
 
     componentWillUnmount() {
@@ -196,7 +205,7 @@ class Score extends Component {
 
     render() {
         const {classes} = this.props;
-        const {selectedInstrument, anchorEl, score, message} = this.state;
+        const {selectedInstrument, anchorEl, score, message, instruments} = this.state;
 
         const hasSheetMusic = Boolean(score.sheetMusic && score.sheetMusic.length);
 
@@ -253,7 +262,7 @@ class Score extends Component {
                         )
                     }
                 </div>
-                <UploadSheetsDialog onRef={ref => this.uploadDialog = ref}/>
+                <UploadSheetsDialog instruments={instruments} onRef={ref => this.uploadDialog = ref}/>
                 <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref}/>
                 <Snackbar
                     anchorOrigin={{

@@ -70,12 +70,6 @@ class UploadSheetsDialog extends Component {
         this.props.onRef(undefined);
     }
 
-    async componentWillMount() {
-        let snapshot = await firebase.firestore().collection('instruments').get();
-        let instruments = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-        this.setState({instruments: instruments});
-    }
-
     _onDialogClose() {
         this.setState({open: false, sheets: []});
     }
@@ -160,8 +154,10 @@ class UploadSheetsDialog extends Component {
     }
 
     render() {
-        const {classes} = this.props;
-        const {sheets, groups, instruments, open} = this.state;
+        const {classes, instruments} = this.props;
+        const {sheets, groups, open} = this.state;
+
+        if (!instruments) return null;
 
         let groupsFlat = [].concat(...groups.map(group => group.sheets.map(sheet => sheet.index)));
 
