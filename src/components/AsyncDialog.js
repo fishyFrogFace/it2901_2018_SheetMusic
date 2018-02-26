@@ -1,18 +1,10 @@
 import React from 'react';
 
-import {withStyles} from "material-ui/styles";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "material-ui";
 
-const styles = {
-};
-
-class FormDialog extends React.Component {
+class AsyncDialog extends React.Component {
     state = {
         open: false
-    };
-
-    inputs = {
-
     };
 
     componentDidMount() {
@@ -20,12 +12,13 @@ class FormDialog extends React.Component {
     }
 
     componentWillUnmount() {
-        this.props.onRef(undefined)
+        this.props.onRef(undefined);
     }
 
     open() {
-        this.setState({open: true});
         return new Promise((resolve, reject) => {
+            this.setState({open: true});
+
             this.__resolve = resolve;
             this.__reject = reject
         })
@@ -37,24 +30,17 @@ class FormDialog extends React.Component {
     }
 
     _onConfirmClick() {
-        let children = typeof this.props.children === 'object' ? [this.props.children] : this.props.children;
-
-        let data = {};
-        for (let child of children) {
-            data[child.props.name] = child.props.value;
-        }
-
-        this.__resolve(data);
+        this.__resolve();
         this.setState({open: false})
     }
 
     render() {
-        const {classes, title='Dialog', confirmText='Confirm'} = this.props;
+        const {title='Dialog', confirmText='Confirm'} = this.props;
         const {open} = this.state;
 
         return <Dialog open={open}>
             <DialogTitle>{title}</DialogTitle>
-            <DialogContent>
+            <DialogContent style={{display: 'flex', flexDirection: 'column'}}>
                 {this.props.children}
             </DialogContent>
             <DialogActions>
@@ -66,4 +52,4 @@ class FormDialog extends React.Component {
 }
 
 
-export default withStyles(styles)(FormDialog);
+export default AsyncDialog;

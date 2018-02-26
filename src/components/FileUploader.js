@@ -13,7 +13,6 @@ import AssistantIcon from 'material-ui-icons/Assistant';
 import AddIcon from 'material-ui-icons/Add';
 import CloseIcon from 'material-ui-icons/Close';
 import Selectable from "./Selectable";
-import FormDialog from "./FormDialog";
 
 import firebase from 'firebase';
 import SelectDialog from "./dialogs/SelectDialog";
@@ -63,8 +62,17 @@ class FileUploader extends Component {
     state = {
         pages: [],
         groups: [],
-        instruments: []
+        instruments: [],
+        open: false
     };
+
+    componentDidMount() {
+        this.props.onRef(this);
+    }
+
+    componentWillUnmount() {
+        this.props.onRef(undefined);
+    }
 
     async componentWillMount() {
         let snapshot = await firebase.firestore().collection('instruments').get();
@@ -73,19 +81,27 @@ class FileUploader extends Component {
     }
 
     _onDialogClose() {
-        this.setState({pages: []});
-        this.props.onClose();
+        this.setState({open: false, pages: []});
     }
 
     _onSelectFileClick() {
         this.fileBrowser.click();
     }
 
+    open() {
+        return new Promise((resolve, reject) => {
+            this.setState({open: true});
+
+            this.__resolve = resolve;
+            this.__reject = reject;
+        });
+    }
+
     async _onFileChange(e) {
         // https://reactjs.org/docs/events.html#event-pooling
         e.persist();
 
-        if  (!e.target.files.length) return;
+        if (!e.target.files.length) return;
 
         const PDFJS = await import('pdfjs-dist');
 
@@ -144,18 +160,19 @@ class FileUploader extends Component {
             sheets: group.pages.map(page => this.state.pages[page].image)
         }));
 
-        this.props.onUpload(instrumentData);
+        this.setState({open: false});
+        this.__resolve(instrumentData);
     }
 
     render() {
         const {classes} = this.props;
-        const {pages, groups, instruments} = this.state;
+        const {pages, groups, instruments, open} = this.state;
 
         let groupsFlat = [].concat(...groups.map(group => group.pages));
 
         return <Dialog
             fullScreen
-            open={this.props.open}
+            open={open}
             onClose={() => this._onDialogClose()}
             transition={Transition}
         >
@@ -207,7 +224,8 @@ class FileUploader extends Component {
             <Snackbar
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right',}}
                 open={Boolean(groups.length)}
-                message={groups.map((group, index) => <Chip className={classes.chip} key={index} label={group.instrument.name}/>)}
+                message={groups.map((group, index) => <Chip className={classes.chip} key={index}
+                                                            label={group.instrument.name}/>)}
                 action={<Button color="primary" onClick={() => this._onUploadClick()}>Upload</Button>}
             />
             <input

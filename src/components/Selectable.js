@@ -1,11 +1,13 @@
 import React from 'react';
 
 import {withStyles} from "material-ui/styles";
+import CheckCircleIcon from 'material-ui-icons/CheckCircle';
 
 const styles = {
     root: {
         backgroundColor: '#dedede',
-        position: 'relative'
+        position: 'relative',
+        cursor: 'pointer'
     },
 
     image: {
@@ -15,13 +17,23 @@ const styles = {
         width: '100%',
         height: '100%',
         backgroundSize: 'cover'
+    },
+
+    icon: {
+        position: 'absolute',
+        top: 15,
+        left: 15
     }
 };
 
 class Selectable extends React.Component {
+    state = {
+        hover: false
+    };
+
     componentWillReceiveProps(props) {
         if (props.selected !== this.props.selected) {
-            this.root.animate([
+            this.image.animate([
                 {transform: props.selected ? 'scale(1)' : 'scale(0.8)'},
                 {transform: props.selected ? 'scale(0.8)' : 'scale(1)'}
             ], {
@@ -32,11 +44,26 @@ class Selectable extends React.Component {
         }
     }
 
-    render() {
-        const {classes, imageURL=''} = this.props;
+    _onMouseEnter() {
+        this.setState({hover: true});
+    }
 
-        return <div className={classes.root} onClick={() => this.props.onClick()}>
-            <div ref={ref => this.root = ref} className={classes.image} style={{backgroundImage: `url(${imageURL})`}}></div>
+    _onMouseLeave() {
+        this.setState({hover: false});
+    }
+
+    render() {
+        const {classes, imageURL = '', selected} = this.props;
+        const {hover} = this.state;
+
+        return <div
+            className={classes.root}
+            onClick={() => this.props.onClick()}
+            onMouseEnter={() => this._onMouseEnter()}
+            onMouseLeave={() => this._onMouseLeave()}
+        >
+            <div ref={ref => this.image = ref} className={classes.image} style={{backgroundImage: `url(${imageURL})`}}/>
+            {(hover || selected) && <CheckCircleIcon style={{color: selected ? '#4285f4' : '#d2d2d2'}} className={classes.icon}/>}
         </div>;
     }
 }

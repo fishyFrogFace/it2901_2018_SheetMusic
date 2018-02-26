@@ -1,10 +1,7 @@
 import React from 'react';
 
-import {withStyles} from "material-ui/styles";
 import {MenuItem, Select} from "material-ui";
-import FormDialog from "../FormDialog";
-
-const styles = {};
+import AsyncDialog from "../AsyncDialog";
 
 class SelectDialog extends React.Component {
     state = {
@@ -20,7 +17,8 @@ class SelectDialog extends React.Component {
     }
 
     async open() {
-        return (await this.dialog.open()).value;
+        await this.dialog.open();
+        return this.state.selectedItem;
     }
 
     _onItemChange(e) {
@@ -31,7 +29,7 @@ class SelectDialog extends React.Component {
         const {title, items, confirmText} = this.props;
         const {selectedItem} = this.state;
 
-        return <FormDialog title={title} confirmText={confirmText} onRef={ref => this.dialog = ref}>
+        return <AsyncDialog title={title} confirmText={confirmText} onRef={ref => this.dialog = ref}>
             <Select
                 name='value'
                 value={selectedItem}
@@ -39,9 +37,9 @@ class SelectDialog extends React.Component {
             >
                 {items.map((item, index) => <MenuItem key={index} value={index}>{item.name}</MenuItem>)}
             </Select>
-        </FormDialog>
+        </AsyncDialog>
     }
 }
 
 
-export default withStyles(styles)(SelectDialog);
+export default SelectDialog;

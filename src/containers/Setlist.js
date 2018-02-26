@@ -24,7 +24,7 @@ class Setlist extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <Typography variant="title" color="inherit" style={{color:'white'}}>
+                        <Typography variant="title" color="inherit">
                             Setlist
                         </Typography>
                     </Toolbar>
@@ -37,6 +37,4 @@ class Setlist extends Component {
 }
 
 
-export default compose(connect(state => ({
-    user: state.default.user,
-})), withStyles(styles))(Setlist);
+export default withStyles(styles)(Setlist);
