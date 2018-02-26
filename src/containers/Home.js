@@ -13,6 +13,8 @@ import firebase from 'firebase';
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 
+import Drawer from "../components/Drawer.js";
+
 export const signOut = async () => {
     await firebase.auth().signOut();
     window.location.reload();
@@ -120,10 +122,6 @@ class Home extends Component {
         }
     }
 
-    _onMenuButtonClick() {
-
-    }
-
     render() {
         const {anchorEl, bands, message} = this.state;
         const {classes} = this.props;
@@ -132,9 +130,7 @@ class Home extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
-                        </IconButton>
+                        <Drawer/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>

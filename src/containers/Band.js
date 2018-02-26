@@ -102,10 +102,6 @@ class Band extends Component {
         this.setState({anchorEl: null});
     }
 
-    _onMenuButtonClick() {
-
-    }
-
     async _onMenuClick(type) {
         let uid = this.props.user.uid;
         let bandId = this.props.detail;
@@ -155,9 +151,7 @@ class Band extends Component {
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
-                        </IconButton>
+                        <Drawer/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>
