@@ -153,7 +153,7 @@ class Band extends Component {
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        <Drawer/>
+                        <Drawer onSignOut={() => this.signOut()} bands={this.state.bands}/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>
