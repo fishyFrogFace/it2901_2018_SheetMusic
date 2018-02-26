@@ -1,10 +1,6 @@
 import React, {Component} from 'react';
 import {
-    AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Slide,
-    Snackbar,
-    TextField,
-    Toolbar,
-    Typography
+    AppBar, Button, Chip, Dialog, IconButton, Slide, Snackbar, Toolbar, Typography
 } from "material-ui";
 
 import {withStyles} from "material-ui/styles";
@@ -12,10 +8,10 @@ import {withStyles} from "material-ui/styles";
 import AssistantIcon from 'material-ui-icons/Assistant';
 import AddIcon from 'material-ui-icons/Add';
 import CloseIcon from 'material-ui-icons/Close';
-import Selectable from "./Selectable";
+import Selectable from "../Selectable";
 
 import firebase from 'firebase';
-import SelectDialog from "./dialogs/SelectDialog";
+import AddSheetsDialog from "./AddSheetsDialog";
 
 const styles = {
     root: {},
@@ -58,9 +54,9 @@ function Transition(props) {
     return <Slide direction="up" {...props} />;
 }
 
-class FileUploader extends Component {
+class UploadSheetsDialog extends Component {
     state = {
-        pages: [],
+        sheets: [],
         groups: [],
         instruments: [],
         open: false
@@ -74,14 +70,8 @@ class FileUploader extends Component {
         this.props.onRef(undefined);
     }
 
-    async componentWillMount() {
-        let snapshot = await firebase.firestore().collection('instruments').get();
-        let instruments = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-        this.setState({instruments: instruments});
-    }
-
     _onDialogClose() {
-        this.setState({open: false, pages: []});
+        this.setState({open: false, sheets: []});
     }
 
     _onSelectFileClick() {
@@ -127,48 +117,49 @@ class FileUploader extends Component {
                 return canvas.toDataURL();
             }));
 
-            this.setState({pages: images.map((image, index) => ({image: image, selected: false, index: index}))});
+            this.setState({sheets: images.map((image, index) => ({image: image, selected: false, index: index}))});
         });
 
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
     _onSelectableClick(index) {
-        let pages = [...this.state.pages];
-        pages[index].selected = !pages[index].selected;
-        this.setState({pages: pages});
+        let sheets = [...this.state.sheets];
+        sheets[index].selected = !sheets[index].selected;
+        this.setState({sheets: sheets});
     }
 
     _onSelectionClose() {
-        this.setState({pages: this.state.pages.map(page => ({...page, selected: false}))});
+        this.setState({sheets: this.state.sheets.map(sheet => ({...sheet, selected: false}))});
     }
 
     async _onAddInstrument() {
-        let selectedPages = this.state.pages.filter(page => page.selected).map(page => page.index);
-        let groups = [...this.state.groups];
+        try {
+            let {instrument, instrumentNumber} = await this.addSheetsDialog.open();
 
-        let instrument = await this.instrumentDialog.open();
+            let selectedSheets = this.state.sheets.filter(sheet => sheet.selected);
 
-        groups.push({instrument: this.state.instruments[instrument], pages: selectedPages});
-
-        this.setState({groups: groups, pages: this.state.pages.map(page => ({...page, selected: false}))});
+            this.setState({
+                groups: [...this.state.groups, {instrument: instrument, instrumentNumber: instrumentNumber, sheets: selectedSheets}],
+                sheets: this.state.sheets.map(sheet => ({...sheet, selected: false})),
+            });
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     _onUploadClick() {
-        let instrumentData = this.state.groups.map(group => ({
-            id: group.instrument.id,
-            sheets: group.pages.map(page => this.state.pages[page].image)
-        }));
-
         this.setState({open: false});
-        this.__resolve(instrumentData);
+        this.__resolve(this.state.groups);
     }
 
     render() {
-        const {classes} = this.props;
-        const {pages, groups, instruments, open} = this.state;
+        const {classes, instruments} = this.props;
+        const {sheets, groups, open} = this.state;
 
-        let groupsFlat = [].concat(...groups.map(group => group.pages));
+        if (!instruments) return null;
+
+        let groupsFlat = [].concat(...groups.map(group => group.sheets.map(sheet => sheet.index)));
 
         return <Dialog
             fullScreen
@@ -187,20 +178,20 @@ class FileUploader extends Component {
                     <Button color="inherit" onClick={() => this._onSelectFileClick()}>
                         select file
                     </Button>
-                    <IconButton disabled={!pages.length} color="inherit">
+                    <IconButton disabled={!sheets.length} color="inherit">
                         <AssistantIcon/>
                     </IconButton>
                 </Toolbar>
             </AppBar>
             {
-                pages.filter(page => page.selected).length > 0 ?
+                sheets.filter(sheet => sheet.selected).length > 0 ?
                     <AppBar className={classes.appBar}>
                         <Toolbar>
                             <IconButton color="inherit" onClick={() => this._onSelectionClose()}>
                                 <CloseIcon/>
                             </IconButton>
                             <Typography variant="title" color="inherit" className={classes.flex}>
-                                {pages.filter(page => page.selected).length} selected
+                                {sheets.filter(sheet => sheet.selected).length} selected
                             </Typography>
                             <IconButton color="inherit" onClick={() => this._onAddInstrument()}>
                                 <AddIcon/>
@@ -211,21 +202,25 @@ class FileUploader extends Component {
 
             <div className={classes.content}>
                 <div className={classes.sheetContainer}>
-                    {pages.filter(page => !groupsFlat.includes(page.index)).map(page =>
+                    {sheets.filter(sheet => !groupsFlat.includes(sheet.index)).map(sheet =>
                         <Selectable
                             classes={{root: classes.selectable}}
-                            key={page.index}
-                            imageURL={page.image}
-                            selected={page.selected}
-                            onClick={(i => () => this._onSelectableClick(i))(page.index)}
+                            key={sheet.index}
+                            imageURL={sheet.image}
+                            selected={sheet.selected}
+                            onClick={(i => () => this._onSelectableClick(i))(sheet.index)}
                         />)}
                 </div>
             </div>
             <Snackbar
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right',}}
                 open={Boolean(groups.length)}
-                message={groups.map((group, index) => <Chip className={classes.chip} key={index}
-                                                            label={group.instrument.name}/>)}
+                message={groups.map((group, index) =>
+                    <Chip
+                        key={index}
+                        className={classes.chip}
+                        label={`${group.instrument.name} ${group.instrumentNumber > 0 ? group.instrumentNumber : ''}`}
+                    />)}
                 action={<Button color="primary" onClick={() => this._onUploadClick()}>Upload</Button>}
             />
             <input
@@ -234,14 +229,9 @@ class FileUploader extends Component {
                 style={{display: 'none'}}
                 onChange={e => this._onFileChange(e)}
             />
-            <SelectDialog
-                items={instruments}
-                title='Create instrument'
-                confirmText='Create'
-                onRef={ref => this.instrumentDialog = ref}
-            />
+            <AddSheetsDialog instruments={instruments} onRef={ref => this.addSheetsDialog = ref}/>
         </Dialog>;
     }
 }
 
-export default withStyles(styles)(FileUploader);
+export default withStyles(styles)(UploadSheetsDialog);

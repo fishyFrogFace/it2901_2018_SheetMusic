@@ -10,7 +10,8 @@ import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
-import TextFieldDialog from "../components/dialogs/TextFieldDialog";
+import CreateBandDialog from "../components/dialogs/CreateBandDialog";
+import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 
 export const signOut = async () => {
     await firebase.auth().signOut();
@@ -76,7 +77,7 @@ class Home extends Component {
 
         switch (type) {
             case 'create':
-                const [name] = await this.createDialog.open();
+                const {name} = await this.createDialog.open();
 
                 try {
                     const band = {
@@ -96,7 +97,7 @@ class Home extends Component {
                 }
                 break;
             case 'join':
-                const [code] = await this.joinDialog.open();
+                const {code} = await this.joinDialog.open();
 
                 let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
@@ -168,8 +169,8 @@ class Home extends Component {
                         </Card>
                     )}
                 </div>
-                <TextFieldDialog labels={['Name']} onRef={ref => this.createDialog = ref} title='Create Band' confirmText='create'/>
-                <TextFieldDialog labels={['Code']} onRef={ref => this.joinDialog = ref} title='Join Band' confirmText='join'/>
+                <CreateBandDialog onRef={ref => this.createDialog = ref}/>
+                <JoinBandDialog onRef={ref => this.joinDialog = ref}/>
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
