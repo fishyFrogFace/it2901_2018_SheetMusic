@@ -28,6 +28,7 @@ const styles = theme => ({
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-around',
+    padding: 10,
   },
   buttonSignout: {
     color: 'white',
@@ -38,7 +39,7 @@ const styles = theme => ({
   },
   bands: {
     height: '100%',
-  }
+  },
 });
 
 class TemporaryDrawer extends React.Component {
@@ -75,6 +76,14 @@ class TemporaryDrawer extends React.Component {
                   </ListItemIcon>
                   <ListItemText primary='Profile name' />
                 </ListItem>
+              <div className={classes.joincreate}>
+                <Button variant='raised' color='default' className={classes.button}>
+                  Join band
+                </Button>
+                <Button variant='raised' color='default' className={classes.button}>
+                  Create band
+                </Button>
+              </div>
               </List>
               <Divider />
               <List className={classes.bands}>
@@ -82,20 +91,10 @@ class TemporaryDrawer extends React.Component {
                   <ListItemIcon>
                     <GroupIcon />
                   </ListItemIcon>
-                  <ListItemText primary='Bands' />
-                </ListItem>
-                <div className={classes.joincreate}>
-                  <Button variant='raised' color='default' className={classes.button}>
-                    Join band
-                  </Button>
-                  <Button variant='raised' color='default' className={classes.button}>
-                    Create band
-                  </Button>
-                </div>
-                <List>
+                  <ListItemText primary='My bands' />
+                  </ListItem>
                   {bands}
                 </List>
-              </List>
               <Divider />
               <Button onClick={() => this.props.onSignOut()} variant='raised' color='default' className={classes.buttonSignout}>
                 Sign out
