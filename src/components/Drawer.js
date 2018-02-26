@@ -10,7 +10,7 @@ import { ListItem, ListItemIcon, ListItemText } from 'material-ui/List';
 import {
   Drawer, List, IconButton
 } from 'material-ui';
-import Button from 'material-ui/Button'
+import Button from 'material-ui/Button';
 
 const styles = theme => ({
   root: {
@@ -42,50 +42,6 @@ const styles = theme => ({
   },
 });
 
-function SimpleList(props) {
-  const { classes } = props;
-  return (
-    <div className={classes.root}>
-      <List className={classes.profile}>
-        <ListItem>
-          <ListItemIcon>
-            <AccountCircleIcon />
-          </ListItemIcon>
-          <ListItemText primary='Profile name' />
-        </ListItem>
-      </List>
-      <Divider />
-      <List>
-        <ListItem>
-          <ListItemIcon>
-            <GroupIcon />
-          </ListItemIcon>
-          <ListItemText primary='Bands' />
-        </ListItem>
-      </List>
-      <Divider />
-      <List className={classes.joincreate}>
-        <Button variant='raised' color='default' className={classes.button}>
-          Join band
-        </Button>
-        <Button variant='raised' color='default' className={classes.button}>
-          Create band
-        </Button>
-      </List>
-      <Divider />
-      <List className={classes.signout}>
-        <Button variant='raised' color='default' className={classes.buttonSignout}>
-          Sign out
-        </Button>
-      </List>
-    </div>
-  );
-}
-
-SimpleList.propTypes = {
-  classes: PropTypes.object.isRequired,
-};
-
 class TemporaryDrawer extends React.Component {
   state = {
     left: false
@@ -100,8 +56,6 @@ class TemporaryDrawer extends React.Component {
   render() {
     const { classes } = this.props;
 
-    const sideList = SimpleList(this.props);
-
     return (
       <div>
       <IconButton color='default' onClick={this.toggleDrawer('left', true)}>
@@ -114,7 +68,41 @@ class TemporaryDrawer extends React.Component {
             onClick={this.toggleDrawer('left', false)}
             onKeyDown={this.toggleDrawer('left', false)}
           >
-            {sideList}
+            <div className={classes.root}>
+              <List className={classes.profile}>
+                <ListItem>
+                  <ListItemIcon>
+                    <AccountCircleIcon />
+                  </ListItemIcon>
+                  <ListItemText primary='Profile name' />
+                </ListItem>
+              </List>
+              <Divider />
+              <List>
+                <ListItem>
+                  <ListItemIcon>
+                    <GroupIcon />
+                  </ListItemIcon>
+                  <ListItemText primary='Bands' />
+                </ListItem>
+              </List>
+              <Divider />
+              <List className={classes.joincreate}>
+                <Button variant='raised' color='default' className={classes.button}>
+                  Join band
+                </Button>
+                <Button variant='raised' color='default' className={classes.button}>
+                  Create band
+                </Button>
+              </List>
+              <Divider />
+              <List className={classes.signout}>
+              </List>
+              <Divider />
+              <Button onClick={() => this.props.onSignOut()} variant='raised' color='default' className={classes.buttonSignout}>
+                Sign out
+              </Button>
+            </div>
           </div>
         </Drawer>
       </div>
