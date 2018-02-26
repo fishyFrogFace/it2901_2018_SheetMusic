@@ -34,7 +34,7 @@ class App extends React.Component {
         if (user) {
             firebase.firestore().doc(`users/${user.uid}`).get().then(async userSnapshot => {
                 if (!userSnapshot.exists) {
-                    await userSnapshot.ref.set({name: user.displayName});
+                    await userSnapshot.ref.set({email: user.email, displayName: user.displayName, photoURL: user.photoURL});
                 }
             });
         }
