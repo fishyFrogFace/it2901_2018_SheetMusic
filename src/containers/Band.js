@@ -16,6 +16,8 @@ import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
 
+import Drawer from '../components/Drawer.js';
+
 const styles = {
     root: {},
     flex: {
