@@ -129,7 +129,7 @@ class Home extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <Drawer onSignOut={() => this.signOut()}/>
+                        <Drawer onSignOut={() => this.signOut()} bands={this.state.bands}/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
