@@ -16,7 +16,9 @@ const styles = {
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundSize: 'cover'
+        backgroundSize: '100% auto',
+        backgroundPosition: 'center top',
+        backgroundRepeat: 'no-repeat'
     },
 
     icon: {

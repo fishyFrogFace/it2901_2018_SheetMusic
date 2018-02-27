@@ -10,6 +10,7 @@
     "material-ui-icons": "^1.0.0-beta.17",
     "pdfjs-dist": "^2.0.376",
     "react": "^16.2.0",
+    "react-beautiful-dnd": "^5.0.0",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.6",
     "react-responsive": "^4.0.4",
