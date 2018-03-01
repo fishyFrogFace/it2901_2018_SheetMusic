@@ -2,12 +2,21 @@ import React from 'react';
 
 import {withStyles} from "material-ui/styles";
 import CheckCircleIcon from 'material-ui-icons/CheckCircle';
+import {Paper} from "material-ui";
 
 const styles = {
     root: {
-        backgroundColor: '#dedede',
+        background: 'white',
+        cursor: 'pointer',
         position: 'relative',
-        cursor: 'pointer'
+    },
+
+    paper: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
     },
 
     image: {
@@ -18,7 +27,7 @@ const styles = {
         height: '100%',
         backgroundSize: '150% auto',
         backgroundPosition: 'left top',
-        backgroundRepeat: 'no-repeat'
+        backgroundRepeat: 'no-repeat',
     },
 
     icon: {
@@ -36,8 +45,8 @@ class Selectable extends React.Component {
     componentWillReceiveProps(props) {
         if (props.selected !== this.props.selected) {
             this.image.animate([
-                {transform: props.selected ? 'scale(1)' : 'scale(0.8)'},
-                {transform: props.selected ? 'scale(0.8)' : 'scale(1)'}
+                {boxShadow: props.selected ? 'none' : 'inset 0px 0px 300px 200px rgba(66,133,244,0.4)'},
+                {boxShadow: props.selected ? 'inset 0px 0px 300px 200px rgba(66,133,244,0.4)' : 'none'}
             ], {
                 duration: 200,
                 fill: 'forwards',
@@ -60,13 +69,23 @@ class Selectable extends React.Component {
 
         return <div
             className={classes.root}
-            onClick={() => this.props.onClick()}
-            onMouseEnter={() => this._onMouseEnter()}
-            onMouseLeave={() => this._onMouseLeave()}
+            draggable
+            onDragStart={e => this.props.onDragStart(e)}
         >
-            <div ref={ref => this.image = ref} className={classes.image} style={{backgroundImage: `url(${imageURL})`}}/>
-            {(hover || selected) && <CheckCircleIcon style={{color: selected ? '#4285f4' : '#d2d2d2'}} className={classes.icon}/>}
-        </div>;
+            <Paper
+                className={classes.paper}
+                onMouseEnter={() => this._onMouseEnter()}
+                onMouseLeave={() => this._onMouseLeave()}
+                elevation={hover ? 2 : 1}
+                onClick={() => this.props.onClick()}
+            >
+                <div
+                    ref={ref => this.image = ref}
+                    className={classes.image}
+                    style={{backgroundImage: `url(${imageURL})`}}
+                />
+            </Paper>
+        </div>
     }
 }
 

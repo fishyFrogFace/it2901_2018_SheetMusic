@@ -13,6 +13,7 @@ import Selectable from "../Selectable";
 import firebase from 'firebase';
 
 import {ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home} from "material-ui-icons";
+import Draggable from "../Draggable";
 
 
 const drawerWidth = 240;
@@ -105,8 +106,23 @@ class UploadSheetsDialog extends Component {
         groups: [],
         instruments: [],
         selectedScore: null,
-        selectedInstrument: null
+        selectedInstrument: null,
+        lastClicked: null
     };
+
+    keys = {};
+
+    constructor(props) {
+        super(props);
+
+        window.onkeydown = e => {
+            this.keys[e.code] = true;
+        };
+
+        window.onkeyup = e => {
+            this.keys[e.code] = false;
+        }
+    }
 
     _onDialogClose() {
         this.setState({sheets: []});
@@ -156,8 +172,29 @@ class UploadSheetsDialog extends Component {
 
     _onSelectableClick(index) {
         let sheets = [...this.state.sheets];
-        sheets[index].selected = !sheets[index].selected;
-        this.setState({sheets: sheets, selectedSheets: sheets.filter(sheet => sheet.selected)});
+
+        console.log(sheets);
+
+        if (this.keys.MetaLeft) {
+            sheets[index].selected = !sheets[index].selected;
+        } else if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
+            const range = (start, end) => {
+                return Array(end - start + 1).fill().map((_, idx) => start + idx)
+            };
+
+            const indices = range(Math.min(this.state.lastClicked, index), Math.max(this.state.lastClicked, index));
+
+            for (let i of indices) {
+                sheets[i].selected = true;
+            }
+        } else {
+            for (let sheet of sheets) {
+                sheet.selected = false;
+            }
+            sheets[index].selected = true;
+        }
+
+        this.setState({sheets: sheets, lastClicked: index});
     }
 
     _onSelectionClose() {
@@ -191,7 +228,7 @@ class UploadSheetsDialog extends Component {
     render() {
         const {classes, band, open} = this.props;
         const {
-            sheets, selectedSheets, groups,
+            sheets, groups,
             selectedScore, selectedInstrument,
         } = this.state;
 
@@ -227,7 +264,7 @@ class UploadSheetsDialog extends Component {
                         </div>
                         <div className={classes.sheetContainer}>
                             {sheets.filter(sheet => !groupsFlat.includes(sheet.index)).map(sheet =>
-                                <Selectable
+                                <Draggable
                                     onDragStart={e => this._onDragStart(e)}
                                     classes={{root: classes.selectable}}
                                     key={sheet.index}
