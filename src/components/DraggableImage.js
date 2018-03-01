@@ -8,32 +8,31 @@ const styles = {
     root: {
         background: 'white',
         cursor: 'pointer',
-        position: 'relative',
+        position: 'relative'
     },
 
     paper: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
         width: '100%',
         height: '100%',
+        overflow: 'hidden'
+    },
+
+    imageContainer: {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
     },
 
     image: {
+        width: '100%'
+    },
+
+    imageOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',
-        height: '100%',
-        backgroundSize: '150% auto',
-        backgroundPosition: 'left top',
-        backgroundRepeat: 'no-repeat',
-    },
-
-    icon: {
-        position: 'absolute',
-        top: 15,
-        left: 15
+        height: '100%'
     }
 };
 
@@ -44,7 +43,7 @@ class DraggableImage extends React.Component {
 
     componentWillReceiveProps(props) {
         if (props.selected !== this.props.selected) {
-            this.image.animate([
+            this.imageContainer.animate([
                 {boxShadow: props.selected ? 'none' : 'inset 0px 0px 300px 200px rgba(66,133,244,0.4)'},
                 {boxShadow: props.selected ? 'inset 0px 0px 300px 200px rgba(66,133,244,0.4)' : 'none'}
             ], {
@@ -79,11 +78,10 @@ class DraggableImage extends React.Component {
                 onMouseLeave={() => this._onMouseLeave()}
                 elevation={hover ? 2 : 1}
             >
-                <div
-                    ref={ref => this.image = ref}
-                    className={classes.image}
-                    style={{backgroundImage: `url(${imageURL})`}}
-                />
+                <div className={classes.imageContainer} >
+                    <img className={classes.image} src={imageURL}/>
+                    <div className={classes.imageOverlay} ref={ref => this.imageContainer = ref}/>
+                </div>
             </Paper>
         </div>
     }
