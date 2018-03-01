@@ -37,7 +37,7 @@ const styles = {
     }
 };
 
-class Selectable extends React.Component {
+class DraggableImage extends React.Component {
     state = {
         hover: false
     };
@@ -90,4 +90,4 @@ class Selectable extends React.Component {
 }
 
 
-export default withStyles(styles)(Selectable);
+export default withStyles(styles)(DraggableImage);

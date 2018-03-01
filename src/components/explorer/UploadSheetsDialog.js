@@ -1,22 +1,17 @@
 import React, {Component} from 'react';
 import {
-    AppBar, Button, Chip, CircularProgress, Collapse, Dialog, Drawer, IconButton, List, ListItem, ListItemText,
-    ListSubheader, Paper, Slide,
-    Snackbar, Toolbar,
-    Typography
+    AppBar, Button, CircularProgress, Dialog, IconButton,
+    List, ListItem, ListItemText, Paper, Slide, Toolbar, Typography
 } from "material-ui";
 
 import {withStyles} from "material-ui/styles";
-
-import Selectable from "../Selectable";
-
-import firebase from 'firebase';
 
 import {
     ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home, Remove,
     Delete
 } from "material-ui-icons";
-import Draggable from "../Draggable";
+import DraggableImage from '../DraggableImage'
+import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 
 
 const drawerWidth = 240;
@@ -113,8 +108,8 @@ class UploadSheetsDialog extends Component {
         sheets: [],
         groups: [],
         instruments: [],
-        selectedScore: null,
-        selectedInstrument: null,
+        selectedScoreId: null,
+        selectedSheetMusicId: null,
         lastClicked: null
     };
 
@@ -205,7 +200,7 @@ class UploadSheetsDialog extends Component {
     }
 
     _onScoreClick(score) {
-        this.setState({selectedScore: score});
+        this.setState({selectedScoreId: score.id});
     }
 
     _onDragStart(e) {
@@ -215,13 +210,13 @@ class UploadSheetsDialog extends Component {
 
     _onListItemDrop = (e, sheetMusic) => {
         this.props.onUploadSheets(
-            this.state.selectedScore.id,
+            this.state.selectedScoreId,
             sheetMusic.id,
             this.state.sheets.filter(sheet => sheet.selected).map(sheet => sheet.image));
     };
 
     _onInstrumentClick(s) {
-        this.setState({selectedInstrument: s})
+        this.setState({selectedSheetMusicId: s.id})
     }
 
     _onSheetDelete() {
@@ -233,16 +228,46 @@ class UploadSheetsDialog extends Component {
     };
 
     _onBreadcrumbScoreClick = () => {
-        this.setState({selectedInstrument: null});
+        this.setState({selectedSheetMusicId: null});
     };
 
     _onBreadcrumbHomeClick = () => {
-        this.setState({selectedInstrument: null, selectedScore: null});
+        this.setState({selectedSheetMusicId: null, selectedScoreId: null});
+    };
+
+    _onDragEnd = result => {
+        // dropped outside the list
+        if (!result.destination) {
+            return;
+        }
+
+        const reorder = (list, startIndex, endIndex) => {
+            const result = Array.from(list);
+            const [removed] = result.splice(startIndex, 1);
+            result.splice(endIndex, 0, removed);
+            return result;
+        };
+
+        const {selectedScoreId, selectedSheetMusicId} = this.state;
+
+        const selectedScore = this.props.band.scores.find(score => score.id === selectedScoreId);
+        const selectedSheetMusic = selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
+
+        const sheets = reorder(
+            selectedSheetMusic.sheets,
+            result.source.index,
+            result.destination.index
+        );
+
+        this.props.onSheetsChange(selectedScoreId, selectedSheetMusicId, sheets);
     };
 
     render() {
         const {classes, band, open} = this.props;
-        const {sheets, selectedScore, selectedInstrument} = this.state;
+        const {sheets, selectedScoreId, selectedSheetMusicId} = this.state;
+
+        const selectedScore = band.scores && band.scores.find(score => score.id === selectedScoreId);
+        const selectedSheetMusic = selectedScore && selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
 
         return <Dialog
             fullScreen
@@ -272,12 +297,12 @@ class UploadSheetsDialog extends Component {
                             </Typography>
                             <div className={classes.flex}/>
                             {sheets.some(sheet => sheet.selected) &&
-                                <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
+                            <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
                             }
                         </div>
                         <div className={classes.sheetContainer}>
                             {sheets.map(sheet =>
-                                <Draggable
+                                <DraggableImage
                                     onDragStart={e => this._onDragStart(e)}
                                     classes={{root: classes.selectable}}
                                     key={sheet.index}
@@ -291,9 +316,10 @@ class UploadSheetsDialog extends Component {
                         <div className={classes.paneHeader}>
                             <Typography variant='body1'>
                                 <span className={classes.anchor} onClick={this._onBreadcrumbHomeClick}>Scores</span>
-                                {selectedScore && <span> › <span className={classes.anchor} onClick={this._onBreadcrumbScoreClick}>{selectedScore.title}</span></span>}
-                                {selectedScore && selectedInstrument &&
-                                <span> › {selectedInstrument.instrument.name}</span>
+                                {selectedScore && <span> › <span className={classes.anchor}
+                                                                 onClick={this._onBreadcrumbScoreClick}>{selectedScore.title}</span></span>}
+                                {selectedScore && selectedSheetMusic &&
+                                <span> › {selectedSheetMusic.instrument.name}</span>
                                 }
                             </Typography>
                             <div className={classes.flex}/>
@@ -306,7 +332,7 @@ class UploadSheetsDialog extends Component {
                                 </Button>
                             }
                             {
-                                selectedScore && !selectedInstrument &&
+                                selectedScore && !selectedSheetMusic &&
                                 <Button fullWidth color='primary'
                                         onClick={() => this.props.onAddInstrument(selectedScore.id)}>
                                     ADD INSTRUMENTS
@@ -315,7 +341,7 @@ class UploadSheetsDialog extends Component {
                         </div>
 
                         {
-                            !selectedScore && !selectedInstrument &&
+                            !selectedScore && !selectedSheetMusic &&
                             <List>
                                 {band.scores && band.scores.map((score, index) =>
                                     <ListItem key={index} button onClick={() => this._onScoreClick(score)}>
@@ -326,7 +352,7 @@ class UploadSheetsDialog extends Component {
                         }
 
                         {
-                            selectedScore && !selectedInstrument &&
+                            selectedScore && !selectedSheetMusic &&
                             <List>
                                 {selectedScore.sheetMusic && selectedScore.sheetMusic.map((s, index) =>
                                     <div
@@ -338,7 +364,8 @@ class UploadSheetsDialog extends Component {
                                             <ListItemText
                                                 primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>
                                             {s.uploading && <CircularProgress size={24}/>}
-                                            {!s.uploading && <Typography variant='body1'>{s.sheets ? s.sheets.length : 0}</Typography>}
+                                            {!s.uploading &&
+                                            <Typography variant='body1'>{s.sheets ? s.sheets.length : 0}</Typography>}
                                         </ListItem>
                                     </div>
                                 )}
@@ -346,14 +373,39 @@ class UploadSheetsDialog extends Component {
                         }
 
                         {
-                            selectedScore && selectedInstrument && selectedInstrument.sheets.map((sheet, index) =>
-                                <div key={index} style={{
-                                    width: '100%',
-                                    height: 100,
-                                    backgroundImage: `url(${sheet})`,
-                                    backgroundSize: '100% auto'
-                                }}/>
-                            )
+                            selectedScore && selectedSheetMusic &&
+                            <DragDropContext onDragEnd={this._onDragEnd}>
+                                <Droppable droppableId="droppable">
+                                    {(provided, snapshot) =>
+                                        <div ref={provided.innerRef}>
+                                            {
+                                                selectedSheetMusic.sheets.map((sheet, index) =>
+                                                    <Draggable key={index} draggableId={sheet} index={index}>
+                                                        {(provided, snapshot) =>
+                                                            <div>
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                >
+                                                                    <div style={{
+                                                                        width: '100%',
+                                                                        height: 100,
+                                                                        backgroundImage: `url(${sheet})`,
+                                                                        backgroundSize: '100% auto'
+                                                                    }}/>
+                                                                </div>
+                                                                {provided.placeholder}
+                                                            </div>
+                                                        }
+                                                    </Draggable>
+                                                )
+                                            }
+                                            {provided.placeholder}
+                                        </div>
+                                    }
+                                </Droppable>
+                            </DragDropContext>
                         }
                     </div>
                 </Paper>

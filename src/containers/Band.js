@@ -230,6 +230,11 @@ class Band extends Component {
         this.setState({uploadSheetsDialogOpen: true});
     }
 
+    _onSheetsChange = async (scoreId, sheetMusicId, sheets) => {
+        const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
+        await sheetMusicRef.update({sheets: sheets});
+    };
+
     render() {
         const {anchorEl, selectedPage, band, uploadSheetsDialogOpen} = this.state;
 
@@ -350,6 +355,7 @@ class Band extends Component {
                     onAddScore={() => this._onAddScore()}
                     onAddInstrument={this._onAddInstrument}
                     onUploadSheets={this._onUploadSheets}
+                    onSheetsChange={this._onSheetsChange}
                 />
             </div>
         );
