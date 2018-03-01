@@ -12,7 +12,7 @@ import Selectable from "../Selectable";
 
 import firebase from 'firebase';
 
-import {ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack} from "material-ui-icons";
+import {ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home} from "material-ui-icons";
 
 
 const drawerWidth = 240;
@@ -168,8 +168,8 @@ class UploadSheetsDialog extends Component {
         this.setState({selectedScore: score});
     }
 
-    _onArrowBackClick = () => {
-        this.setState({selectedScore: null});
+    _onHomeClick = () => {
+        this.setState({selectedInstrument: null, selectedScore: null});
     };
 
     _onDragStart(e) {
@@ -183,6 +183,10 @@ class UploadSheetsDialog extends Component {
             sheetMusic.id,
             this.state.selectedSheets.map(sheet => sheet.image));
     };
+
+    _onInstrumentClick(s) {
+        this.setState({selectedInstrument: s})
+    }
 
     render() {
         const {classes, band, open} = this.props;
@@ -235,20 +239,13 @@ class UploadSheetsDialog extends Component {
                     </div>
                     <div className={classes.explorerPane}>
                         <div className={classes.paneHeader}>
-                            {
-                                selectedScore &&
-                                <IconButton style={{marginLeft: -20}} onClick={this._onArrowBackClick}>
-                                    <ArrowBack/>
-                                </IconButton>
-                            }
-
+                            <IconButton style={{marginLeft: -20}} onClick={this._onHomeClick}>
+                                <Home/>
+                            </IconButton>
                             <Typography variant='body1'>
-                                {
-                                    !selectedScore && 'Scores'
-                                }
-                                {
-                                    selectedScore && selectedScore.title
-                                }
+                                {!selectedScore && 'Scores'}
+                                {selectedScore && selectedScore.title}
+                                {selectedScore && selectedInstrument && ` › ${selectedInstrument.instrument.name}`}
                             </Typography>
                             <div className={classes.flex}/>
                         </div>
@@ -260,7 +257,7 @@ class UploadSheetsDialog extends Component {
                                 </Button>
                             }
                             {
-                                selectedScore &&
+                                selectedScore && !selectedInstrument &&
                                 <Button fullWidth color='primary'
                                         onClick={() => this.props.onAddInstrument(selectedScore.id)}>
                                     ADD INSTRUMENTS
@@ -288,10 +285,11 @@ class UploadSheetsDialog extends Component {
                                         onDragOver={e => e.preventDefault()}
                                         onDrop={e => this._onListItemDrop(e, s)}
                                     >
-                                        <ListItem key={index}>
+                                        <ListItem button key={index} onClick={() => this._onInstrumentClick(s)}>
                                             <ListItemText
                                                 primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>
                                             {s.uploading && <CircularProgress size={24}/>}
+                                            {!s.uploading && <Typography variant='body1'>{s.sheets ? s.sheets.length : 0}</Typography>}
                                         </ListItem>
                                     </div>
                                 )}
@@ -303,7 +301,7 @@ class UploadSheetsDialog extends Component {
                                 <div key={index} style={{
                                     width: '100%',
                                     height: 100,
-                                    backgroundImage: `url(${sheet.image})`,
+                                    backgroundImage: `url(${sheet})`,
                                     backgroundSize: '100% auto'
                                 }}/>
                             )
