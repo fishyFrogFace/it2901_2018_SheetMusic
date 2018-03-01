@@ -172,9 +172,7 @@ class UploadSheetsDialog extends Component {
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    _onDraggableClick(e, index) {
-        e.stopPropagation();
-
+    _onDraggableMouseDown = (e, index) => {
         let sheets = [...this.state.sheets];
 
         if (this.keys.MetaLeft) {
@@ -189,14 +187,16 @@ class UploadSheetsDialog extends Component {
                 sheets[i].selected = true;
             }
         } else {
-            for (let sheet of sheets) {
-                sheet.selected = false;
+            if (!sheets[index].selected) {
+                for (let sheet of sheets) {
+                    sheet.selected = false;
+                }
+                sheets[index].selected = true;
             }
-            sheets[index].selected = true;
         }
 
         this.setState({sheets: sheets, lastClicked: index});
-    }
+    };
 
     _onScoreClick(score) {
         this.setState({selectedScoreId: score.id});
@@ -307,7 +307,8 @@ class UploadSheetsDialog extends Component {
                                     key={sheet.index}
                                     imageURL={sheet.image}
                                     selected={sheet.selected}
-                                    onClick={e => this._onDraggableClick(e, sheet.index)}
+                                    onClick={e => e.stopPropagation()}
+                                    onMouseDown={e => this._onDraggableMouseDown(e, sheet.index)}
                                 />)}
                         </div>
                     </div>

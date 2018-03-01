@@ -70,6 +70,7 @@ class DraggableImage extends React.Component {
             className={classes.root}
             draggable
             onDragStart={e => this.props.onDragStart(e)}
+            onMouseDown={e => this.props.onMouseDown(e)}
             onClick={e => this.props.onClick(e)}
         >
             <Paper
