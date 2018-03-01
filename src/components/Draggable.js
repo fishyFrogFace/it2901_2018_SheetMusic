@@ -71,13 +71,13 @@ class Selectable extends React.Component {
             className={classes.root}
             draggable
             onDragStart={e => this.props.onDragStart(e)}
+            onClick={e => this.props.onClick(e)}
         >
             <Paper
                 className={classes.paper}
                 onMouseEnter={() => this._onMouseEnter()}
                 onMouseLeave={() => this._onMouseLeave()}
                 elevation={hover ? 2 : 1}
-                onClick={() => this.props.onClick()}
             >
                 <div
                     ref={ref => this.image = ref}

@@ -12,7 +12,10 @@ import Selectable from "../Selectable";
 
 import firebase from 'firebase';
 
-import {ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home} from "material-ui-icons";
+import {
+    ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home, Remove,
+    Delete
+} from "material-ui-icons";
 import Draggable from "../Draggable";
 
 
@@ -91,6 +94,12 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         padding: '0 20px'
+    },
+
+    anchor: {
+        textDecoration: 'underline',
+        cursor: 'pointer',
+        color: 'rgb(0,188,212)'
     }
 
 };
@@ -102,7 +111,6 @@ function Transition(props) {
 class UploadSheetsDialog extends Component {
     state = {
         sheets: [],
-        selectedSheets: [],
         groups: [],
         instruments: [],
         selectedScore: null,
@@ -170,19 +178,18 @@ class UploadSheetsDialog extends Component {
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    _onSelectableClick(index) {
-        let sheets = [...this.state.sheets];
+    _onDraggableClick(e, index) {
+        e.stopPropagation();
 
-        console.log(sheets);
+        let sheets = [...this.state.sheets];
 
         if (this.keys.MetaLeft) {
             sheets[index].selected = !sheets[index].selected;
         } else if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
-            const range = (start, end) => {
-                return Array(end - start + 1).fill().map((_, idx) => start + idx)
-            };
-
-            const indices = range(Math.min(this.state.lastClicked, index), Math.max(this.state.lastClicked, index));
+            let indices = [];
+            for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
+                indices.push(i);
+            }
 
             for (let i of indices) {
                 sheets[i].selected = true;
@@ -197,17 +204,9 @@ class UploadSheetsDialog extends Component {
         this.setState({sheets: sheets, lastClicked: index});
     }
 
-    _onSelectionClose() {
-        this.setState({sheets: this.state.sheets.map(sheet => ({...sheet, selected: false}))});
-    }
-
     _onScoreClick(score) {
         this.setState({selectedScore: score});
     }
-
-    _onHomeClick = () => {
-        this.setState({selectedInstrument: null, selectedScore: null});
-    };
 
     _onDragStart(e) {
         const image = new Image();
@@ -218,21 +217,32 @@ class UploadSheetsDialog extends Component {
         this.props.onUploadSheets(
             this.state.selectedScore.id,
             sheetMusic.id,
-            this.state.selectedSheets.map(sheet => sheet.image));
+            this.state.sheets.filter(sheet => sheet.selected).map(sheet => sheet.image));
     };
 
     _onInstrumentClick(s) {
         this.setState({selectedInstrument: s})
     }
 
+    _onSheetDelete() {
+
+    }
+
+    _onUploadPaneClick = () => {
+        this.setState({sheets: this.state.sheets.map(sheet => ({...sheet, selected: false}))});
+    };
+
+    _onBreadcrumbScoreClick = () => {
+        this.setState({selectedInstrument: null});
+    };
+
+    _onBreadcrumbHomeClick = () => {
+        this.setState({selectedInstrument: null, selectedScore: null});
+    };
+
     render() {
         const {classes, band, open} = this.props;
-        const {
-            sheets, groups,
-            selectedScore, selectedInstrument,
-        } = this.state;
-
-        let groupsFlat = [].concat(...groups.map(group => group.sheets.map(sheet => sheet.index)));
+        const {sheets, selectedScore, selectedInstrument} = this.state;
 
         return <Dialog
             fullScreen
@@ -255,34 +265,36 @@ class UploadSheetsDialog extends Component {
             </AppBar>
             <div className={classes.content}>
                 <Paper className={classes.paper} elevation={1}>
-                    <div className={classes.uploadPane}>
+                    <div className={classes.uploadPane} onClick={this._onUploadPaneClick}>
                         <div className={classes.paneHeader}>
                             <Typography variant='body1'>
                                 Unsorted Sheets
                             </Typography>
                             <div className={classes.flex}/>
+                            {sheets.some(sheet => sheet.selected) &&
+                                <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
+                            }
                         </div>
                         <div className={classes.sheetContainer}>
-                            {sheets.filter(sheet => !groupsFlat.includes(sheet.index)).map(sheet =>
+                            {sheets.map(sheet =>
                                 <Draggable
                                     onDragStart={e => this._onDragStart(e)}
                                     classes={{root: classes.selectable}}
                                     key={sheet.index}
                                     imageURL={sheet.image}
                                     selected={sheet.selected}
-                                    onClick={() => this._onSelectableClick(sheet.index)}
+                                    onClick={e => this._onDraggableClick(e, sheet.index)}
                                 />)}
                         </div>
                     </div>
                     <div className={classes.explorerPane}>
                         <div className={classes.paneHeader}>
-                            <IconButton style={{marginLeft: -20}} onClick={this._onHomeClick}>
-                                <Home/>
-                            </IconButton>
                             <Typography variant='body1'>
-                                {!selectedScore && 'Scores'}
-                                {selectedScore && selectedScore.title}
-                                {selectedScore && selectedInstrument && ` › ${selectedInstrument.instrument.name}`}
+                                <span className={classes.anchor} onClick={this._onBreadcrumbHomeClick}>Scores</span>
+                                {selectedScore && <span> › <span className={classes.anchor} onClick={this._onBreadcrumbScoreClick}>{selectedScore.title}</span></span>}
+                                {selectedScore && selectedInstrument &&
+                                <span> › {selectedInstrument.instrument.name}</span>
+                                }
                             </Typography>
                             <div className={classes.flex}/>
                         </div>
