@@ -16,8 +16,8 @@ const styles = {
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundSize: '100% auto',
-        backgroundPosition: 'center top',
+        backgroundSize: '150% auto',
+        backgroundPosition: 'left top',
         backgroundRepeat: 'no-repeat'
     },
 
@@ -63,6 +63,8 @@ class Selectable extends React.Component {
             onClick={() => this.props.onClick()}
             onMouseEnter={() => this._onMouseEnter()}
             onMouseLeave={() => this._onMouseLeave()}
+            draggable
+            onDragStart={e => this.props.onDragStart(e)}
         >
             <div ref={ref => this.image = ref} className={classes.image} style={{backgroundImage: `url(${imageURL})`}}/>
             {(hover || selected) && <CheckCircleIcon style={{color: selected ? '#4285f4' : '#d2d2d2'}} className={classes.icon}/>}

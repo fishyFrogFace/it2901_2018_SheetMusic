@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {
-    AppBar, Button, Chip, Collapse, Dialog, Drawer, IconButton, List, ListItem, ListItemText, ListSubheader, Slide,
+    AppBar, Button, Chip, CircularProgress, Collapse, Dialog, Drawer, IconButton, List, ListItem, ListItemText,
+    ListSubheader, Paper, Slide,
     Snackbar, Toolbar,
     Typography
 } from "material-ui";
@@ -11,7 +12,7 @@ import Selectable from "../Selectable";
 
 import firebase from 'firebase';
 
-import {ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore} from "material-ui-icons";
+import {ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack} from "material-ui-icons";
 
 
 const drawerWidth = 240;
@@ -31,23 +32,32 @@ const styles = {
         display: 'flex',
         paddingTop: 10,
         paddingLeft: 10,
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        overflowY: 'auto',
+        height: 'calc(100% - 45px)',
+        boxSizing: 'border-box'
     },
 
     selectable: {
-        height: 150,
-        width: 120,
+        height: 170,
+        width: 220,
         marginRight: 10,
         marginBottom: 10
     },
 
     content: {
-        paddingTop: 64,
-        width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: drawerWidth,
-        height: 'calc(100% - 64px)',
-        overflowY: 'auto',
-        background: '#f7f7f7'
+        paddingTop: 64 + 20,
+        paddingLeft: 20,
+        paddingRight: 20,
+        paddingBottom: 20,
+        height: '100%',
+        background: 'rgb(250, 250, 250)',
+        boxSizing: 'border-box'
+    },
+
+    paper: {
+        display: 'flex',
+        height: '100%'
     },
 
     chip: {
@@ -61,7 +71,27 @@ const styles = {
 
     drawerContent: {
         paddingTop: 64,
+    },
+
+    uploadPane: {
+        flex: 1,
+        overflowY: 'auto',
+        borderRight: '1px solid rgba(0,0,0,0.12)',
+    },
+
+    explorerPane: {
+        width: '400px'
+    },
+
+    paneHeader: {
+        height: 44,
+        background: 'rgb(245, 245, 245)',
+        borderBottom: '1px solid rgba(0,0,0,0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 20px'
     }
+
 };
 
 function Transition(props) {
@@ -74,32 +104,17 @@ class UploadSheetsDialog extends Component {
         selectedSheets: [],
         groups: [],
         instruments: [],
-        open: false
+        selectedScore: null,
+        selectedInstrument: null
     };
 
-    componentDidMount() {
-        this.props.onRef(this);
-    }
-
-    componentWillUnmount() {
-        this.props.onRef(undefined);
-    }
-
     _onDialogClose() {
-        this.setState({open: false, sheets: []});
+        this.setState({sheets: []});
+        this.props.onClose();
     }
 
     _onSelectFileClick() {
         this.fileBrowser.click();
-    }
-
-    open() {
-        return new Promise((resolve, reject) => {
-            this.setState({open: true});
-
-            this.__resolve = resolve;
-            this.__reject = reject;
-        });
     }
 
     async _onFileChange(e) {
@@ -129,9 +144,7 @@ class UploadSheetsDialog extends Component {
 
                 await task.promise;
 
-                const blob = await new Promise(resolve => canvas.toBlob(blob => resolve(blob)));
-
-                return window.URL.createObjectURL(blob)
+                return canvas.toDataURL();
             }));
 
 
@@ -151,18 +164,32 @@ class UploadSheetsDialog extends Component {
         this.setState({sheets: this.state.sheets.map(sheet => ({...sheet, selected: false}))});
     }
 
-    _onUploadClick() {
-        this.setState({open: false});
-        this.__resolve(this.state.groups);
+    _onScoreClick(score) {
+        this.setState({selectedScore: score});
     }
 
-    _onListItemDrop() {
+    _onArrowBackClick = () => {
+        this.setState({selectedScore: null});
+    };
 
+    _onDragStart(e) {
+        const image = new Image();
+        e.dataTransfer.setDragImage(image, 0, 0);
     }
+
+    _onListItemDrop = (e, sheetMusic) => {
+        this.props.onUploadSheets(
+            this.state.selectedScore.id,
+            sheetMusic.id,
+            this.state.selectedSheets.map(sheet => sheet.image));
+    };
 
     render() {
-        const {classes, band} = this.props;
-        const {sheets, selectedSheets, groups, open} = this.state;
+        const {classes, band, open} = this.props;
+        const {
+            sheets, selectedSheets, groups,
+            selectedScore, selectedInstrument,
+        } = this.state;
 
         let groupsFlat = [].concat(...groups.map(group => group.sheets.map(sheet => sheet.index)));
 
@@ -178,101 +205,111 @@ class UploadSheetsDialog extends Component {
                         <Close/>
                     </IconButton>
                     <Typography variant="title" color="inherit" className={classes.flex}>
-                        Upload instruments
+                        Upload sheets
                     </Typography>
                     <Button color="inherit" onClick={() => this._onSelectFileClick()}>
-                        browse
+                        Add Sheets
                     </Button>
-                    <IconButton disabled={!sheets.length} color="inherit">
-                        <Assistant/>
-                    </IconButton>
                 </Toolbar>
             </AppBar>
-            <Drawer
-                variant="persistent"
-                anchor='left'
-                open={true}
-                classes={{
-                    paper: classes.drawer__paper,
-                }}
-            >
-                <div className={classes.drawerContent}>
-                    <ListItem button onClick={() => this.props.onAddScore()}>
-                        <Add/>
-                        <ListItemText inset primary='Create Score'/>
-                    </ListItem>
-                    <List dense>
-                        {band.scores && band.scores.map((score, index) =>
-                            <div key={index}>
-                                <ListItem button>
-                                    {!score.__in && <ExpandMore onClick={() => {score.__in = true; this.forceUpdate();}}/>}
-                                    {score.__in &&  <ExpandLess onClick={() => {score.__in = false; this.forceUpdate();}}/>}
-                                    <ListItemText inset primary={`${score.title} - ${score.composer}`}/>
-                                    <Add onClick={() => this.props.onAddInstrument(score.id)}/>
-                                </ListItem>
-                                <Collapse in={score.__in} timeout="auto">
-                                    <List dense disablePadding>
-                                        {
-                                            score.sheetMusic && score.sheetMusic.map((s, index) =>
-                                                <div onDragOver={e => e.preventDefault()}
-                                                     onDrop={e => this._onListItemDrop(e)}>
-                                                    <ListItem key={index}>
-                                                        <ListItemText inset
-                                                                      primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>
-                                                    </ListItem>
-                                                </div>
-                                            )
-                                        }
-                                    </List>
-                                </Collapse>
-                            </div>
-                        )}
-                    </List>
-                    {/*<Droppable droppableId="droppable">*/}
-                    {/*{(provided, snapshot) =>*/}
-                    {/*<div ref={provided.innerRef}>*/}
-                    {/*{selectedSheets.map((sheet, index) =>*/}
-                    {/*<Draggable key={sheet.image} draggableId={sheet.image} index={index}>*/}
-                    {/*{(provided, snapshot) =>*/}
-                    {/*<div>*/}
-                    {/*<div*/}
-                    {/*ref={provided.innerRef}*/}
-                    {/*{...provided.draggableProps}*/}
-                    {/*{...provided.dragHandleProps}*/}
-                    {/*>*/}
-                    {/*<div style={{*/}
-                    {/*width: '100%',*/}
-                    {/*height: 100,*/}
-                    {/*backgroundImage: `url(${sheet.image})`,*/}
-                    {/*backgroundSize: '100% auto'*/}
-                    {/*}}/>*/}
-                    {/*</div>*/}
-                    {/*{provided.placeholder}*/}
-                    {/*</div>*/}
-                    {/*}*/}
-                    {/*</Draggable>*/}
-                    {/*)}*/}
-                    {/*</div>*/}
-                    {/*}*/}
-                    {/*</Droppable>*/}
-                </div>
-            </Drawer>
             <div className={classes.content}>
-                <div className={classes.sheetContainer}>
-
-                    <div draggable style={{width: 100, height: 100, background: 'black'}}>
-                        LOOOL
+                <Paper className={classes.paper} elevation={1}>
+                    <div className={classes.uploadPane}>
+                        <div className={classes.paneHeader}>
+                            <Typography variant='body1'>
+                                Unsorted Sheets
+                            </Typography>
+                            <div className={classes.flex}/>
+                        </div>
+                        <div className={classes.sheetContainer}>
+                            {sheets.filter(sheet => !groupsFlat.includes(sheet.index)).map(sheet =>
+                                <Selectable
+                                    onDragStart={e => this._onDragStart(e)}
+                                    classes={{root: classes.selectable}}
+                                    key={sheet.index}
+                                    imageURL={sheet.image}
+                                    selected={sheet.selected}
+                                    onClick={() => this._onSelectableClick(sheet.index)}
+                                />)}
+                        </div>
                     </div>
+                    <div className={classes.explorerPane}>
+                        <div className={classes.paneHeader}>
+                            {
+                                selectedScore &&
+                                <IconButton style={{marginLeft: -20}} onClick={this._onArrowBackClick}>
+                                    <ArrowBack/>
+                                </IconButton>
+                            }
 
-                    {sheets.filter(sheet => !groupsFlat.includes(sheet.index)).map(sheet =>
-                        <Selectable
-                            classes={{root: classes.selectable}}
-                            key={sheet.index}
-                            imageURL={sheet.image}
-                            selected={sheet.selected}
-                            onClick={(i => () => this._onSelectableClick(i))(sheet.index)}
-                        />)}
-                </div>
+                            <Typography variant='body1'>
+                                {
+                                    !selectedScore && 'Scores'
+                                }
+                                {
+                                    selectedScore && selectedScore.title
+                                }
+                            </Typography>
+                            <div className={classes.flex}/>
+                        </div>
+                        <div style={{borderBottom: '1px solid rgba(0,0,0,0.12)'}}>
+                            {
+                                !selectedScore &&
+                                <Button fullWidth color='primary' onClick={() => this.props.onAddScore()}>
+                                    ADD SCORE
+                                </Button>
+                            }
+                            {
+                                selectedScore &&
+                                <Button fullWidth color='primary'
+                                        onClick={() => this.props.onAddInstrument(selectedScore.id)}>
+                                    ADD INSTRUMENTS
+                                </Button>
+                            }
+                        </div>
+
+                        {
+                            !selectedScore && !selectedInstrument &&
+                            <List>
+                                {band.scores && band.scores.map((score, index) =>
+                                    <ListItem key={index} button onClick={() => this._onScoreClick(score)}>
+                                        <ListItemText primary={`${score.title} - ${score.composer}`}/>
+                                    </ListItem>
+                                )}
+                            </List>
+                        }
+
+                        {
+                            selectedScore && !selectedInstrument &&
+                            <List>
+                                {selectedScore.sheetMusic && selectedScore.sheetMusic.map((s, index) =>
+                                    <div
+                                        key={index}
+                                        onDragOver={e => e.preventDefault()}
+                                        onDrop={e => this._onListItemDrop(e, s)}
+                                    >
+                                        <ListItem key={index}>
+                                            <ListItemText
+                                                primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>
+                                            {s.uploading && <CircularProgress size={24}/>}
+                                        </ListItem>
+                                    </div>
+                                )}
+                            </List>
+                        }
+
+                        {
+                            selectedScore && selectedInstrument && selectedInstrument.sheets.map((sheet, index) =>
+                                <div key={index} style={{
+                                    width: '100%',
+                                    height: 100,
+                                    backgroundImage: `url(${sheet.image})`,
+                                    backgroundSize: '100% auto'
+                                }}/>
+                            )
+                        }
+                    </div>
+                </Paper>
             </div>
             <input
                 ref={input => this.fileBrowser = input}
