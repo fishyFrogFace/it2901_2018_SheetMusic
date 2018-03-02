@@ -13,10 +13,7 @@ import firebase from 'firebase';
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 
-export const signOut = async () => {
-    await firebase.auth().signOut();
-    window.location.reload();
-};
+import Drawer from "../components/Drawer.js";
 
 const styles = {
     root: {},
@@ -46,6 +43,10 @@ class Home extends Component {
         bands: [],
         message: null
     };
+
+    signOut() {
+      return firebase.auth().signOut();
+    }
 
     componentWillMount() {
         this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
@@ -126,10 +127,6 @@ class Home extends Component {
         }
     }
 
-    _onMenuButtonClick() {
-
-    }
-
     render() {
         const {anchorEl, bands, message} = this.state;
         const {classes} = this.props;
@@ -138,13 +135,11 @@ class Home extends Component {
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
-                        </IconButton>
+                        <Drawer onSignOut={() => this.signOut()} bands={this.state.bands}/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
-                        <Button onClick={() => signOut()} style={{color: 'white'}}>Sign Out</Button>
+                        <Button onClick={() => this.signOut()} style={{color: 'white'}}>Sign Out</Button>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>

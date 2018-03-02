@@ -19,6 +19,8 @@ import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
 import UploadSheetsDialog from "../components/explorer/UploadSheetsDialog";
 import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
+import Drawer from '../components/Drawer.js';
+
 const styles = {
     root: {},
     flex: {
@@ -119,6 +121,15 @@ class Band extends Component {
         );
 
         // Band
+
+        this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
+          const bands = await Promise.all(snapshot.docs.map(async doc => {
+            const bandDoc = await doc.data().ref.get();
+            return {id: bandDoc.id, ...bandDoc.data()};
+          }));
+
+          this.setState({bands: bands});
+        });
 
         const doc = await firebase.firestore().doc(`bands/${bandId}`).get();
         this.setState({band: doc.data()});
@@ -244,9 +255,7 @@ class Band extends Component {
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onMenuButtonClick()}>
-                            <MenuIcon/>
-                        </IconButton>
+                        <Drawer onSignOut={() => this.signOut()} bands={this.state.bands}/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>
