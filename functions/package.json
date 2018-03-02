@@ -1,0 +1,12 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "dependencies": {
+    "canvas-prebuilt": "2.0.0-alpha.5",
+    "firebase-admin": "^5.9.1",
+    "firebase-functions": "^0.7.0",
+    "pdfjs-dist": "^2.0.402",
+    "@google-cloud/storage": "^1.5.2"
+  },
+  "private": true
+}
