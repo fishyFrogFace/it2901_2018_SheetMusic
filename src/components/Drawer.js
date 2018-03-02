@@ -42,7 +42,7 @@ const styles = theme => ({
   },
 });
 
-class Drawer extends React.Component {
+class SideDrawer extends React.Component {
   constructor () {
     super()
     this.state = {
@@ -109,9 +109,9 @@ class Drawer extends React.Component {
   }
 }
 
-Drawer.propTypes = {
+SideDrawer.propTypes = {
   classes: PropTypes.object.isRequired,
   bands: PropTypes.array,
 };
 
-export default withStyles(styles)(Drawer);
+export default withStyles(styles)(SideDrawer);
