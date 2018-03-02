@@ -43,9 +43,12 @@ const styles = theme => ({
 });
 
 class TemporaryDrawer extends React.Component {
-  state = {
-    left: false
-  };
+  constructor () {
+    super()
+    this.state = {
+      left: false,
+    }
+  }
 
   toggleDrawer = (side, open) => () => {
     this.setState({
@@ -54,8 +57,7 @@ class TemporaryDrawer extends React.Component {
   };
 
   render() {
-    const { classes } = this.props;
-    const bands = this.props.bands.map(band => <ListItem key={band.name}>{band.name}</ListItem>);
+    const { classes, bands } = this.props;
     return (
       <div>
       <IconButton color='default' onClick={this.toggleDrawer('left', true)}>
@@ -93,7 +95,7 @@ class TemporaryDrawer extends React.Component {
                   </ListItemIcon>
                   <ListItemText primary='My bands' />
                   </ListItem>
-                  {bands}
+                  {bands && bands.map(band => <ListItem key={band.id}>{band.name}</ListItem>)}
                 </List>
               <Divider />
               <Button onClick={() => this.props.onSignOut()} variant='raised' color='default' className={classes.buttonSignout}>
@@ -109,6 +111,7 @@ class TemporaryDrawer extends React.Component {
 
 TemporaryDrawer.propTypes = {
   classes: PropTypes.object.isRequired,
+  bands: PropTypes.array,
 };
 
 export default withStyles(styles)(TemporaryDrawer);
