@@ -11,10 +11,13 @@ import {
 } from "material-ui";
 import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
+import FileUploadIcon from 'material-ui-icons/FileUpload';
 
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
+import UploadSheetsDialog from "../components/explorer/UploadSheetsDialog";
+import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
 import Drawer from '../components/Drawer.js';
 
@@ -62,33 +65,62 @@ class Band extends Component {
     state = {
         anchorEl: null,
         selectedPage: 1,
-        band: {}
+        band: {scores: []},
+        uploadSheetsDialogOpen: false
     };
 
-    componentWillMount() {
+    unsubscribeCallbacks = [];
+
+    async componentWillMount() {
         const bandId = this.props.detail;
 
-        firebase.firestore().doc(`bands/${bandId}`).get().then(doc => {
-            this.setState({band: doc.data()});
-        });
+        this.unsubscribeCallbacks.push(
+            firebase.firestore().collection(`bands/${bandId}/scores`).onSnapshot(async snapshot => {
+                for (let change of snapshot.docChanges) {
+                    switch (change.type) {
+                        case 'added':
+                            const scoreDoc = await change.doc.data().ref.get();
 
-        this._unsubscribeScores = firebase.firestore().collection(`bands/${bandId}/scores`).onSnapshot(async snapshot => {
-            const scores = await Promise.all(snapshot.docs.map(async doc => {
-                const arrDoc = await doc.data().ref.get();
-                return {id: arrDoc.id, ...arrDoc.data()};
-            }));
+                            this.unsubscribeCallbacks.push(
+                                scoreDoc.ref.collection('sheetMusic').onSnapshot(async snapshot => {
+                                    const sheetMusic = await Promise.all(
+                                        snapshot.docs.map(async doc => {
+                                            const instrumentRef = await doc.data().instrument.get();
+                                            return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
+                                        })
+                                    );
 
-            this.setState({band: {...this.state.band, scores: scores}});
-        });
+                                    const scores = [...this.state.band.scores];
 
-        this._unsubscribeMembers = firebase.firestore().collection(`bands/${bandId}/members`).onSnapshot(async snapshot => {
-            const members = await Promise.all(snapshot.docs.map(async doc => {
-                const memberDoc = await doc.data().ref.get();
-                return {id: memberDoc.id, ...memberDoc.data()};
-            }));
+                                    scores.find(score => score.id === scoreDoc.id).sheetMusic = sheetMusic;
 
-            this.setState({band: {...this.state.band, members: members}});
-        });
+                                    this.setState({band: {...this.state.band, scores: scores}})
+                                })
+                            );
+
+                            const scores = [...(this.state.band.scores || []), {...scoreDoc.data(), id: scoreDoc.id}];
+
+                            this.setState({band: {...this.state.band, scores: scores}});
+                            break;
+                        case 'modified':
+                            break;
+                    }
+                }
+            })
+        );
+
+        this.unsubscribeCallbacks.push(
+            firebase.firestore().collection(`bands/${bandId}/members`).onSnapshot(async snapshot => {
+                const members = await Promise.all(snapshot.docs.map(async doc => {
+                    const memberDoc = await doc.data().ref.get();
+                    return {id: memberDoc.id, ...memberDoc.data()};
+                }));
+
+                this.setState({band: {...this.state.band, members: members}});
+            })
+        );
+
+        // Band
 
         this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
           const bands = await Promise.all(snapshot.docs.map(async doc => {
@@ -98,11 +130,25 @@ class Band extends Component {
 
           this.setState({bands: bands});
         });
+
+        const doc = await firebase.firestore().doc(`bands/${bandId}`).get();
+        this.setState({band: doc.data()});
+
+        // Instruments
+
+        const snapshot = await doc.ref.collection('instruments').get();
+        const instrumentsSorted = (await Promise.all(snapshot.docs
+            .map(async doc => {
+                const instrumentRef = await doc.data().ref.get();
+                return {...instrumentRef.data(), id: instrumentRef.id};
+            })))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        this.setState({band: {...this.state.band, instruments: instrumentsSorted}});
     }
 
     componentWillUnmount() {
-        this._unsubscribeScores();
-        this._unsubscribeMembers();
+        this.unsubscribeCallbacks.forEach(c => c());
     }
 
     _onAddButtonClick(e) {
@@ -113,33 +159,55 @@ class Band extends Component {
         this.setState({anchorEl: null});
     }
 
-    async _onMenuClick(type) {
+    _onMenuButtonClick() {
+
+    }
+
+    async _onAddScore() {
         let uid = this.props.user.uid;
         let bandId = this.props.detail;
+
+        const {title, composer} = await this.scoreDialog.open();
+
+        try {
+            const score = {
+                title: title,
+                composer: composer,
+                creator: firebase.firestore().doc(`users/${uid}`),
+                band: firebase.firestore().doc(`bands/${bandId}`)
+            };
+
+            let ref = await firebase.firestore().collection('scores').add(score);
+
+            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
+                ref: firebase.firestore().doc(`scores/${ref.id}`)
+            });
+            // window.location.hash = `#/score/${ref.id}`;
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    _onAddInstrument = async (scoreId) => {
+        try {
+            let {instrument, instrumentNumber} = await this.addInstrumentDialog.open();
+
+            await firebase.firestore().collection(`scores/${scoreId}/sheetMusic`).add({
+                instrument: firebase.firestore().doc(`instruments/${instrument.id}`),
+                instrumentNumber
+            })
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    async _onMenuClick(type) {
 
         this.setState({anchorEl: null});
 
         switch (type) {
             case 'score':
-                const {title, composer} = await this.scoreDialog.open();
 
-                try {
-                    const score = {
-                        title: title,
-                        composer: composer,
-                        creator: firebase.firestore().doc(`users/${uid}`),
-                        band: firebase.firestore().doc(`bands/${bandId}`)
-                    };
-
-                    let ref = await firebase.firestore().collection('scores').add(score);
-
-                    await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                        ref: firebase.firestore().doc(`scores/${ref.id}`)
-                    });
-                    window.location.hash = `#/score/${ref.id}`;
-                } catch (err) {
-                    console.log(err);
-                }
                 break;
             case 'setlist':
                 const {name} = await this.setlistDialog.open();
@@ -153,8 +221,33 @@ class Band extends Component {
         this.setState({selectedPage: value});
     }
 
+    _onUploadSheets = async (scoreId, sheetMusicId, sheetImages) => {
+        const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
+
+        await sheetMusicRef.update({uploading: true});
+
+        const taskSnapshots = await Promise.all(
+            sheetImages.map((image, index) =>
+                firebase.storage().ref(`sheets/${scoreId}/${sheetMusicId}/${index}`).putString(image, 'data_url', {contentType: 'image/png'}))
+        );
+
+        await sheetMusicRef.update({
+            uploading: firebase.firestore.FieldValue.delete(),
+            sheets: taskSnapshots.map(snap => snap.downloadURL)
+        });
+    };
+
+    async _onFileUploadButtonClick() {
+        this.setState({uploadSheetsDialogOpen: true});
+    }
+
+    _onSheetsChange = async (scoreId, sheetMusicId, sheets) => {
+        const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
+        await sheetMusicRef.update({sheets: sheets});
+    };
+
     render() {
-        const {anchorEl, selectedPage, band} = this.state;
+        const {anchorEl, selectedPage, band, uploadSheetsDialogOpen} = this.state;
 
         const {classes} = this.props;
 
@@ -166,6 +259,9 @@ class Band extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>
+                        <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
+                            <FileUploadIcon/>
+                        </IconButton>
                         <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
@@ -245,7 +341,7 @@ class Band extends Component {
                                             <List>
                                                 {band.members && band.members.map((member, index) =>
                                                     <ListItem key={index} dense button>
-                                                        <Avatar alt="Remy Sharp" src={member.photoURL}/>
+                                                        <Avatar src={member.photoURL}/>
                                                         <ListItemText primary={member.displayName}/>
                                                     </ListItem>)}
                                             </List>
@@ -257,6 +353,19 @@ class Band extends Component {
                 </div>
                 <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
                 <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
+                <AddInstrumentDialog
+                    band={band}
+                    onRef={ref => this.addInstrumentDialog = ref}
+                />
+                <UploadSheetsDialog
+                    band={band}
+                    open={uploadSheetsDialogOpen}
+                    onClose={() => this.setState({uploadSheetsDialogOpen: false})}
+                    onAddScore={() => this._onAddScore()}
+                    onAddInstrument={this._onAddInstrument}
+                    onUploadSheets={this._onUploadSheets}
+                    onSheetsChange={this._onSheetsChange}
+                />
             </div>
         );
     }

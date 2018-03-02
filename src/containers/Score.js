@@ -7,13 +7,11 @@ import Typography from 'material-ui/Typography';
 
 import {IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
-import FileUploadIcon from 'material-ui-icons/FileUpload';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 
 import firebase from 'firebase';
 import 'firebase/storage';
 
-import UploadSheetsDialog from "../components/dialogs/UploadSheetsDialog";
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 
 const styles = {
@@ -46,8 +44,7 @@ class Score extends Component {
         fileUploaderOpen: false,
         selectedInstrument: null,
         anchorEl: null,
-        score: {},
-        instruments: []
+        score: {}
     };
 
     async componentWillMount() {
@@ -79,16 +76,6 @@ class Score extends Component {
         this.setState({
             score: {...this.state.score, ...scoreDoc.data(), band: {...band.data(), id: band.id}}
         });
-
-        // Instruments
-
-        const snapshot = await firebase.firestore().collection('instruments').get();
-
-        const instrumentsSorted = snapshot.docs
-            .map(doc => ({id: doc.id, ...doc.data()}))
-            .sort((a, b) => a.name.localeCompare(b.name));
-
-        this.setState({instruments: instrumentsSorted});
     }
 
     componentWillUnmount() {
@@ -101,48 +88,6 @@ class Score extends Component {
 
     async _onArrowBackButtonClick() {
         window.location.hash = `#/band/${this.state.score.band.id}`;
-    }
-
-    async _onFileUploadButtonClick() {
-        const sheetGroups = await this.uploadDialog.open();
-
-        const scoreId = this.props.detail;
-
-        const sheetMusicRef = firebase.firestore().collection(`scores/${scoreId}/sheetMusic`);
-
-        this.setState({message: 'Starting upload...'});
-
-        for (let i = 0; i < sheetGroups.length; i++) {
-            let group = sheetGroups[i];
-
-            let instrumentRef = firebase.firestore().doc(`instruments/${group.instrument.id}`);
-            let querySnapshot = await sheetMusicRef
-                .where('instrument', '==', instrumentRef)
-                .where('instrumentNumber', '==', group.instrumentNumber)
-                .get();
-
-            const tasks = Promise.all(
-                group.sheets.map((sheet, index) =>
-                    firebase.storage().ref(`sheets/${scoreId}/${group.instrument.id}/${group.instrumentNumber}/${index}`).putString(sheet.image, 'data_url', {contentType: 'image/png'}))
-            );
-
-            this.setState({message: `Uploading instrument ${i + 1}/${sheetGroups.length}...`});
-
-            if (querySnapshot.docs.length > 0) {
-                // TODO create dialog asking whether to overwrite or not
-                const taskSnapshots = await tasks;
-                await querySnapshot.docs[0].ref.update({sheets: taskSnapshots.map(snap => snap.downloadURL)})
-            } else {
-                const taskSnapshots = await tasks;
-                await sheetMusicRef.add({
-                    instrument: instrumentRef,
-                    instrumentNumber: group.instrumentNumber,
-                    sheets: taskSnapshots.map(snap => snap.downloadURL),
-                })
-            }
-        }
-
-        this.setState({message: null});
     }
 
     _onMenuClose() {
@@ -210,7 +155,7 @@ class Score extends Component {
 
     render() {
         const {classes} = this.props;
-        const {selectedInstrument, anchorEl, score, message, instruments} = this.state;
+        const {selectedInstrument, anchorEl, score, message} = this.state;
 
         const hasSheetMusic = Boolean(score.sheetMusic && score.sheetMusic.length);
 
@@ -244,9 +189,6 @@ class Score extends Component {
                             </Select>
                         }
                         <div className={classes.flex}></div>
-                        <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
-                            <FileUploadIcon/>
-                        </IconButton>
                         <IconButton color="inherit" onClick={e => this._onMoreVertClick(e)}>
                             <MoreVertIcon/>
                         </IconButton>
@@ -267,7 +209,6 @@ class Score extends Component {
                         )
                     }
                 </div>
-                <UploadSheetsDialog instruments={instruments} onRef={ref => this.uploadDialog = ref}/>
                 <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref}/>
                 <Snackbar
                     anchorOrigin={{

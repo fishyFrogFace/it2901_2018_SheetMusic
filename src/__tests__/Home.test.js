@@ -9,7 +9,7 @@ const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
 
 describe('Home', () => {
-    it('creates BANDS_FETCH_RESPONSE after fetching bands', async () => {
+    xit('creates BANDS_FETCH_RESPONSE after fetching bands', async () => {
         const expectedActions = [
             {type: 'BANDS_FETCH_RESPONSE', bands: []}
         ];
@@ -21,7 +21,7 @@ describe('Home', () => {
         expect(store.getActions()).toEqual(expectedActions)
     });
 
-    it('creates BAND_ADD_SUCCESS after adding band', async () => {
+    xit('creates BAND_ADD_SUCCESS after adding band', async () => {
         const store = mockStore({default: {user: {uid: 'uid'}}});
 
         await store.dispatch(addBand('band_name'));
@@ -33,7 +33,7 @@ describe('Home', () => {
         expect(actions[0].band.code.length).toEqual(5);
     });
 
-    it('creates BAND_JOIN_SUCCESS after joining band', async () => {
+    xit('creates BAND_JOIN_SUCCESS after joining band', async () => {
         const store = mockStore({default: {user: {uid: 'uid'}}});
 
         firebase.__setMockBand({name: 'name', code: 'code'});

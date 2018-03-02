@@ -89,6 +89,12 @@ class Home extends Component {
 
                     let ref = await firebase.firestore().collection('bands').add(band);
 
+                    const instrumentIds = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.id);
+                    await Promise.all(
+                        instrumentIds.map(id =>
+                            ref.collection('instruments').add({ref: firebase.firestore().doc(`instruments/${id}`)}))
+                    );
+
                     await firebase.firestore().collection(`users/${uid}/bands`).add({
                         ref: firebase.firestore().doc(`bands/${ref.id}`)
                     });
