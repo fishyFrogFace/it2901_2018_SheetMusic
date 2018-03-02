@@ -9,7 +9,7 @@ const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
 
 describe('Arrangement', () => {
-    it('creates ARRANGEMENT_DETAIL_FETCH_RESPONSE fetching arrangement', async () => {
+    xit('creates ARRANGEMENT_DETAIL_FETCH_RESPONSE fetching arrangement', async () => {
         const store = mockStore({});
 
         await store.dispatch(getArrangementDetail('arr_id'));
