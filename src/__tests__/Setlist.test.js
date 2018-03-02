@@ -5,6 +5,6 @@ const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
 
 describe('Setlist', () => {
-    it('works', () => {
+    xit('works', () => {
     })
 });
