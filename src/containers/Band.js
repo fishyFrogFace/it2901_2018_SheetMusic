@@ -89,6 +89,15 @@ class Band extends Component {
 
             this.setState({band: {...this.state.band, members: members}});
         });
+
+        this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
+          const bands = await Promise.all(snapshot.docs.map(async doc => {
+            const bandDoc = await doc.data().ref.get();
+            return {id: bandDoc.id, ...bandDoc.data()};
+          }));
+
+          this.setState({bands: bands});
+        });
     }
 
     componentWillUnmount() {
