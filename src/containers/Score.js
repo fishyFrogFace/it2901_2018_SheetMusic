@@ -42,7 +42,7 @@ const styles = {
 class Score extends Component {
     state = {
         fileUploaderOpen: false,
-        selectedInstrument: null,
+        selectedSheetMusicId: null,
         anchorEl: null,
         score: {}
     };
@@ -62,9 +62,11 @@ class Score extends Component {
             const sheetMusicSorted = sheetMusic
                 .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
 
+            console.log(sheetMusicSorted);
+
             this.setState({
                 score: {...this.state.score, sheetMusic: sheetMusicSorted},
-                selectedInstrument: sheetMusicSorted.length > 0 ? sheetMusicSorted[0].id : null
+                selectedSheetMusicId: sheetMusicSorted.length > 0 ? sheetMusicSorted[0].id : null
             });
         });
 
@@ -83,7 +85,7 @@ class Score extends Component {
     }
 
     _onInstrumentSelectChange(e) {
-        this.setState({selectedInstrument: e.target.value});
+        this.setState({selectedSheetMusicId: e.target.value});
     }
 
     async _onArrowBackButtonClick() {
@@ -104,9 +106,9 @@ class Score extends Component {
         switch (type) {
             case 'download':
                 try {
-                    const {score, selectedInstrument} = this.state;
+                    const {score, selectedSheetMusicId} = this.state;
 
-                    const sheetMusic = score.sheetMusic.find(s => s.id === selectedInstrument);
+                    const sheetMusic = score.sheetMusic.find(s => s.id === selectedSheetMusicId);
 
                     const {} = await this.downloadDialog.open(sheetMusic.instrument);
 
@@ -155,7 +157,7 @@ class Score extends Component {
 
     render() {
         const {classes} = this.props;
-        const {selectedInstrument, anchorEl, score, message} = this.state;
+        const {selectedSheetMusicId, anchorEl, score, message} = this.state;
 
         const hasSheetMusic = Boolean(score.sheetMusic && score.sheetMusic.length);
 
@@ -177,7 +179,7 @@ class Score extends Component {
                                     select: classes.instrumentSelector__select,
                                     icon: classes.instrumentSelector__icon
                                 }}
-                                value={selectedInstrument}
+                                value={selectedSheetMusicId}
                                 onChange={e => this._onInstrumentSelectChange(e)}
                                 disableUnderline={true}
                             >
@@ -204,7 +206,7 @@ class Score extends Component {
                 <div className={classes.sheetContainer}>
                     {
                         hasSheetMusic &&
-                        score.sheetMusic.find(s => s.id === selectedInstrument).sheets.map((sheet, index) =>
+                        (score.sheetMusic.find(s => s.id === selectedSheetMusicId).sheets || []).map((sheet, index) =>
                             <img key={index} className={classes.sheet} src={sheet}/>
                         )
                     }
