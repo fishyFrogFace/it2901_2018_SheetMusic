@@ -16,7 +16,7 @@ import FileUploadIcon from 'material-ui-icons/FileUpload';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
-import UploadSheetsDialog from "../components/explorer/UploadSheetsDialog";
+import UploadSheetsDialog from "../components/UploadSheetsDialog";
 import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
 import Drawer from '../components/Drawer.js';
@@ -120,6 +120,13 @@ class Band extends Component {
             })
         );
 
+        this.unsubscribeCallbacks.push(
+          firebase.firestore().collection(`bands/${bandId}/unsortedSheets`).onSnapshot(snapshot => {
+              const sheets =  snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
+              this.setState({band: {...this.state.band, unsortedSheets: sheets}});
+          })
+        );
+
         // Band
 
         this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
@@ -199,7 +206,7 @@ class Band extends Component {
         } catch (err) {
             console.log(err);
         }
-    }
+    };
 
     async _onMenuClick(type) {
 
