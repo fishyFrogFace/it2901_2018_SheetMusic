@@ -172,7 +172,7 @@ class UploadSheetsDialog extends Component {
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    _onDraggableMouseDown = (e, index) => {
+    _onDraggableMouseDown = (e, groupId, index) => {
         let sheets = [...this.state.sheets];
 
         if (this.keys.MetaLeft) {
@@ -296,21 +296,27 @@ class UploadSheetsDialog extends Component {
                             </Typography>
                             <div className={classes.flex}/>
                             {sheets.some(sheet => sheet.selected) &&
-                            <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
+                                <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
                             }
                         </div>
-                        <div className={classes.sheetContainer}>
-                            {sheets.map(sheet =>
-                                <DraggableImage
-                                    onDragStart={e => this._onDragStart(e)}
-                                    classes={{root: classes.selectable}}
-                                    key={sheet.index}
-                                    imageURL={sheet.image}
-                                    selected={sheet.selected}
-                                    onClick={e => e.stopPropagation()}
-                                    onMouseDown={e => this._onDraggableMouseDown(e, sheet.index)}
-                                />)}
-                        </div>
+                        {band.unsortedSheets && band.unsortedSheets.map(group =>
+                            <div key={group.id}>
+                                <Typography variant='headline'>{group.fileName}</Typography>
+                                <div className={classes.sheetContainer}>
+                                    {group.sheets.map((sheet, index) =>
+                                        <DraggableImage
+                                            onDragStart={e => this._onDragStart(e)}
+                                            classes={{root: classes.selectable}}
+                                            key={index}
+                                            imageURL={sheet}
+                                            selected={false}
+                                            onClick={e => e.stopPropagation()}
+                                            onMouseDown={e => this._onDraggableMouseDown(e, group.id, index)}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className={classes.explorerPane}>
                         <div className={classes.paneHeader}>

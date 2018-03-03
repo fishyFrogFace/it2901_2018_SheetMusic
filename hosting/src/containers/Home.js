@@ -48,21 +48,6 @@ class Home extends Component {
       return firebase.auth().signOut();
     }
 
-    componentWillMount() {
-        this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
-            const bands = await Promise.all(snapshot.docs.map(async doc => {
-                const bandDoc = await doc.data().ref.get();
-                return {id: bandDoc.id, ...bandDoc.data()};
-            }));
-
-            this.setState({bands: bands});
-        });
-    }
-
-    componentWillUnmount() {
-        this.unsubscribe();
-    }
-
     _onAddButtonClick(e) {
         this.setState({anchorEl: e.currentTarget});
     }
@@ -128,14 +113,14 @@ class Home extends Component {
     }
 
     render() {
-        const {anchorEl, bands, message} = this.state;
-        const {classes} = this.props;
+        const {anchorEl, message} = this.state;
+        const {classes, user} = this.props;
 
         return (
             <div className={classes.root}>
                 <AppBar position="static">
                     <Toolbar>
-                        <Drawer onSignOut={() => this.signOut()} bands={this.state.bands}/>
+                        <Drawer onSignOut={() => this.signOut()} bands={user.bands}/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             ScoreButler
                         </Typography>
@@ -154,7 +139,7 @@ class Home extends Component {
                     </Toolbar>
                 </AppBar>
                 <div className={classes.grid}>
-                    {bands.map((band, index) =>
+                    {user.bands && user.bands.map((band, index) =>
                         <Card key={index} className={classes.card}
                               onClick={() => window.location.hash = `#/band/${band.id}`} elevation={1}>
                             <CardMedia

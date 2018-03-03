@@ -121,25 +121,15 @@ class Band extends Component {
         );
 
         this.unsubscribeCallbacks.push(
-          firebase.firestore().collection(`bands/${bandId}/unsortedSheets`).onSnapshot(snapshot => {
-              const sheets =  snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
-              this.setState({band: {...this.state.band, unsortedSheets: sheets}});
-          })
+            firebase.firestore().collection(`bands/${bandId}/unsortedSheets`).onSnapshot(snapshot => {
+                const sheets = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
+                console.log(sheets);
+                this.setState({band: {...this.state.band, unsortedSheets: sheets}});
+            })
         );
 
-        // Band
-
-        this.unsubscribe = firebase.firestore().collection(`users/${this.props.user.uid}/bands`).onSnapshot(async snapshot => {
-          const bands = await Promise.all(snapshot.docs.map(async doc => {
-            const bandDoc = await doc.data().ref.get();
-            return {id: bandDoc.id, ...bandDoc.data()};
-          }));
-
-          this.setState({bands: bands});
-        });
-
         const doc = await firebase.firestore().doc(`bands/${bandId}`).get();
-        this.setState({band: doc.data()});
+        this.setState({band: {...this.state.band, ...doc.data()}});
 
         // Instruments
 
@@ -256,13 +246,13 @@ class Band extends Component {
     render() {
         const {anchorEl, selectedPage, band, uploadSheetsDialogOpen} = this.state;
 
-        const {classes} = this.props;
+        const {classes, user} = this.props;
 
         return (
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        <Drawer onSignOut={() => this.signOut()} bands={this.state.bands}/>
+                        <Drawer onSignOut={() => this.signOut()} bands={user.bands}/>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>

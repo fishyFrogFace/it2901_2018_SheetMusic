@@ -37,6 +37,15 @@ class App extends React.Component {
                     await userSnapshot.ref.set({email: user.email, displayName: user.displayName, photoURL: user.photoURL});
                 }
             });
+
+            firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
+                const bands = await Promise.all(snapshot.docs.map(async doc => {
+                    const bandDoc = await doc.data().ref.get();
+                    return {id: bandDoc.id, ...bandDoc.data()};
+                }));
+
+                this.setState({user: {...this.state.user, bands: bands}});
+            })
         }
 
         let hash = (() => {
@@ -84,11 +93,9 @@ class App extends React.Component {
     render() {
         const {page, user, detail, component: Component} = this.state;
 
-        const props = {user: user, detail: detail};
-
         return (
             <div>
-                {Component && <Component {...this.props} {...props}/>}
+                {Component && <Component {...this.props} user={user} detail={detail} />}
             </div>
         )
     }
