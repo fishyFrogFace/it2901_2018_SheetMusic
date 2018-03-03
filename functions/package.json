@@ -2,11 +2,12 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "dependencies": {
-    "canvas-prebuilt": "2.0.0-alpha.5",
+    "@google-cloud/storage": "^1.5.2",
+    "child-process-promise": "^2.2.1",
     "firebase-admin": "^5.9.1",
-    "firebase-functions": "^0.7.0",
-    "pdfjs-dist": "^2.0.402",
-    "@google-cloud/storage": "^1.5.2"
+    "firebase-functions": "^0.8.1",
+    "fs-extra": "^5.0.0",
+    "gs": "git+https://github.com/sina-masnadi/node-gs.git"
   },
   "private": true
 }

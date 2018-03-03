@@ -1,82 +1,102 @@
+const path = require('path');
 const functions = require('firebase-functions');
-const Canvas = require('canvas-prebuilt');
-const PDFJS = require('pdfjs-dist');
-const Storage = require('@google-cloud/storage');
+const storage = require('@google-cloud/storage')({keyFilename: 'scores-butler-firebase-adminsdk-q3z9b-b842fdbdfd.json'});
+const spawn = require('child-process-promise').spawn;
+const gs = require('gs');
+const fs = require('fs-extra');
+const admin = require('firebase-admin');
+admin.initializeApp(functions.config().firebase);
 
-PDFJS.disableFontFace = true;
+exports.generateImagesFromPDF = functions.storage.object().onChange(event => {
+    const object = event.data;
 
-const storage = new Storage();
+    if (object.resourceState === 'not_exists') return null;
 
-function NodeCanvasFactory() {
-}
+    // Full file path (bands/<bandId>/pdfs/<fileName>.pdf)
+    const filePath = object.name;
 
-NodeCanvasFactory.prototype = {
-    create: function NodeCanvasFactory_create(width, height) {
-        let canvas = new Canvas(width, height);
-        let context = canvas.getContext('2d');
-        return {
-            canvas: canvas,
-            context: context,
-        };
-    },
+    if (!filePath.endsWith('.pdf')) return null;
 
-    reset: function NodeCanvasFactory_reset(canvasAndContext, width, height) {
-        canvasAndContext.canvas.width = width;
-        canvasAndContext.canvas.height = height;
-    },
+    const parts = filePath.split('/');
 
-    destroy: function NodeCanvasFactory_destroy(canvasAndContext) {
-        canvasAndContext.canvas.width = 0;
-        canvasAndContext.canvas.height = 0;
-        canvasAndContext.canvas = null;
-        canvasAndContext.context = null;
-    }
-};
+    if (parts[0] !== 'bands') return null;
 
+    if (parts.length !== 4) return null;
 
-exports.test = functions.https.onRequest((req, res) => {
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bandId = parts[1];
 
-    return bucket.file('pdf/score.pdf').download()
-        .then(response => {
-            const data = new Uint8Array(response[0]);
-            return PDFJS.getDocument(data);
-        })
-        .then(pdfDocument => pdfDocument.getPage(1))
-        .then(page => {
-            let viewport = page.getViewport(2.0);
+    // File name without extension (<fileName>)
+    const fileName = path.basename(filePath, '.pdf');
 
-            let canvasFactory = new NodeCanvasFactory();
+    const outputDir = `bands/${bandId}/unsortedSheets/${fileName}`;
 
-            let canvasAndContext = canvasFactory.create(viewport.width, viewport.height);
+    const localFilePath = `/tmp/${fileName}.pdf`;
+    const localOutputDir = '/tmp/output';
 
-            let renderContext = {
-                canvasContext: canvasAndContext.context,
-                viewport: viewport,
-                canvasFactory: canvasFactory
-            };
+    const bucket = storage.bucket(object.bucket);
 
-            return page.render(renderContext).then(() => canvasAndContext);
-        }).then(canvasAndContext => {
-            console.log(canvasAndContext);
+    return Promise.resolve()
+        // Create output directory
+        .then(() => fs.ensureDir(localOutputDir))
+        // Download to local directory
+        .then(() => bucket.file(filePath).download({destination: localFilePath}))
+        // Generate images
+        .then(() => new Promise((resolve, reject) => {
+            gs()
+                .batch()
+                .nopause()
+                .executablePath('ghostscript/bin/./gs')
+                .device('pngmono')
+                .res(300)
+                .output(`${localOutputDir}/page-%d`)
+                .input(localFilePath)
+                .exec((err, stdout, stderr) => {
+                    console.log(stdout);
 
-            let image = canvasAndContext.canvas.toBuffer();
-
-            return new Promise((resolve, reject) => {
-                bucket.file('image/score.png').save(image, err => {
                     if (err) {
+                        console.log(stderr);
                         reject(err);
                     } else {
                         resolve();
                     }
                 });
-            });
-        }).catch(reason => {
-            console.log(reason);
+        }))
+        // Get images
+        .then(() => fs.readdir(localOutputDir))
+        // Upload images
+        .then(fileNames => Promise.all(
+            fileNames.map((fileName, index) =>
+                bucket.upload(`${localOutputDir}/${fileName}`, {
+                    destination: `${outputDir}/${index}.png`,
+                    contentType: 'image/png'
+                })
+            ))
+        )
+        // Get urls
+        .then(uploadResponses =>
+            Promise.all(
+                uploadResponses.map(response =>
+                    response[0].getSignedUrl({
+                        action: 'read',
+                        expires: '03-09-2491'
+                    })
+                )
+            )
+        )
+        // Add document
+        .then(urlResponses =>
+            admin.firestore().collection(`bands/${bandId}/unsortedSheets`).add({
+                fileName: fileName,
+                sheets: urlResponses.map(responses => responses[0]),
+                uploadedAt: admin.firestore.FieldValue.serverTimestamp()
+            })
+        )
+        // Clean up
+        .then(() => Promise.all([fs.remove(localFilePath), fs.remove(localOutputDir)]))
+        .catch(err => {
+            console.log(err);
         });
-
 });
-
 
 
 
