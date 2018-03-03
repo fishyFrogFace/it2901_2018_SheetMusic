@@ -30,8 +30,8 @@ const styles = {
     selectable: {
         height: 170,
         width: 220,
-        marginRight: 10,
-        marginBottom: 10
+        marginRight: 15,
+        marginBottom: 15
     },
 
     content: {
@@ -47,11 +47,6 @@ const styles = {
     paper: {
         display: 'flex',
         height: '100%'
-    },
-
-    chip: {
-        marginRight: 10,
-        marginBottom: 10
     },
 
     paneHeader: {
@@ -76,8 +71,8 @@ const styles = {
 
     sheetContainer: {
         display: 'flex',
-        paddingTop: 10,
-        paddingLeft: 10,
+        paddingTop: 15,
+        paddingLeft: 15,
         flexWrap: 'wrap',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
@@ -304,13 +299,13 @@ class UploadSheetsDialog extends Component {
                             </Typography>
                             <div className={classes.flex}/>
                             {sheets.some(sheet => sheet.selected) &&
-                            <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
+                                <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
                             }
                         </div>
                         <div className={classes.paneContent}>
                             {entered && band.unsortedSheets && band.unsortedSheets.map(group =>
                                 <div key={group.id}>
-                                    <Typography variant='subheading'>{group.fileName}</Typography>
+                                    <Typography variant='body2' style={{padding: 15}}>{group.fileName}</Typography>
                                     <div className={classes.sheetContainer}>
                                         {group.sheets.map((sheet, index) =>
                                             <DraggableImage
