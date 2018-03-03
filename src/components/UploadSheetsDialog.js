@@ -96,9 +96,7 @@ function Transition(props) {
 
 class UploadSheetsDialog extends Component {
     state = {
-        sheets: [],
-        groups: [],
-        instruments: [],
+        selectedSheets: {},
         selectedScoreId: null,
         selectedSheetMusicId: null,
         lastClicked: null,
@@ -120,7 +118,7 @@ class UploadSheetsDialog extends Component {
     }
 
     _onDialogClose() {
-        this.setState({sheets: []});
+        this.setState({selectedSheets: {}});
         this.props.onClose();
     }
 
@@ -134,42 +132,20 @@ class UploadSheetsDialog extends Component {
 
         if (!e.target.files.length) return;
 
-        const PDFJS = await import('pdfjs-dist');
-
         let reader = new FileReader();
 
-        reader.addEventListener('load', async () => {
-            let pdf = await PDFJS.getDocument(new Uint8Array(reader.result));
+        reader.addEventListener('load', () => {
 
-            let images = await Promise.all([...Array(pdf.numPages).keys()].map(async n => {
-                let page = await pdf.getPage(n + 1);
-
-                let viewport = page.getViewport(2);
-
-                let canvas = document.createElement("canvas");
-                let context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                let task = page.render({canvasContext: context, viewport: viewport});
-
-                await task.promise;
-
-                return canvas.toDataURL();
-            }));
-
-
-            this.setState({sheets: images.map((image, index) => ({image: image, selected: false, index: index}))});
         });
 
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    _onDraggableMouseDown = (e, groupId, index) => {
-        let sheets = [...this.state.sheets];
+    _onDraggableMouseDown = (e, index) => {
+        const selectedSheets = {...this.state.selectedSheets};
 
         if (this.keys.MetaLeft) {
-            sheets[index].selected = !sheets[index].selected;
+            selectedSheets[index] = !selectedSheets[index];
         } else if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
             let indices = [];
             for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
@@ -177,18 +153,18 @@ class UploadSheetsDialog extends Component {
             }
 
             for (let i of indices) {
-                sheets[i].selected = true;
+                selectedSheets[i] = true;
             }
         } else {
-            if (!sheets[index].selected) {
-                for (let sheet of sheets) {
-                    sheet.selected = false;
+            if (!selectedSheets[index]) {
+                for (let key of Object.keys(selectedSheets)) {
+                   selectedSheets[key] = false;
                 }
-                sheets[index].selected = true;
+                selectedSheets[index] = true;
             }
         }
 
-        this.setState({sheets: sheets, lastClicked: index});
+        this.setState({selectedSheets: selectedSheets, lastClicked: index});
     };
 
     _onScoreClick(score) {
@@ -216,7 +192,13 @@ class UploadSheetsDialog extends Component {
     }
 
     _onUploadPaneClick = () => {
-        this.setState({sheets: this.state.sheets.map(sheet => ({...sheet, selected: false}))});
+        const selectedSheets = {...this.state.selectedSheets};
+
+        for (let key of Object.keys(selectedSheets)) {
+            selectedSheets[key] = false;
+        }
+
+        this.setState({selectedSheets: selectedSheets});
     };
 
     _onBreadcrumbScoreClick = () => {
@@ -264,7 +246,7 @@ class UploadSheetsDialog extends Component {
 
     render() {
         const {classes, band, open} = this.props;
-        const {sheets, selectedScoreId, selectedSheetMusicId, entered} = this.state;
+        const {selectedSheets, selectedScoreId, selectedSheetMusicId, entered} = this.state;
 
         const selectedScore = band.scores && band.scores.find(score => score.id === selectedScoreId);
         const selectedSheetMusic = selectedScore && selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
@@ -298,24 +280,22 @@ class UploadSheetsDialog extends Component {
                                 Unsorted Sheets
                             </Typography>
                             <div className={classes.flex}/>
-                            {sheets.some(sheet => sheet.selected) &&
-                                <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
-                            }
+                            {Object.keys(selectedSheets).length && <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>}
                         </div>
                         <div className={classes.paneContent}>
-                            {entered && band.unsortedSheets && band.unsortedSheets.map(group =>
-                                <div key={group.id}>
-                                    <Typography variant='body2' style={{padding: 15}}>{group.fileName}</Typography>
+                            {entered && band.unsortedSheets && band.unsortedSheets.map((doc, docIndex) =>
+                                <div key={doc.id}>
+                                    <Typography variant='body2' style={{padding: 15}}>{doc.fileName}</Typography>
                                     <div className={classes.sheetContainer}>
-                                        {group.sheets.map((sheet, index) =>
+                                        {doc.sheets.map((sheet, sheetIndex) =>
                                             <DraggableImage
-                                                // onDragStart={e => this._onDragStart(e)}
+                                                onDragStart={e => this._onDragStart(e)}
                                                 classes={{root: classes.selectable}}
-                                                key={index}
+                                                key={sheetIndex}
                                                 imageURL={sheet}
-                                                selected={false}
+                                                selected={selectedSheets[docIndex + sheetIndex]}
                                                 onClick={e => e.stopPropagation()}
-                                                // onMouseDown={e => this._onDraggableMouseDown(e, group.id, index)}
+                                                onMouseDown={e => this._onDraggableMouseDown(e, docIndex + sheetIndex)}
                                             />
                                         )}
                                     </div>
