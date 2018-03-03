@@ -123,7 +123,6 @@ class Band extends Component {
         this.unsubscribeCallbacks.push(
             firebase.firestore().collection(`bands/${bandId}/unsortedSheets`).onSnapshot(snapshot => {
                 const sheets = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
-                console.log(sheets);
                 this.setState({band: {...this.state.band, unsortedSheets: sheets}});
             })
         );

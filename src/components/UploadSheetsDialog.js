@@ -79,23 +79,20 @@ const styles = {
         paddingTop: 10,
         paddingLeft: 10,
         flexWrap: 'wrap',
-        overflowY: 'auto',
-        height: 'calc(100% - 45px)',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
-    },
-
-    listContainer: {
-        overflowY: 'auto',
-        height: 'calc(100% - 45px)'
     },
 
     anchor: {
         textDecoration: 'underline',
         cursor: 'pointer',
         color: 'rgb(0,188,212)'
-    }
+    },
 
+    paneContent: {
+        height: 'calc(100% - 45px)',
+        overflowY: 'auto'
+    }
 };
 
 function Transition(props) {
@@ -109,7 +106,8 @@ class UploadSheetsDialog extends Component {
         instruments: [],
         selectedScoreId: null,
         selectedSheetMusicId: null,
-        lastClicked: null
+        lastClicked: null,
+        entered: false
     };
 
     keys = {};
@@ -261,9 +259,17 @@ class UploadSheetsDialog extends Component {
         this.props.onSheetsChange(selectedScoreId, selectedSheetMusicId, sheets);
     };
 
+    _onDialogEntered = () => {
+        this.setState({entered: true});
+    };
+
+    _onDialogExiting = () => {
+        this.setState({entered: false});
+    };
+
     render() {
         const {classes, band, open} = this.props;
-        const {sheets, selectedScoreId, selectedSheetMusicId} = this.state;
+        const {sheets, selectedScoreId, selectedSheetMusicId, entered} = this.state;
 
         const selectedScore = band.scores && band.scores.find(score => score.id === selectedScoreId);
         const selectedSheetMusic = selectedScore && selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
@@ -273,6 +279,8 @@ class UploadSheetsDialog extends Component {
             open={open}
             onClose={() => this._onDialogClose()}
             transition={Transition}
+            onEntered={this._onDialogEntered}
+            onExiting={this._onDialogExiting}
         >
             <AppBar className={classes.appBar}>
                 <Toolbar>
@@ -296,27 +304,29 @@ class UploadSheetsDialog extends Component {
                             </Typography>
                             <div className={classes.flex}/>
                             {sheets.some(sheet => sheet.selected) &&
-                                <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
+                            <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
                             }
                         </div>
-                        {band.unsortedSheets && band.unsortedSheets.map(group =>
-                            <div key={group.id}>
-                                <Typography variant='headline'>{group.fileName}</Typography>
-                                <div className={classes.sheetContainer}>
-                                    {group.sheets.map((sheet, index) =>
-                                        <DraggableImage
-                                            onDragStart={e => this._onDragStart(e)}
-                                            classes={{root: classes.selectable}}
-                                            key={index}
-                                            imageURL={sheet}
-                                            selected={false}
-                                            onClick={e => e.stopPropagation()}
-                                            onMouseDown={e => this._onDraggableMouseDown(e, group.id, index)}
-                                        />
-                                    )}
+                        <div className={classes.paneContent}>
+                            {entered && band.unsortedSheets && band.unsortedSheets.map(group =>
+                                <div key={group.id}>
+                                    <Typography variant='subheading'>{group.fileName}</Typography>
+                                    <div className={classes.sheetContainer}>
+                                        {group.sheets.map((sheet, index) =>
+                                            <DraggableImage
+                                                // onDragStart={e => this._onDragStart(e)}
+                                                classes={{root: classes.selectable}}
+                                                key={index}
+                                                imageURL={sheet}
+                                                selected={false}
+                                                onClick={e => e.stopPropagation()}
+                                                // onMouseDown={e => this._onDraggableMouseDown(e, group.id, index)}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                     <div className={classes.explorerPane}>
                         <div className={classes.paneHeader}>
@@ -330,7 +340,7 @@ class UploadSheetsDialog extends Component {
                             </Typography>
                             <div className={classes.flex}/>
                         </div>
-                        <div className={classes.listContainer}>
+                        <div className={classes.paneContent}>
                             <div style={{borderBottom: '1px solid rgba(0,0,0,0.12)'}}>
                                 {
                                     !selectedScore &&
