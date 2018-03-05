@@ -16,7 +16,7 @@ import FileUploadIcon from 'material-ui-icons/FileUpload';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
-import UploadSheetsDialog from "../components/explorer/UploadSheetsDialog";
+import UploadSheetsDialog from "../components/UploadSheetsDialog";
 import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
 import Drawer from '../components/Drawer.js';

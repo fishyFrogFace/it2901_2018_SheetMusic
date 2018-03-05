@@ -10,7 +10,7 @@ import {
     ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home, Remove,
     Delete
 } from "material-ui-icons";
-import DraggableImage from '../DraggableImage'
+import DraggableImage from './DraggableImage'
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 
 
@@ -30,8 +30,8 @@ const styles = {
     selectable: {
         height: 170,
         width: 220,
-        marginRight: 10,
-        marginBottom: 10
+        marginRight: 15,
+        marginBottom: 15
     },
 
     content: {
@@ -47,11 +47,6 @@ const styles = {
     paper: {
         display: 'flex',
         height: '100%'
-    },
-
-    chip: {
-        marginRight: 10,
-        marginBottom: 10
     },
 
     paneHeader: {
@@ -76,26 +71,23 @@ const styles = {
 
     sheetContainer: {
         display: 'flex',
-        paddingTop: 10,
-        paddingLeft: 10,
+        paddingTop: 15,
+        paddingLeft: 15,
         flexWrap: 'wrap',
-        overflowY: 'auto',
-        height: 'calc(100% - 45px)',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
-    },
-
-    listContainer: {
-        overflowY: 'auto',
-        height: 'calc(100% - 45px)'
     },
 
     anchor: {
         textDecoration: 'underline',
         cursor: 'pointer',
         color: 'rgb(0,188,212)'
-    }
+    },
 
+    paneContent: {
+        height: 'calc(100% - 45px)',
+        overflowY: 'auto'
+    }
 };
 
 function Transition(props) {
@@ -104,12 +96,11 @@ function Transition(props) {
 
 class UploadSheetsDialog extends Component {
     state = {
-        sheets: [],
-        groups: [],
-        instruments: [],
+        selectedSheets: {},
         selectedScoreId: null,
         selectedSheetMusicId: null,
-        lastClicked: null
+        lastClicked: null,
+        entered: false
     };
 
     keys = {};
@@ -127,7 +118,7 @@ class UploadSheetsDialog extends Component {
     }
 
     _onDialogClose() {
-        this.setState({sheets: []});
+        this.setState({selectedSheets: {}});
         this.props.onClose();
     }
 
@@ -141,42 +132,20 @@ class UploadSheetsDialog extends Component {
 
         if (!e.target.files.length) return;
 
-        const PDFJS = await import('pdfjs-dist');
-
         let reader = new FileReader();
 
-        reader.addEventListener('load', async () => {
-            let pdf = await PDFJS.getDocument(new Uint8Array(reader.result));
+        reader.addEventListener('load', () => {
 
-            let images = await Promise.all([...Array(pdf.numPages).keys()].map(async n => {
-                let page = await pdf.getPage(n + 1);
-
-                let viewport = page.getViewport(2);
-
-                let canvas = document.createElement("canvas");
-                let context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                let task = page.render({canvasContext: context, viewport: viewport});
-
-                await task.promise;
-
-                return canvas.toDataURL();
-            }));
-
-
-            this.setState({sheets: images.map((image, index) => ({image: image, selected: false, index: index}))});
         });
 
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
     _onDraggableMouseDown = (e, index) => {
-        let sheets = [...this.state.sheets];
+        const selectedSheets = {...this.state.selectedSheets};
 
         if (this.keys.MetaLeft) {
-            sheets[index].selected = !sheets[index].selected;
+            selectedSheets[index] = !selectedSheets[index];
         } else if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
             let indices = [];
             for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
@@ -184,18 +153,18 @@ class UploadSheetsDialog extends Component {
             }
 
             for (let i of indices) {
-                sheets[i].selected = true;
+                selectedSheets[i] = true;
             }
         } else {
-            if (!sheets[index].selected) {
-                for (let sheet of sheets) {
-                    sheet.selected = false;
+            if (!selectedSheets[index]) {
+                for (let key of Object.keys(selectedSheets)) {
+                   selectedSheets[key] = false;
                 }
-                sheets[index].selected = true;
+                selectedSheets[index] = true;
             }
         }
 
-        this.setState({sheets: sheets, lastClicked: index});
+        this.setState({selectedSheets: selectedSheets, lastClicked: index});
     };
 
     _onScoreClick(score) {
@@ -223,7 +192,13 @@ class UploadSheetsDialog extends Component {
     }
 
     _onUploadPaneClick = () => {
-        this.setState({sheets: this.state.sheets.map(sheet => ({...sheet, selected: false}))});
+        const selectedSheets = {...this.state.selectedSheets};
+
+        for (let key of Object.keys(selectedSheets)) {
+            selectedSheets[key] = false;
+        }
+
+        this.setState({selectedSheets: selectedSheets});
     };
 
     _onBreadcrumbScoreClick = () => {
@@ -261,9 +236,17 @@ class UploadSheetsDialog extends Component {
         this.props.onSheetsChange(selectedScoreId, selectedSheetMusicId, sheets);
     };
 
+    _onDialogEntered = () => {
+        this.setState({entered: true});
+    };
+
+    _onDialogExiting = () => {
+        this.setState({entered: false});
+    };
+
     render() {
         const {classes, band, open} = this.props;
-        const {sheets, selectedScoreId, selectedSheetMusicId} = this.state;
+        const {selectedSheets, selectedScoreId, selectedSheetMusicId, entered} = this.state;
 
         const selectedScore = band.scores && band.scores.find(score => score.id === selectedScoreId);
         const selectedSheetMusic = selectedScore && selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
@@ -273,6 +256,8 @@ class UploadSheetsDialog extends Component {
             open={open}
             onClose={() => this._onDialogClose()}
             transition={Transition}
+            onEntered={this._onDialogEntered}
+            onExiting={this._onDialogExiting}
         >
             <AppBar className={classes.appBar}>
                 <Toolbar>
@@ -295,21 +280,27 @@ class UploadSheetsDialog extends Component {
                                 Unsorted Sheets
                             </Typography>
                             <div className={classes.flex}/>
-                            {sheets.some(sheet => sheet.selected) &&
-                            <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>
-                            }
+                            {Object.keys(selectedSheets).length > 0 && <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>}
                         </div>
-                        <div className={classes.sheetContainer}>
-                            {sheets.map(sheet =>
-                                <DraggableImage
-                                    onDragStart={e => this._onDragStart(e)}
-                                    classes={{root: classes.selectable}}
-                                    key={sheet.index}
-                                    imageURL={sheet.image}
-                                    selected={sheet.selected}
-                                    onClick={e => e.stopPropagation()}
-                                    onMouseDown={e => this._onDraggableMouseDown(e, sheet.index)}
-                                />)}
+                        <div className={classes.paneContent}>
+                            {entered && band.unsortedSheets && band.unsortedSheets.map((doc, docIndex) =>
+                                <div key={doc.id}>
+                                    <Typography variant='body2' style={{padding: 15}}>{doc.fileName}</Typography>
+                                    <div className={classes.sheetContainer}>
+                                        {doc.sheets.map((sheet, sheetIndex) =>
+                                            <DraggableImage
+                                                onDragStart={e => this._onDragStart(e)}
+                                                classes={{root: classes.selectable}}
+                                                key={sheetIndex}
+                                                imageURL={sheet}
+                                                selected={selectedSheets[docIndex + sheetIndex]}
+                                                onClick={e => e.stopPropagation()}
+                                                onMouseDown={e => this._onDraggableMouseDown(e, docIndex + sheetIndex)}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className={classes.explorerPane}>
@@ -324,7 +315,7 @@ class UploadSheetsDialog extends Component {
                             </Typography>
                             <div className={classes.flex}/>
                         </div>
-                        <div className={classes.listContainer}>
+                        <div className={classes.paneContent}>
                             <div style={{borderBottom: '1px solid rgba(0,0,0,0.12)'}}>
                                 {
                                     !selectedScore &&
