@@ -10,6 +10,7 @@ admin.initializeApp(functions.config().firebase);
 
 const storage = Storage({keyFilename: 'service-account-key.json'});
 
+// Extracts ZIP with pdfs
 exports.extractZip = functions.storage.object().onChange(async event => {
     const object = event.data;
 
@@ -56,7 +57,7 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
                     await new Promise((resolve, reject) => {
                         file.stream()
-                            .pipe(bucket.file(`bands/${bandId}/pdfs/${name}`).createWriteStream())
+                            .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
                             .on('error', reject)
                             .on('finish', resolve)
 
@@ -72,90 +73,82 @@ exports.extractZip = functions.storage.object().onChange(async event => {
     }
 });
 
-// exports.generateImagesFromPDF = functions.storage.object().onChange(async event => {
-//     const object = event.data;
-//
-//     if (object.resourceState === 'not_exists') return null;
-//
-//     // Full file path (bands/<bandId>/pdfs/<fileName>.pdf)
-//     const filePath = object.name;
-//
-//     if (!filePath.endsWith('.pdf')) return null;
-//
-//     const parts = filePath.split('/');
-//
-//     if (parts[0] !== 'bands') return null;
-//
-//     if (parts.length !== 4) return null;
-//
-//     const bandId = parts[1];
-//
-//     // File name without extension (<fileName>)
-//     const fileName = path.basename(filePath, '.pdf');
-//
-//     const outputDir = `bands/${bandId}/unsortedSheets/${fileName}`;
-//
-//     const localFilePath = `/tmp/${fileName}.pdf`;
-//     const localOutputDir = '/tmp/output';
-//
-//     const bucket = storage.bucket(object.bucket);
-//
-//     // Create output directory
-//     await fs.ensureDir(localOutputDir);
-//
-//     // Download to local directory
-//     await bucket.file(filePath).download({destination: localFilePath});
-//
-//     // Generate images
-//     await new Promise((resolve, reject) => {
-//         gs()
-//             .batch()
-//             .nopause()
-//             .executablePath('ghostscript/bin/./gs')
-//             .device('pngmono')
-//             .res(300)
-//             .output(`${localOutputDir}/page-%d`)
-//             .input(localFilePath)
-//             .exec((err, stdout, stderr) => {
-//                 console.log(stdout);
-//
-//                 if (err) {
-//                     console.log(stderr);
-//                     reject(err);
-//                 } else {
-//                     resolve();
-//                 }
-//             });
-//     });
-//
-//     // Get images
-//     const fileNames = await fs.readdir(localOutputDir);
-//
-//     // Upload images
-//     const uploadResponses = await Promise.all(
-//         fileNames.map((fileName, index) =>
-//             bucket.upload(`${localOutputDir}/${fileName}`, {
-//                 destination: `${outputDir}/${index}.png`
-//             })
-//         ));
-//
-//     // Get urls
-//     const urlResponses = await Promise.all(
-//         uploadResponses.map(response =>
-//             response[0].getSignedUrl({
-//                 action: 'read',
-//                 expires: '03-09-2491'
-//             })
-//         )
-//     );
-//
-//     // Add document
-//     await admin.firestore().collection(`bands/${bandId}/unsortedSheets`).add({
-//         fileName: fileName,
-//         sheets: urlResponses.map(responses => responses[0]),
-//         uploadedAt: admin.firestore.FieldValue.serverTimestamp()
-//     });
-//
-//     // Clean up
-//     await Promise.all([fs.remove(localFilePath), fs.remove(localOutputDir)]);
-// });
+// Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
+exports.addPDF = functions.storage.object().onChange(async event => {
+    const object = event.data;
+
+    if (object.resourceState === 'not_exists') return null;
+
+    // Full file path (bands/<bandId>/input/<fileName>.pdf)
+    const filePath = object.name;
+
+    if (!filePath.endsWith('.pdf')) return null;
+
+    const pdfPathParts = filePath.split('/');
+
+    if (pdfPathParts[0] !== 'bands' || pdfPathParts[2] !== 'input') return null;
+
+    const bandId = pdfPathParts[1];
+
+    // File name without extension
+    const fileName = path.basename(filePath, '.pdf');
+
+    // Create storage bucket
+    const bucket = storage.bucket(object.bucket);
+
+    try {
+        // Download to local directory
+        await bucket.file(filePath).download({destination: `/tmp/${fileName}.pdf`});
+
+        // Create output directory
+        await fs.ensureDir(`/tmp/output`);
+
+        // Generate thumbnail
+        await spawn('ghostscript/bin/./gs', [
+            '-dBATCH',
+            '-dNOPAUSE',
+            '-sDEVICE=pngmono',
+            `-sOutputFile=/tmp/output/${fileName}-%00d.png`,
+            '-r300',
+            `/tmp/${fileName}.pdf`
+        ]);
+
+
+        // Read output directory
+        const imageFileNames = await fs.readdir(`/tmp/output`);
+
+        // Upload images
+        const uploadResponses = await Promise.all(
+            imageFileNames.map((name, index) =>
+                bucket.upload(`/tmp/output/${name}`, {
+                    destination: `bands/${bandId}/pdfs/${fileName}/${index}.png`,
+                    metadata: {
+                        contentType: 'image/png'
+                    }
+                })
+            ));
+
+        // Get urls
+        const urlResponses = await Promise.all(
+            uploadResponses.map(([file]) =>
+                file.getSignedUrl({
+                    action: 'read',
+                    expires: '03-09-2491'
+                })
+            )
+        );
+
+        // Add document
+        await admin.firestore().collection(`bands/${bandId}/unsortedPDFs`).add({
+            name: fileName,
+            pages: urlResponses.map(([url]) => url),
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Clean up
+        await Promise.all([fs.remove(`/tmp/${fileName}.pdf`), fs.remove(`/tmp/output`)]);
+        await bucket.file(filePath).delete();
+    } catch (err) {
+        console.log(err);
+    }
+});

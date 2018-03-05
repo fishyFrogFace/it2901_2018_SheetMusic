@@ -11,11 +11,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const path = require("path");
 const Storage = require("@google-cloud/storage");
+const child_process_promise_1 = require("child-process-promise");
 const fs = require("fs-extra");
 const admin = require("firebase-admin");
 const unzipper = require("unzipper");
 admin.initializeApp(functions.config().firebase);
 const storage = Storage({ keyFilename: 'service-account-key.json' });
+// Extracts ZIP with pdfs
 exports.extractZip = functions.storage.object().onChange((event) => __awaiter(this, void 0, void 0, function* () {
     const object = event.data;
     if (object.resourceState === 'not_exists')
@@ -50,7 +52,7 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
             yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({ name: name });
             yield new Promise((resolve, reject) => {
                 file.stream()
-                    .pipe(bucket.file(`bands/${bandId}/pdfs/${name}`).createWriteStream())
+                    .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
                     .on('error', reject)
                     .on('finish', resolve);
             });
@@ -63,91 +65,63 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
         console.log(err);
     }
 }));
-// exports.generateImagesFromPDF = functions.storage.object().onChange(async event => {
-//     const object = event.data;
-//
-//     if (object.resourceState === 'not_exists') return null;
-//
-//     // Full file path (bands/<bandId>/pdfs/<fileName>.pdf)
-//     const filePath = object.name;
-//
-//     if (!filePath.endsWith('.pdf')) return null;
-//
-//     const parts = filePath.split('/');
-//
-//     if (parts[0] !== 'bands') return null;
-//
-//     if (parts.length !== 4) return null;
-//
-//     const bandId = parts[1];
-//
-//     // File name without extension (<fileName>)
-//     const fileName = path.basename(filePath, '.pdf');
-//
-//     const outputDir = `bands/${bandId}/unsortedSheets/${fileName}`;
-//
-//     const localFilePath = `/tmp/${fileName}.pdf`;
-//     const localOutputDir = '/tmp/output';
-//
-//     const bucket = storage.bucket(object.bucket);
-//
-//     // Create output directory
-//     await fs.ensureDir(localOutputDir);
-//
-//     // Download to local directory
-//     await bucket.file(filePath).download({destination: localFilePath});
-//
-//     // Generate images
-//     await new Promise((resolve, reject) => {
-//         gs()
-//             .batch()
-//             .nopause()
-//             .executablePath('ghostscript/bin/./gs')
-//             .device('pngmono')
-//             .res(300)
-//             .output(`${localOutputDir}/page-%d`)
-//             .input(localFilePath)
-//             .exec((err, stdout, stderr) => {
-//                 console.log(stdout);
-//
-//                 if (err) {
-//                     console.log(stderr);
-//                     reject(err);
-//                 } else {
-//                     resolve();
-//                 }
-//             });
-//     });
-//
-//     // Get images
-//     const fileNames = await fs.readdir(localOutputDir);
-//
-//     // Upload images
-//     const uploadResponses = await Promise.all(
-//         fileNames.map((fileName, index) =>
-//             bucket.upload(`${localOutputDir}/${fileName}`, {
-//                 destination: `${outputDir}/${index}.png`
-//             })
-//         ));
-//
-//     // Get urls
-//     const urlResponses = await Promise.all(
-//         uploadResponses.map(response =>
-//             response[0].getSignedUrl({
-//                 action: 'read',
-//                 expires: '03-09-2491'
-//             })
-//         )
-//     );
-//
-//     // Add document
-//     await admin.firestore().collection(`bands/${bandId}/unsortedSheets`).add({
-//         fileName: fileName,
-//         sheets: urlResponses.map(responses => responses[0]),
-//         uploadedAt: admin.firestore.FieldValue.serverTimestamp()
-//     });
-//
-//     // Clean up
-//     await Promise.all([fs.remove(localFilePath), fs.remove(localOutputDir)]);
-// });
+// Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
+exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, void 0, void 0, function* () {
+    const object = event.data;
+    if (object.resourceState === 'not_exists')
+        return null;
+    // Full file path (bands/<bandId>/input/<fileName>.pdf)
+    const filePath = object.name;
+    if (!filePath.endsWith('.pdf'))
+        return null;
+    const pdfPathParts = filePath.split('/');
+    if (pdfPathParts[0] !== 'bands' || pdfPathParts[2] !== 'input')
+        return null;
+    const bandId = pdfPathParts[1];
+    // File name without extension
+    const fileName = path.basename(filePath, '.pdf');
+    // Create storage bucket
+    const bucket = storage.bucket(object.bucket);
+    try {
+        // Download to local directory
+        yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.pdf` });
+        // Create output directory
+        yield fs.ensureDir(`/tmp/output`);
+        // Generate thumbnail
+        yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
+            '-dBATCH',
+            '-dNOPAUSE',
+            '-sDEVICE=pngmono',
+            `-sOutputFile=/tmp/output/${fileName}-%00d.png`,
+            '-r300',
+            `/tmp/${fileName}.pdf`
+        ]);
+        // Read output directory
+        const imageFileNames = yield fs.readdir(`/tmp/output`);
+        // Upload images
+        const uploadResponses = yield Promise.all(imageFileNames.map((name, index) => bucket.upload(`/tmp/output/${name}`, {
+            destination: `bands/${bandId}/pdfs/${fileName}/${index}.png`,
+            metadata: {
+                contentType: 'image/png'
+            }
+        })));
+        // Get urls
+        const urlResponses = yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
+            action: 'read',
+            expires: '03-09-2491'
+        })));
+        // Add document
+        yield admin.firestore().collection(`bands/${bandId}/unsortedPDFs`).add({
+            name: fileName,
+            pages: urlResponses.map(([url]) => url),
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        // Clean up
+        yield Promise.all([fs.remove(`/tmp/${fileName}.pdf`), fs.remove(`/tmp/output`)]);
+        yield bucket.file(filePath).delete();
+    }
+    catch (err) {
+        console.log(err);
+    }
+}));
 //# sourceMappingURL=index.js.map

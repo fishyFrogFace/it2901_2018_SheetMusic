@@ -61,7 +61,7 @@ const styles = {
     uploadPane: {
         flex: 1,
         height: '100%',
-        borderRight: '1px solid rgba(0,0,0,0.12)',
+        borderRight: '1px solid rgba(0,0,0,0.12)'
     },
 
     explorerPane: {
@@ -69,7 +69,7 @@ const styles = {
         height: '100%'
     },
 
-    sheetContainer: {
+    flexWrapContainer: {
         display: 'flex',
         paddingTop: 15,
         paddingLeft: 15,
@@ -158,7 +158,7 @@ class UploadSheetsDialog extends Component {
         } else {
             if (!selectedSheets[index]) {
                 for (let key of Object.keys(selectedSheets)) {
-                   selectedSheets[key] = false;
+                    selectedSheets[key] = false;
                 }
                 selectedSheets[index] = true;
             }
@@ -273,136 +273,128 @@ class UploadSheetsDialog extends Component {
                 </Toolbar>
             </AppBar>
             <div className={classes.content}>
-                <Paper className={classes.paper} elevation={1}>
-                    <div className={classes.uploadPane} onClick={this._onUploadPaneClick}>
-                        <div className={classes.paneHeader}>
-                            <Typography variant='body1'>
-                                PDFS
-                            </Typography>
-                            <div className={classes.flex}/>
-                            {Object.keys(selectedSheets).length > 0 && <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>}
-                        </div>
-                        <div className={classes.paneContent}>
-                            {entered && band.pdfs && band.pdfs.map((doc, docIndex) =>
-                                <div key={doc.id}>
-                                    <Typography variant='body2' style={{padding: 15}}>{doc.name}</Typography>
-                                    {/*<div className={classes.sheetContainer}>*/}
-                                        {/*{doc.pdfs.map((sheet, sheetIndex) =>*/}
-                                            {/*<DraggableImage*/}
-                                                {/*onDragStart={e => this._onDragStart(e)}*/}
-                                                {/*classes={{root: classes.selectable}}*/}
-                                                {/*key={sheetIndex}*/}
-                                                {/*imageURL={sheet}*/}
-                                                {/*selected={selectedSheets[docIndex + sheetIndex]}*/}
-                                                {/*onClick={e => e.stopPropagation()}*/}
-                                                {/*onMouseDown={e => this._onDraggableMouseDown(e, docIndex + sheetIndex)}*/}
-                                            {/*/>*/}
-                                        {/*)}*/}
-                                    {/*</div>*/}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <div className={classes.explorerPane}>
-                        <div className={classes.paneHeader}>
-                            <Typography variant='body1'>
-                                <span className={classes.anchor} onClick={this._onBreadcrumbHomeClick}>Scores</span>
-                                {selectedScore && <span> › <span className={classes.anchor}
-                                                                 onClick={this._onBreadcrumbScoreClick}>{selectedScore.title}</span></span>}
-                                {selectedScore && selectedSheetMusic &&
-                                <span> › {selectedSheetMusic.instrument.name}</span>
-                                }
-                            </Typography>
-                            <div className={classes.flex}/>
-                        </div>
-                        <div className={classes.paneContent}>
-                            <div style={{borderBottom: '1px solid rgba(0,0,0,0.12)'}}>
-                                {
-                                    !selectedScore &&
-                                    <Button fullWidth color='primary' onClick={() => this.props.onAddScore()}>
-                                        ADD SCORE
-                                    </Button>
-                                }
-                                {
-                                    selectedScore && !selectedSheetMusic &&
-                                    <Button fullWidth color='primary'
-                                            onClick={() => this.props.onAddInstrument(selectedScore.id)}>
-                                        ADD INSTRUMENTS
-                                    </Button>
-                                }
-                            </div>
+                {entered && band.unsortedPDFs && band.unsortedPDFs.map(doc =>
+                    <Paper elevation={1} key={doc.id} style={{margin: 15, width: 300}}>
+                        <Typography variant='body2' style={{padding: 15}}>{doc.name}</Typography>
+                    </Paper>
+                )}
 
-                            {
-                                !selectedScore && !selectedSheetMusic &&
-                                <List>
-                                    {band.scores && band.scores.map((score, index) =>
-                                        <ListItem key={index} button onClick={() => this._onScoreClick(score)}>
-                                            <ListItemText primary={`${score.title} - ${score.composer}`}/>
-                                        </ListItem>
-                                    )}
-                                </List>
-                            }
+                {/*<Paper className={classes.paper} elevation={1}>*/}
+                    {/*<div className={classes.uploadPane} onClick={this._onUploadPaneClick}>*/}
+                        {/*<div className={classes.paneHeader}>*/}
+                            {/*<Typography variant='body1'>*/}
+                                {/*Unsorted PDFs*/}
+                            {/*</Typography>*/}
+                            {/*<div className={classes.flex}/>*/}
+                            {/*{Object.keys(selectedSheets).length > 0 &&*/}
+                            {/*<IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>}*/}
+                        {/*</div>*/}
+                        {/*<div className={classes.paneContent}>*/}
+                            {/*<div className={classes.flexWrapContainer}>*/}
 
-                            {
-                                selectedScore && !selectedSheetMusic &&
-                                <List>
-                                    {selectedScore.sheetMusic && selectedScore.sheetMusic.map((s, index) =>
-                                        <div
-                                            key={index}
-                                            onDragOver={e => e.preventDefault()}
-                                            onDrop={e => this._onListItemDrop(e, s)}
-                                        >
-                                            <ListItem button key={index} onClick={() => this._onInstrumentClick(s)}>
-                                                <ListItemText
-                                                    primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>
-                                                {s.uploading && <CircularProgress size={24}/>}
-                                                {!s.uploading &&
-                                                <Typography
-                                                    variant='body1'>{s.sheets ? s.sheets.length : 0}</Typography>}
-                                            </ListItem>
-                                        </div>
-                                    )}
-                                </List>
-                            }
+                            {/*</div>*/}
+                        {/*</div>*/}
+                    {/*</div>*/}
+                    {/*<div className={classes.explorerPane}>*/}
+                        {/*<div className={classes.paneHeader}>*/}
+                            {/*<Typography variant='body1'>*/}
+                                {/*<span className={classes.anchor} onClick={this._onBreadcrumbHomeClick}>Scores</span>*/}
+                                {/*{selectedScore && <span> › <span className={classes.anchor}*/}
+                                                                 {/*onClick={this._onBreadcrumbScoreClick}>{selectedScore.title}</span></span>}*/}
+                                {/*{selectedScore && selectedSheetMusic &&*/}
+                                {/*<span> › {selectedSheetMusic.instrument.name}</span>*/}
+                                {/*}*/}
+                            {/*</Typography>*/}
+                            {/*<div className={classes.flex}/>*/}
+                        {/*</div>*/}
+                        {/*<div className={classes.paneContent}>*/}
+                            {/*<div style={{borderBottom: '1px solid rgba(0,0,0,0.12)'}}>*/}
+                                {/*{*/}
+                                    {/*!selectedScore &&*/}
+                                    {/*<Button fullWidth color='primary' onClick={() => this.props.onAddScore()}>*/}
+                                        {/*ADD SCORE*/}
+                                    {/*</Button>*/}
+                                {/*}*/}
+                                {/*{*/}
+                                    {/*selectedScore && !selectedSheetMusic &&*/}
+                                    {/*<Button fullWidth color='primary'*/}
+                                            {/*onClick={() => this.props.onAddInstrument(selectedScore.id)}>*/}
+                                        {/*ADD INSTRUMENTS*/}
+                                    {/*</Button>*/}
+                                {/*}*/}
+                            {/*</div>*/}
 
-                            {
-                                selectedScore && selectedSheetMusic &&
-                                <DragDropContext onDragEnd={this._onDragEnd}>
-                                    <Droppable droppableId="droppable">
-                                        {(provided, snapshot) =>
-                                            <div ref={provided.innerRef}>
-                                                {
-                                                    selectedSheetMusic.sheets.map((sheet, index) =>
-                                                        <Draggable key={index} draggableId={sheet} index={index}>
-                                                            {(provided, snapshot) =>
-                                                                <div>
-                                                                    <div
-                                                                        ref={provided.innerRef}
-                                                                        {...provided.draggableProps}
-                                                                        {...provided.dragHandleProps}
-                                                                    >
-                                                                        <div style={{
-                                                                            width: '100%',
-                                                                            height: 100,
-                                                                            backgroundImage: `url(${sheet})`,
-                                                                            backgroundSize: '100% auto'
-                                                                        }}/>
-                                                                    </div>
-                                                                    {provided.placeholder}
-                                                                </div>
-                                                            }
-                                                        </Draggable>
-                                                    )
-                                                }
-                                                {provided.placeholder}
-                                            </div>
-                                        }
-                                    </Droppable>
-                                </DragDropContext>
-                            }
-                        </div>
-                    </div>
-                </Paper>
+                            {/*{*/}
+                                {/*!selectedScore && !selectedSheetMusic &&*/}
+                                {/*<List>*/}
+                                    {/*{band.scores && band.scores.map((score, index) =>*/}
+                                        {/*<ListItem key={index} button onClick={() => this._onScoreClick(score)}>*/}
+                                            {/*<ListItemText primary={`${score.title} - ${score.composer}`}/>*/}
+                                        {/*</ListItem>*/}
+                                    {/*)}*/}
+                                {/*</List>*/}
+                            {/*}*/}
+
+                            {/*{*/}
+                                {/*selectedScore && !selectedSheetMusic &&*/}
+                                {/*<List>*/}
+                                    {/*{selectedScore.sheetMusic && selectedScore.sheetMusic.map((s, index) =>*/}
+                                        {/*<div*/}
+                                            {/*key={index}*/}
+                                            {/*onDragOver={e => e.preventDefault()}*/}
+                                            {/*onDrop={e => this._onListItemDrop(e, s)}*/}
+                                        {/*>*/}
+                                            {/*<ListItem button key={index} onClick={() => this._onInstrumentClick(s)}>*/}
+                                                {/*<ListItemText*/}
+                                                    {/*primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>*/}
+                                                {/*{s.uploading && <CircularProgress size={24}/>}*/}
+                                                {/*{!s.uploading &&*/}
+                                                {/*<Typography*/}
+                                                    {/*variant='body1'>{s.sheets ? s.sheets.length : 0}</Typography>}*/}
+                                            {/*</ListItem>*/}
+                                        {/*</div>*/}
+                                    {/*)}*/}
+                                {/*</List>*/}
+                            {/*}*/}
+
+                            {/*{*/}
+                                {/*selectedScore && selectedSheetMusic &&*/}
+                                {/*<DragDropContext onDragEnd={this._onDragEnd}>*/}
+                                    {/*<Droppable droppableId="droppable">*/}
+                                        {/*{(provided, snapshot) =>*/}
+                                            {/*<div ref={provided.innerRef}>*/}
+                                                {/*{*/}
+                                                    {/*selectedSheetMusic.sheets.map((sheet, index) =>*/}
+                                                        {/*<Draggable key={index} draggableId={sheet} index={index}>*/}
+                                                            {/*{(provided, snapshot) =>*/}
+                                                                {/*<div>*/}
+                                                                    {/*<div*/}
+                                                                        {/*ref={provided.innerRef}*/}
+                                                                        {/*{...provided.draggableProps}*/}
+                                                                        {/*{...provided.dragHandleProps}*/}
+                                                                    {/*>*/}
+                                                                        {/*<div style={{*/}
+                                                                            {/*width: '100%',*/}
+                                                                            {/*height: 100,*/}
+                                                                            {/*backgroundImage: `url(${sheet})`,*/}
+                                                                            {/*backgroundSize: '100% auto'*/}
+                                                                        {/*}}/>*/}
+                                                                    {/*</div>*/}
+                                                                    {/*{provided.placeholder}*/}
+                                                                {/*</div>*/}
+                                                            {/*}*/}
+                                                        {/*</Draggable>*/}
+                                                    {/*)*/}
+                                                {/*}*/}
+                                                {/*{provided.placeholder}*/}
+                                            {/*</div>*/}
+                                        {/*}*/}
+                                    {/*</Droppable>*/}
+                                {/*</DragDropContext>*/}
+                            {/*}*/}
+                        {/*</div>*/}
+                    {/*</div>*/}
+                {/*</Paper>*/}
             </div>
             <input
                 ref={input => this.fileBrowser = input}
