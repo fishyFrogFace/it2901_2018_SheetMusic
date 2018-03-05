@@ -12,6 +12,7 @@ import {
 } from "material-ui-icons";
 import DraggableImage from './DraggableImage'
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
+import Selectable from "./Selectable";
 
 
 const drawerWidth = 240;
@@ -28,19 +29,15 @@ const styles = {
     },
 
     selectable: {
-        height: 170,
-        width: 220,
-        marginRight: 15,
-        marginBottom: 15
+        height: 250,
+        width: 250,
+        marginRight: 20,
+        marginBottom: 20
     },
 
     content: {
-        paddingTop: 64 + 20,
-        paddingLeft: 20,
-        paddingRight: 20,
-        paddingBottom: 20,
+        paddingTop: 64,
         height: '100%',
-        background: 'rgb(250, 250, 250)',
         boxSizing: 'border-box'
     },
 
@@ -71,8 +68,8 @@ const styles = {
 
     flexWrapContainer: {
         display: 'flex',
-        paddingTop: 15,
-        paddingLeft: 15,
+        paddingTop: 20,
+        paddingLeft: 20,
         flexWrap: 'wrap',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
@@ -141,12 +138,10 @@ class UploadSheetsDialog extends Component {
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    _onDraggableMouseDown = (e, index) => {
+    _onSelectableMouseDown = (e, index) => {
         const selectedSheets = {...this.state.selectedSheets};
 
-        if (this.keys.MetaLeft) {
-            selectedSheets[index] = !selectedSheets[index];
-        } else if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
+        if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
             let indices = [];
             for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
                 indices.push(i);
@@ -156,12 +151,7 @@ class UploadSheetsDialog extends Component {
                 selectedSheets[i] = true;
             }
         } else {
-            if (!selectedSheets[index]) {
-                for (let key of Object.keys(selectedSheets)) {
-                    selectedSheets[key] = false;
-                }
-                selectedSheets[index] = true;
-            }
+            selectedSheets[index] = !selectedSheets[index];
         }
 
         this.setState({selectedSheets: selectedSheets, lastClicked: index});
@@ -273,11 +263,18 @@ class UploadSheetsDialog extends Component {
                 </Toolbar>
             </AppBar>
             <div className={classes.content}>
-                {entered && band.unsortedPDFs && band.unsortedPDFs.map(doc =>
-                    <Paper elevation={1} key={doc.id} style={{margin: 15, width: 300}}>
-                        <Typography variant='body2' style={{padding: 15}}>{doc.name}</Typography>
-                    </Paper>
-                )}
+                <div className={classes.flexWrapContainer}>
+                    {entered && band.pdfs && band.pdfs.map((doc, docIndex) =>
+                        <Selectable
+                            key={doc.id}
+                            classes={{root: classes.selectable}}
+                            title={doc.name + '.pdf'}
+                            imageURL={doc.pages[0]}
+                            selected={selectedSheets[docIndex]}
+                            onMouseDown={e => this._onSelectableMouseDown(e, docIndex)}
+                        />
+                    )}
+                </div>
 
                 {/*<Paper className={classes.paper} elevation={1}>*/}
                     {/*<div className={classes.uploadPane} onClick={this._onUploadPaneClick}>*/}

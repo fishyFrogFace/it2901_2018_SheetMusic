@@ -128,10 +128,10 @@ class Band extends Component {
         // );
 
         this.unsubscribeCallbacks.push(
-            firebase.firestore().collection(`bands/${bandId}/unsortedPDFs`).onSnapshot(snapshot => {
+            firebase.firestore().collection(`bands/${bandId}/pdfs`).onSnapshot(snapshot => {
                 const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
                 const pdfsSorted = pdfs.sort((a, b) => a.name.localeCompare(b.name));
-                this.setState({band: {...this.state.band, unsortedPDFs: pdfsSorted}});
+                this.setState({band: {...this.state.band, pdfs: pdfsSorted}});
             })
         );
 

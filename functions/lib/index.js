@@ -111,7 +111,7 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
             expires: '03-09-2491'
         })));
         // Add document
-        yield admin.firestore().collection(`bands/${bandId}/unsortedPDFs`).add({
+        yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
             name: fileName,
             pages: urlResponses.map(([url]) => url),
             uploadedAt: admin.firestore.FieldValue.serverTimestamp()

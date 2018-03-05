@@ -139,7 +139,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
         );
 
         // Add document
-        await admin.firestore().collection(`bands/${bandId}/unsortedPDFs`).add({
+        await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
             name: fileName,
             pages: urlResponses.map(([url]) => url),
             uploadedAt: admin.firestore.FieldValue.serverTimestamp()
