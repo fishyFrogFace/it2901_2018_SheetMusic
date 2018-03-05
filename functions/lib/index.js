@@ -24,12 +24,10 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
     const filePath = object.name;
     if (!filePath.endsWith('.zip'))
         return null;
-    const parts = filePath.split('/');
-    if (parts.length !== 4)
+    const zipPathParts = filePath.split('/');
+    if (zipPathParts[0] !== 'bands' || zipPathParts[2] !== 'input')
         return null;
-    if (parts[0] !== 'bands' || parts[2] !== 'input')
-        return null;
-    const bandId = parts[1];
+    const bandId = zipPathParts[1];
     // File name without extension
     const fileName = path.basename(filePath, '.zip');
     // Create storage bucket
@@ -40,10 +38,15 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
         // Unzip
         const dir = yield unzipper.Open.file(`/tmp/${fileName}.zip`);
         yield Promise.all(dir.files
-            .filter(file => !file.path.startsWith('__MACOSX'))
+            .filter(file => !file.path.endsWith('/'))
             .filter(file => file.path.endsWith('.pdf'))
+            .filter(file => !file.path.startsWith('__MACOSX'))
             .map((file) => __awaiter(this, void 0, void 0, function* () {
-            const name = file.path.split('/').join(' - ');
+            let pdfPathParts = file.path.split('/');
+            if (pdfPathParts[0] === fileName) {
+                pdfPathParts = pdfPathParts.slice(1);
+            }
+            const name = pdfPathParts.join(' - ');
             yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({ name: name });
             yield new Promise((resolve, reject) => {
                 file.stream()
@@ -53,6 +56,7 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
             });
         })));
         // Clean up
+        yield bucket.file(filePath).delete();
         yield fs.remove(`/tmp/${fileName}.zip`);
     }
     catch (err) {

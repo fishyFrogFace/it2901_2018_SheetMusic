@@ -120,10 +120,17 @@ class Band extends Component {
             })
         );
 
+        // this.unsubscribeCallbacks.push(
+        //     firebase.firestore().collection(`bands/${bandId}/unsortedSheets`).onSnapshot(snapshot => {
+        //         const sheets = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
+        //         this.setState({band: {...this.state.band, unsortedSheets: sheets}});
+        //     })
+        // );
+
         this.unsubscribeCallbacks.push(
-            firebase.firestore().collection(`bands/${bandId}/unsortedSheets`).onSnapshot(snapshot => {
-                const sheets = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
-                this.setState({band: {...this.state.band, unsortedSheets: sheets}});
+            firebase.firestore().collection(`bands/${bandId}/pdfs`).onSnapshot(snapshot => {
+                const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
+                this.setState({band: {...this.state.band, pdfs: pdfs}});
             })
         );
 

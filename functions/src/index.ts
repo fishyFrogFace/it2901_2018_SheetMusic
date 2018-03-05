@@ -2,12 +2,9 @@ import * as functions from 'firebase-functions';
 import * as path from 'path';
 import * as Storage from '@google-cloud/storage';
 import {spawn} from 'child-process-promise';
-import * as gs from 'gs';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
-import * as directoryTree from 'directory-tree';
 import * as unzipper from 'unzipper';
-import * as stream from "stream";
 
 admin.initializeApp(functions.config().firebase);
 
@@ -23,13 +20,11 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
     if (!filePath.endsWith('.zip')) return null;
 
-    const parts = filePath.split('/');
+    const zipPathParts = filePath.split('/');
 
-    if (parts.length !== 4) return null;
+    if (zipPathParts[0] !== 'bands' || zipPathParts[2] !== 'input') return null;
 
-    if (parts[0] !== 'bands' || parts[2] !== 'input') return null;
-
-    const bandId = parts[1];
+    const bandId = zipPathParts[1];
 
     // File name without extension
     const fileName = path.basename(filePath, '.zip');
@@ -46,10 +41,16 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
         await Promise.all(
             dir.files
-                .filter(file => !file.path.startsWith('__MACOSX'))
+                .filter(file => !file.path.endsWith('/'))
                 .filter(file => file.path.endsWith('.pdf'))
+                .filter(file => !file.path.startsWith('__MACOSX'))
                 .map(async file => {
-                    const name = file.path.split('/').join(' - ');
+                    let pdfPathParts = file.path.split('/');
+                    if (pdfPathParts[0] === fileName) {
+                        pdfPathParts = pdfPathParts.slice(1);
+                    }
+
+                    const name = pdfPathParts.join(' - ');
 
                     await admin.firestore().collection(`bands/${bandId}/pdfs`).add({name: name});
 
@@ -64,6 +65,7 @@ exports.extractZip = functions.storage.object().onChange(async event => {
         );
 
         // Clean up
+        await bucket.file(filePath).delete();
         await fs.remove(`/tmp/${fileName}.zip`);
     } catch (err) {
         console.log(err);

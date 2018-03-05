@@ -277,28 +277,28 @@ class UploadSheetsDialog extends Component {
                     <div className={classes.uploadPane} onClick={this._onUploadPaneClick}>
                         <div className={classes.paneHeader}>
                             <Typography variant='body1'>
-                                Unsorted Sheets
+                                PDFS
                             </Typography>
                             <div className={classes.flex}/>
                             {Object.keys(selectedSheets).length > 0 && <IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>}
                         </div>
                         <div className={classes.paneContent}>
-                            {entered && band.unsortedSheets && band.unsortedSheets.map((doc, docIndex) =>
+                            {entered && band.pdfs && band.pdfs.map((doc, docIndex) =>
                                 <div key={doc.id}>
-                                    <Typography variant='body2' style={{padding: 15}}>{doc.fileName}</Typography>
-                                    <div className={classes.sheetContainer}>
-                                        {doc.sheets.map((sheet, sheetIndex) =>
-                                            <DraggableImage
-                                                onDragStart={e => this._onDragStart(e)}
-                                                classes={{root: classes.selectable}}
-                                                key={sheetIndex}
-                                                imageURL={sheet}
-                                                selected={selectedSheets[docIndex + sheetIndex]}
-                                                onClick={e => e.stopPropagation()}
-                                                onMouseDown={e => this._onDraggableMouseDown(e, docIndex + sheetIndex)}
-                                            />
-                                        )}
-                                    </div>
+                                    <Typography variant='body2' style={{padding: 15}}>{doc.name}</Typography>
+                                    {/*<div className={classes.sheetContainer}>*/}
+                                        {/*{doc.pdfs.map((sheet, sheetIndex) =>*/}
+                                            {/*<DraggableImage*/}
+                                                {/*onDragStart={e => this._onDragStart(e)}*/}
+                                                {/*classes={{root: classes.selectable}}*/}
+                                                {/*key={sheetIndex}*/}
+                                                {/*imageURL={sheet}*/}
+                                                {/*selected={selectedSheets[docIndex + sheetIndex]}*/}
+                                                {/*onClick={e => e.stopPropagation()}*/}
+                                                {/*onMouseDown={e => this._onDraggableMouseDown(e, docIndex + sheetIndex)}*/}
+                                            {/*/>*/}
+                                        {/*)}*/}
+                                    {/*</div>*/}
                                 </div>
                             )}
                         </div>
