@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {
     AppBar, Button, CircularProgress, Dialog, IconButton,
-    List, ListItem, ListItemText, Paper, Slide, Toolbar, Typography
+    List, ListItem, ListItemText, Menu, MenuItem, Paper, Slide, Toolbar, Typography
 } from "material-ui";
 
 import {withStyles} from "material-ui/styles";
@@ -84,6 +84,12 @@ const styles = {
     paneContent: {
         height: 'calc(100% - 45px)',
         overflowY: 'auto'
+    },
+
+    selectionToolbar: {
+        position: 'absolute',
+        top: 0,
+        left: 0
     }
 };
 
@@ -93,11 +99,13 @@ function Transition(props) {
 
 class UploadSheetsDialog extends Component {
     state = {
-        selectedSheets: {},
+        selectedPDFs: new Set(),
         selectedScoreId: null,
         selectedSheetMusicId: null,
         lastClicked: null,
-        entered: false
+        entered: false,
+        anchorEl: null,
+        selectMode: false
     };
 
     keys = {};
@@ -114,10 +122,10 @@ class UploadSheetsDialog extends Component {
         }
     }
 
-    _onDialogClose() {
-        this.setState({selectedSheets: {}});
+    _onDialogClose = () => {
+        this.setState({selectedPDFs: new Set()});
         this.props.onClose();
-    }
+    };
 
     _onSelectFileClick() {
         this.fileBrowser.click();
@@ -138,8 +146,8 @@ class UploadSheetsDialog extends Component {
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    _onSelectableMouseDown = (e, index) => {
-        const selectedSheets = {...this.state.selectedSheets};
+    _onSelectableSelect = (e, index) => {
+        const selectedPDFs = new Set(this.state.selectedPDFs);
 
         if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
             let indices = [];
@@ -148,13 +156,21 @@ class UploadSheetsDialog extends Component {
             }
 
             for (let i of indices) {
-                selectedSheets[i] = true;
+                selectedPDFs.add(i);
             }
         } else {
-            selectedSheets[index] = !selectedSheets[index];
+            if (selectedPDFs.has(index)) {
+                selectedPDFs.delete(index);
+            } else {
+                selectedPDFs.add(index);
+            }
         }
 
-        this.setState({selectedSheets: selectedSheets, lastClicked: index});
+        this.setState({selectedPDFs: selectedPDFs, lastClicked: index});
+    };
+
+    _onSelectableClick = (e, index) => {
+
     };
 
     _onScoreClick(score) {
@@ -181,14 +197,19 @@ class UploadSheetsDialog extends Component {
 
     }
 
+    _onAddButtonClick = e => {
+        this.setState({anchorEl: e.currentTarget});
+    };
+
+
     _onUploadPaneClick = () => {
-        const selectedSheets = {...this.state.selectedSheets};
-
-        for (let key of Object.keys(selectedSheets)) {
-            selectedSheets[key] = false;
-        }
-
-        this.setState({selectedSheets: selectedSheets});
+        // const selectedSheets = {...this.state.selectedSheets};
+        //
+        // for (let key of Object.keys(selectedSheets)) {
+        //     selectedSheets[key] = false;
+        // }
+        //
+        // this.setState({selectedPDFs: selectedPDFs});
     };
 
     _onBreadcrumbScoreClick = () => {
@@ -234,12 +255,25 @@ class UploadSheetsDialog extends Component {
         this.setState({entered: false});
     };
 
+    _onMenuClick = () => {
+        this.setState({anchorEl: null});
+    };
+
+    _onMenuClose = () => {
+        this.setState({anchorEl: null});
+    };
+
+    _onSelectionCloseClick = () => {
+        this.setState({selectedPDFs: new Set()});
+    };
+
     render() {
         const {classes, band, open} = this.props;
-        const {selectedSheets, selectedScoreId, selectedSheetMusicId, entered} = this.state;
+        const {selectedPDFs, selectedScoreId, selectedSheetMusicId, entered, selectMode} = this.state;
 
         const selectedScore = band.scores && band.scores.find(score => score.id === selectedScoreId);
         const selectedSheetMusic = selectedScore && selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
+
 
         return <Dialog
             fullScreen
@@ -249,19 +283,30 @@ class UploadSheetsDialog extends Component {
             onEntered={this._onDialogEntered}
             onExiting={this._onDialogExiting}
         >
-            <AppBar className={classes.appBar}>
-                <Toolbar>
-                    <IconButton color="inherit" onClick={() => this._onDialogClose()}>
-                        <Close/>
-                    </IconButton>
-                    <Typography variant="title" color="inherit" className={classes.flex}>
-                        Upload sheets
-                    </Typography>
-                    <Button color="inherit" onClick={() => this._onSelectFileClick()}>
-                        Add Sheets
-                    </Button>
-                </Toolbar>
-            </AppBar>
+            {selectedPDFs.size > 0 ?
+                <AppBar className={classes.appBar}>
+                    <Toolbar>
+                        <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
+                            <Close/>
+                        </IconButton>
+                        <Typography variant="title" color="inherit" className={classes.flex}>
+                            {selectedPDFs.size} selected
+                        </Typography>
+                        <Button color='inherit'>Add to score</Button>
+                    </Toolbar>
+                </AppBar> :
+                <AppBar className={classes.appBar}>
+                    <Toolbar>
+                        <IconButton color="inherit" onClick={this._onDialogClose}>
+                            <Close/>
+                        </IconButton>
+                        <Typography variant="title" color="inherit" className={classes.flex}>
+                            Unsorted PDF
+                        </Typography>
+                        <Button color='inherit'>Select</Button>
+                    </Toolbar>
+                </AppBar>
+            }
             <div className={classes.content}>
                 <div className={classes.flexWrapContainer}>
                     {entered && band.pdfs && band.pdfs.map((doc, docIndex) =>
@@ -270,128 +315,13 @@ class UploadSheetsDialog extends Component {
                             classes={{root: classes.selectable}}
                             title={doc.name + '.pdf'}
                             imageURL={doc.pages[0]}
-                            selected={selectedSheets[docIndex]}
-                            onMouseDown={e => this._onSelectableMouseDown(e, docIndex)}
+                            selected={selectedPDFs.has(docIndex)}
+                            onClick={e => this._onSelectableClick(e, docIndex)}
+                            onSelect={e => this._onSelectableSelect(e, docIndex)}
+                            selectMode={selectedPDFs.size > 0}
                         />
                     )}
                 </div>
-
-                {/*<Paper className={classes.paper} elevation={1}>*/}
-                    {/*<div className={classes.uploadPane} onClick={this._onUploadPaneClick}>*/}
-                        {/*<div className={classes.paneHeader}>*/}
-                            {/*<Typography variant='body1'>*/}
-                                {/*Unsorted PDFs*/}
-                            {/*</Typography>*/}
-                            {/*<div className={classes.flex}/>*/}
-                            {/*{Object.keys(selectedSheets).length > 0 &&*/}
-                            {/*<IconButton onClick={() => this._onSheetDelete()}><Delete/></IconButton>}*/}
-                        {/*</div>*/}
-                        {/*<div className={classes.paneContent}>*/}
-                            {/*<div className={classes.flexWrapContainer}>*/}
-
-                            {/*</div>*/}
-                        {/*</div>*/}
-                    {/*</div>*/}
-                    {/*<div className={classes.explorerPane}>*/}
-                        {/*<div className={classes.paneHeader}>*/}
-                            {/*<Typography variant='body1'>*/}
-                                {/*<span className={classes.anchor} onClick={this._onBreadcrumbHomeClick}>Scores</span>*/}
-                                {/*{selectedScore && <span> › <span className={classes.anchor}*/}
-                                                                 {/*onClick={this._onBreadcrumbScoreClick}>{selectedScore.title}</span></span>}*/}
-                                {/*{selectedScore && selectedSheetMusic &&*/}
-                                {/*<span> › {selectedSheetMusic.instrument.name}</span>*/}
-                                {/*}*/}
-                            {/*</Typography>*/}
-                            {/*<div className={classes.flex}/>*/}
-                        {/*</div>*/}
-                        {/*<div className={classes.paneContent}>*/}
-                            {/*<div style={{borderBottom: '1px solid rgba(0,0,0,0.12)'}}>*/}
-                                {/*{*/}
-                                    {/*!selectedScore &&*/}
-                                    {/*<Button fullWidth color='primary' onClick={() => this.props.onAddScore()}>*/}
-                                        {/*ADD SCORE*/}
-                                    {/*</Button>*/}
-                                {/*}*/}
-                                {/*{*/}
-                                    {/*selectedScore && !selectedSheetMusic &&*/}
-                                    {/*<Button fullWidth color='primary'*/}
-                                            {/*onClick={() => this.props.onAddInstrument(selectedScore.id)}>*/}
-                                        {/*ADD INSTRUMENTS*/}
-                                    {/*</Button>*/}
-                                {/*}*/}
-                            {/*</div>*/}
-
-                            {/*{*/}
-                                {/*!selectedScore && !selectedSheetMusic &&*/}
-                                {/*<List>*/}
-                                    {/*{band.scores && band.scores.map((score, index) =>*/}
-                                        {/*<ListItem key={index} button onClick={() => this._onScoreClick(score)}>*/}
-                                            {/*<ListItemText primary={`${score.title} - ${score.composer}`}/>*/}
-                                        {/*</ListItem>*/}
-                                    {/*)}*/}
-                                {/*</List>*/}
-                            {/*}*/}
-
-                            {/*{*/}
-                                {/*selectedScore && !selectedSheetMusic &&*/}
-                                {/*<List>*/}
-                                    {/*{selectedScore.sheetMusic && selectedScore.sheetMusic.map((s, index) =>*/}
-                                        {/*<div*/}
-                                            {/*key={index}*/}
-                                            {/*onDragOver={e => e.preventDefault()}*/}
-                                            {/*onDrop={e => this._onListItemDrop(e, s)}*/}
-                                        {/*>*/}
-                                            {/*<ListItem button key={index} onClick={() => this._onInstrumentClick(s)}>*/}
-                                                {/*<ListItemText*/}
-                                                    {/*primary={`${s.instrument.name} ${s.instrumentNumber > 0 ? s.instrumentNumber : ''}`}/>*/}
-                                                {/*{s.uploading && <CircularProgress size={24}/>}*/}
-                                                {/*{!s.uploading &&*/}
-                                                {/*<Typography*/}
-                                                    {/*variant='body1'>{s.sheets ? s.sheets.length : 0}</Typography>}*/}
-                                            {/*</ListItem>*/}
-                                        {/*</div>*/}
-                                    {/*)}*/}
-                                {/*</List>*/}
-                            {/*}*/}
-
-                            {/*{*/}
-                                {/*selectedScore && selectedSheetMusic &&*/}
-                                {/*<DragDropContext onDragEnd={this._onDragEnd}>*/}
-                                    {/*<Droppable droppableId="droppable">*/}
-                                        {/*{(provided, snapshot) =>*/}
-                                            {/*<div ref={provided.innerRef}>*/}
-                                                {/*{*/}
-                                                    {/*selectedSheetMusic.sheets.map((sheet, index) =>*/}
-                                                        {/*<Draggable key={index} draggableId={sheet} index={index}>*/}
-                                                            {/*{(provided, snapshot) =>*/}
-                                                                {/*<div>*/}
-                                                                    {/*<div*/}
-                                                                        {/*ref={provided.innerRef}*/}
-                                                                        {/*{...provided.draggableProps}*/}
-                                                                        {/*{...provided.dragHandleProps}*/}
-                                                                    {/*>*/}
-                                                                        {/*<div style={{*/}
-                                                                            {/*width: '100%',*/}
-                                                                            {/*height: 100,*/}
-                                                                            {/*backgroundImage: `url(${sheet})`,*/}
-                                                                            {/*backgroundSize: '100% auto'*/}
-                                                                        {/*}}/>*/}
-                                                                    {/*</div>*/}
-                                                                    {/*{provided.placeholder}*/}
-                                                                {/*</div>*/}
-                                                            {/*}*/}
-                                                        {/*</Draggable>*/}
-                                                    {/*)*/}
-                                                {/*}*/}
-                                                {/*{provided.placeholder}*/}
-                                            {/*</div>*/}
-                                        {/*}*/}
-                                    {/*</Droppable>*/}
-                                {/*</DragDropContext>*/}
-                            {/*}*/}
-                        {/*</div>*/}
-                    {/*</div>*/}
-                {/*</Paper>*/}
             </div>
             <input
                 ref={input => this.fileBrowser = input}
