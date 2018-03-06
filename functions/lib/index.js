@@ -96,11 +96,16 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
             '-r300',
             `/tmp/${fileName}.pdf`
         ]);
+        // Add document
+        const docRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+            name: fileName,
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
         // Read output directory
         const imageFileNames = yield fs.readdir(`/tmp/output`);
         // Upload images
         const uploadResponses = yield Promise.all(imageFileNames.map((name, index) => bucket.upload(`/tmp/output/${name}`, {
-            destination: `bands/${bandId}/pdfs/${fileName}/${index}.png`,
+            destination: `bands/${bandId}/pdfs/${docRef.id}/${index}.png`,
             metadata: {
                 contentType: 'image/png'
             }
@@ -110,12 +115,8 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
             action: 'read',
             expires: '03-09-2491'
         })));
-        // Add document
-        yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
-            name: fileName,
-            pages: urlResponses.map(([url]) => url),
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        // Add pages to document
+        yield docRef.update({ pages: urlResponses.map(([url]) => url) });
         // Clean up
         yield Promise.all([fs.remove(`/tmp/${fileName}.pdf`), fs.remove(`/tmp/output`)]);
         yield bucket.file(filePath).delete();

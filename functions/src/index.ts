@@ -113,6 +113,11 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             `/tmp/${fileName}.pdf`
         ]);
 
+        // Add document
+        const docRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+            name: fileName,
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
 
         // Read output directory
         const imageFileNames = await fs.readdir(`/tmp/output`);
@@ -121,7 +126,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
         const uploadResponses = await Promise.all(
             imageFileNames.map((name, index) =>
                 bucket.upload(`/tmp/output/${name}`, {
-                    destination: `bands/${bandId}/pdfs/${fileName}/${index}.png`,
+                    destination: `bands/${bandId}/pdfs/${docRef.id}/${index}.png`,
                     metadata: {
                         contentType: 'image/png'
                     }
@@ -138,12 +143,8 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             )
         );
 
-        // Add document
-        await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
-            name: fileName,
-            pages: urlResponses.map(([url]) => url),
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        // Add pages to document
+        await docRef.update({pages: urlResponses.map(([url]) => url)});
 
         // Clean up
         await Promise.all([fs.remove(`/tmp/${fileName}.pdf`), fs.remove(`/tmp/output`)]);

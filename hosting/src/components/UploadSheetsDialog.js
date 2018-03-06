@@ -13,6 +13,7 @@ import {
 import DraggableImage from './DraggableImage'
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import Selectable from "./Selectable";
+import AddPDFToScoreDialog from "./dialogs/AddPDFToScoreDialog";
 
 
 const drawerWidth = 240;
@@ -267,13 +268,19 @@ class UploadSheetsDialog extends Component {
         this.setState({selectedPDFs: new Set()});
     };
 
+    _onAddToScoreClick = async () => {
+        const {score, instruments} = await this.addPDFToScoreDialog.open();
+        this.setState({selectedPDFs: new Set()});
+
+        console.log(score, instruments);
+    };
+
     render() {
         const {classes, band, open} = this.props;
         const {selectedPDFs, selectedScoreId, selectedSheetMusicId, entered, selectMode} = this.state;
 
         const selectedScore = band.scores && band.scores.find(score => score.id === selectedScoreId);
         const selectedSheetMusic = selectedScore && selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
-
 
         return <Dialog
             fullScreen
@@ -292,7 +299,7 @@ class UploadSheetsDialog extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {selectedPDFs.size} selected
                         </Typography>
-                        <Button color='inherit'>Add to score</Button>
+                        <Button color='inherit' onClick={this._onAddToScoreClick}>Add to score</Button>
                     </Toolbar>
                 </AppBar> :
                 <AppBar className={classes.appBar}>
@@ -303,7 +310,7 @@ class UploadSheetsDialog extends Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             Unsorted PDF
                         </Typography>
-                        <Button color='inherit'>Select</Button>
+                        <Button color='inherit'>Upload</Button>
                     </Toolbar>
                 </AppBar>
             }
@@ -324,11 +331,12 @@ class UploadSheetsDialog extends Component {
                 </div>
             </div>
             <input
-                ref={input => this.fileBrowser = input}
+                ref={ref => this.fileBrowser = ref}
                 type='file'
                 style={{display: 'none'}}
                 onChange={e => this._onFileChange(e)}
             />
+            <AddPDFToScoreDialog band={band} pdfs={Array.from(selectedPDFs).map(i => band.pdfs[i])} onRef={ref => this.addPDFToScoreDialog = ref}/>
         </Dialog>;
     }
 }
