@@ -19,6 +19,7 @@ class AddPDFToScoreDialog extends React.Component {
         activeStep: 0,
         scoreCreated: false,
         open: false,
+        pdfs: []
     };
 
     componentDidMount() {
@@ -29,18 +30,15 @@ class AddPDFToScoreDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
-    componentWillReceiveProps(props) {
-        if (props.pdfs && props.pdfs.length > 0) {
-            this.setState({
-                pdfData: props.pdfs.map(pdf => ({instrument: 0, instrumentNumber: 0})),
-                scoreData: {title: props.pdfs[0].name}
-            })
-        }
-    }
-
-    async open() {
+    async open(pdfs) {
         return new Promise((resolve, reject) => {
-            this.setState({open: true});
+            this.setState({
+                open: true,
+                pdfs: pdfs,
+                pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0})),
+                scoreData: {title: pdfs[0].name}
+            });
+
             this.__resolve = resolve;
             this.__reject = reject;
         });
@@ -61,8 +59,8 @@ class AddPDFToScoreDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, pdfData, scoreData} = this.state;
-        const {band, pdfs} = this.props;
+        const {activeStep, pdfData, scoreData, pdfs} = this.state;
+        const {band} = this.props;
 
         if (this.state.activeStep === 1) {
             this.setState({activeStep: 2, scoreCreated: true});
@@ -104,9 +102,9 @@ class AddPDFToScoreDialog extends React.Component {
     };
 
     render() {
-        const {pdfData, scoreData, activeStep, scoreCreated, open} = this.state;
+        const {pdfData, scoreData, activeStep, scoreCreated, open, pdfs} = this.state;
 
-        const {band, pdfs} = this.props;
+        const {band} = this.props;
 
         if (!open) return null;
 

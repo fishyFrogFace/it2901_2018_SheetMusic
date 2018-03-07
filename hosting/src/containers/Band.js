@@ -16,20 +16,22 @@ import FileUploadIcon from 'material-ui-icons/FileUpload';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
-import UploadSheetsDialog from "../components/UploadSheetsDialog";
+import PDFList from "./Band/PDFList";
 import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
 import Drawer from '../components/Drawer.js';
+import {Home} from "material-ui-icons";
 
 const styles = {
-    root: {},
+    root: {
+        height: '100%',
+        overflow: 'hidden'
+    },
     flex: {
         flex: 1
     },
 
-    appBar: {
-        flexWrap: 'wrap',
-    },
+    appBar: {},
 
     dialogContent: {
         display: 'flex',
@@ -50,9 +52,7 @@ const styles = {
         height: 144
     },
 
-    content: {
-        paddingTop: 112
-    },
+    content: {},
 
     pageContainer: {
         display: 'flex',
@@ -64,7 +64,7 @@ const styles = {
 class Band extends Component {
     state = {
         anchorEl: null,
-        selectedPage: 1,
+        selectedPage: 3,
         band: {scores: []},
         uploadSheetsDialogOpen: false
     };
@@ -221,9 +221,9 @@ class Band extends Component {
         }
     }
 
-    _onTabsChange(e, value) {
-        this.setState({selectedPage: value});
-    }
+    _onNavClick = index => {
+        this.setState({selectedPage: index});
+    };
 
     _onUploadSheets = async (scoreId, sheetMusicId, sheetImages) => {
         const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
@@ -241,6 +241,10 @@ class Band extends Component {
         });
     };
 
+    _onAddPDF = async (score, instruments) => {
+
+    };
+
     async _onFileUploadButtonClick() {
         this.setState({uploadSheetsDialogOpen: true});
     }
@@ -254,6 +258,7 @@ class Band extends Component {
         const {anchorEl, selectedPage, band, uploadSheetsDialogOpen} = this.state;
 
         const {classes, user} = this.props;
+
 
         return (
             <div className={classes.root}>
@@ -278,98 +283,95 @@ class Band extends Component {
                             <MenuItem onClick={() => this._onMenuClick('setlist')}>Create Setlist</MenuItem>
                         </Menu>
                     </Toolbar>
-                    <Tabs
-                        centered
-                        value={selectedPage}
-                        onChange={(e, value) => this._onTabsChange(e, value)}
-                        indicatorColor='white'
-                    >
-                        <Tab label='Home'/>
-                        <Tab label='Scores'/>
-                        <Tab label='Setlists'/>
-                        <Tab label='Members'/>
-                    </Tabs>
                 </AppBar>
-                <div className={classes.content}>
-                    {(() => {
-                        switch (selectedPage) {
-                            case 0:
-                                return <div>
-                                    <div className={classes.banner}></div>
-                                </div>;
-                            case 1:
-                                return <div className={classes.pageContainer}>
-                                    <div style={{display: 'flex', width: 600, flexWrap: 'wrap'}}>
-                                        {band.scores && band.scores.map((arr, index) =>
-                                            <Card key={index} className={classes.card}
-                                                  onClick={() => window.location.hash = `#/score/${arr.id}`}
-                                                  elevation={1}>
-                                                <CardMedia
-                                                    className={classes.media}
-                                                    image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
-                                                    title=""
-                                                />
-                                                <CardContent>
-                                                    <Typography variant="headline" component="h2">
-                                                        {arr.title}
-                                                    </Typography>
-                                                    <Typography component="p">
-                                                        {arr.composer}
-                                                    </Typography>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </div>
-                                </div>;
-                            case 2:
-                                return <div className={classes.pageContainer}>Setlists</div>;
-                            case 3:
-                                return <div className={classes.pageContainer}>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', width: 600}}>
-                                        <Paper style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '0 15px',
-                                            width: 150,
-                                            height: 50
-                                        }}>
-                                            <Typography variant='body1'>
-                                                Band code
+                <div style={{display: 'flex', paddingTop: 64, height: 'calc(100% - 64px)', overflow: 'hidden'}}>
+                    <div style={{width: 250, paddingTop: 20}}>
+                        <List>
+                            {['Scores', 'Setlists', 'Members', 'PDFs'].map((name, index) => {
+                                const props = index === selectedPage ? {style: {backgroundColor: 'rgba(0, 0, 0, 0.08)'}} : {};
+
+                                return <ListItem key={index} button {...props} onClick={() => this._onNavClick(index)}>
+                                    <Home style={{color: '#757575'}}/>
+                                    <ListItemText inset primary={name}/>
+                                </ListItem>
+                            })}
+                        </List>
+                    </div>
+                    <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
+                        {selectedPage === 0 &&
+                        <div className={classes.pageContainer}>
+                            <div style={{display: 'flex', width: 600, flexWrap: 'wrap'}}>
+                                {band.scores && band.scores.map((arr, index) =>
+                                    <Card key={index} className={classes.card}
+                                          onClick={() => window.location.hash = `#/score/${arr.id}`}
+                                          elevation={1}>
+                                        <CardMedia
+                                            className={classes.media}
+                                            image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
+                                            title=""
+                                        />
+                                        <CardContent>
+                                            <Typography variant="headline" component="h2">
+                                                {arr.title}
                                             </Typography>
-                                            <Typography variant='body1'>
-                                                <b>{band.code}</b>
+                                            <Typography component="p">
+                                                {arr.composer}
                                             </Typography>
-                                        </Paper>
-                                        <Paper style={{width: 400}}>
-                                            <List>
-                                                {band.members && band.members.map((member, index) =>
-                                                    <ListItem key={index} dense button>
-                                                        <Avatar src={member.photoURL}/>
-                                                        <ListItemText primary={member.displayName}/>
-                                                    </ListItem>)}
-                                            </List>
-                                        </Paper>
-                                    </div>
-                                </div>;
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                        </div>
                         }
-                    })()}
+                        {selectedPage === 1 &&
+                        <div>Setlists</div>
+                        }
+                        {selectedPage === 2 &&
+                        <div style={{display: 'flex', justifyContent: 'space-between', width: 600}}>
+                            <Paper style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0 15px',
+                                width: 150,
+                                height: 50
+                            }}>
+                                <Typography variant='body1'>
+                                    Band code
+                                </Typography>
+                                <Typography variant='body1'>
+                                    <b>{band.code}</b>
+                                </Typography>
+                            </Paper>
+                            <Paper style={{width: 400}}>
+                                <List>
+                                    {band.members && band.members.map((member, index) =>
+                                        <ListItem key={index} dense button>
+                                            <Avatar src={member.photoURL}/>
+                                            <ListItemText primary={member.displayName}/>
+                                        </ListItem>)}
+                                </List>
+                            </Paper>
+                        </div>
+                        }
+                        {selectedPage === 3 &&
+                        <PDFList
+                            band={band}
+                            onAddScore={() => this._onAddScore()}
+                            onAddInstrument={this._onAddInstrument}
+                            onUploadSheets={this._onUploadSheets}
+                            onSheetsChange={this._onSheetsChange}
+                            onAddPDF={this._onAddPDF}
+                        />
+                        }
+                    </div>
+                    <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
+                    <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
+                    <AddInstrumentDialog
+                        band={band}
+                        onRef={ref => this.addInstrumentDialog = ref}
+                    />
                 </div>
-                <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
-                <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
-                <AddInstrumentDialog
-                    band={band}
-                    onRef={ref => this.addInstrumentDialog = ref}
-                />
-                <UploadSheetsDialog
-                    band={band}
-                    open={uploadSheetsDialogOpen}
-                    onClose={() => this.setState({uploadSheetsDialogOpen: false})}
-                    onAddScore={() => this._onAddScore()}
-                    onAddInstrument={this._onAddInstrument}
-                    onUploadSheets={this._onUploadSheets}
-                    onSheetsChange={this._onSheetsChange}
-                />
             </div>
         );
     }

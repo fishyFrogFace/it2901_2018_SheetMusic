@@ -85,40 +85,57 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
     try {
         // Download to local directory
         yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.pdf` });
-        // Create output directory
-        yield fs.ensureDir(`/tmp/output`);
-        // Generate thumbnail
-        yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
+        // Create output directories
+        yield fs.ensureDir(`/tmp/output-original`);
+        yield fs.ensureDir(`/tmp/output-cropped`);
+        // Generate images
+        const gsProcess = yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
             '-sDEVICE=pngmono',
-            `-sOutputFile=/tmp/output/${fileName}-%00d.png`,
+            `-sOutputFile=/tmp/output-original/${fileName}-%03d.png`,
             '-r300',
             `/tmp/${fileName}.pdf`
         ]);
+        gsProcess.childProcess.kill();
+        const mogrifyProcess = yield child_process_promise_1.spawn('mogrify', [
+            '-crop', '5000x666+0+0',
+            '-resize', '50%',
+            '-path', '../output-cropped',
+            '*.png'
+        ], { cwd: '/tmp/output-original' });
+        mogrifyProcess.childProcess.kill();
         // Add document
         const docRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
             name: fileName,
             uploadedAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        // Read output directory
-        const imageFileNames = yield fs.readdir(`/tmp/output`);
-        // Upload images
-        const uploadResponses = yield Promise.all(imageFileNames.map((name, index) => bucket.upload(`/tmp/output/${name}`, {
-            destination: `bands/${bandId}/pdfs/${docRef.id}/${index}.png`,
-            metadata: {
-                contentType: 'image/png'
-            }
-        })));
-        // Get urls
-        const urlResponses = yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
-            action: 'read',
-            expires: '03-09-2491'
-        })));
-        // Add pages to document
-        yield docRef.update({ pages: urlResponses.map(([url]) => url) });
+        const upload = (outputType) => __awaiter(this, void 0, void 0, function* () {
+            // Read files
+            let fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
+            // Upload files
+            let uploadResponses = yield Promise.all(fileNames.map((name, index) => bucket.upload(`/tmp/output-${outputType}/${name}`, {
+                destination: `bands/${bandId}/pdfs/${docRef.id}/${outputType}/${index}.png`,
+                metadata: {
+                    contentType: 'image/png'
+                }
+            })));
+            // Generate urls
+            let urlResponses = yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
+                action: 'read',
+                expires: '03-09-2491'
+            })));
+            // Add pages to document
+            yield docRef.update({ [`pages${outputType[0].toUpperCase()}${outputType.slice(1)}`]: urlResponses.map(([url]) => url) });
+        });
+        yield upload('original');
+        yield upload('cropped');
         // Clean up
-        yield Promise.all([fs.remove(`/tmp/${fileName}.pdf`), fs.remove(`/tmp/output`)]);
+        yield Promise.all([
+            fs.remove(`/tmp/${fileName}.pdf`),
+            fs.remove(`/tmp/output-original`),
+            fs.remove(`/tmp/output-cropped`)
+        ]);
         yield bucket.file(filePath).delete();
     }
     catch (err) {

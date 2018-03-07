@@ -20,10 +20,6 @@ const styles = {
         overflow: 'hidden'
     },
 
-    image: {
-        width: '150%'
-    },
-
     title: {
         position: 'absolute',
         bottom: 0,
@@ -45,7 +41,8 @@ const styles = {
 class Selectable extends React.Component {
     state = {
         hover: false,
-        iconHover: false
+        iconHover: false,
+        imageLoaded: false
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -60,26 +57,6 @@ class Selectable extends React.Component {
                 duration: 150,
                 fill: 'forwards',
                 easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
-            });
-        }
-
-        if (!curProps.selectMode && !prevProps.selected && prevState.hover !== this.state.hover) {
-            this.shadow.animate([
-                {boxShadow: curState.hover ? 'none' : 'inset 40px 200px 285px -200px rgba(0,0,0,0.75)'},
-                {boxShadow: curState.hover ? 'inset 40px 200px 285px -200px rgba(0,0,0,0.75)' : 'none'}
-            ], {
-                duration: 50,
-                fill: 'forwards'
-            });
-        }
-
-        if (prevProps.selectMode !== curProps.selectMode) {
-            this.shadow.animate([
-                {boxShadow: curProps.selectMode ? 'none' : 'inset 40px 200px 285px -200px rgba(0,0,0,0.75)'},
-                {boxShadow: curProps.selectMode ? 'inset 40px 200px 285px -200px rgba(0,0,0,0.75)' : 'none'}
-            ], {
-                duration: 50,
-                fill: 'forwards'
             });
         }
     }
@@ -100,30 +77,42 @@ class Selectable extends React.Component {
         this.setState({iconHover: false});
     };
 
+    _onImageLoad = () => {
+      this.setState({imageLoaded: true})
+    };
+
+
+    shouldComponentUpdate(nextProps, nextState) {
+        return nextState.imageLoaded;
+    }
+
     render() {
-        const {classes, imageURL, selected, title, selectMode} = this.props;
+        const {classes, imageURL, selected, title, selectMode, zoomed} = this.props;
         const {hover, iconHover} = this.state;
+
+        const imageProps = zoomed ? {style: {width: '330%', marginLeft: '-70%'}} : {style: {width: '100%'}};
 
         return <div
             className={classes.root}
-            onClick={!selectMode ? this.props.onClick : () => {}}
-            onMouseDown={selectMode ? this.props.onSelect : () => {}}
+            onClick={!selectMode ? this.props.onClick : () => {
+            }}
+            onMouseDown={selectMode ? this.props.onSelect : () => {
+            }}
             onMouseEnter={this._onMouseEnter}
             onMouseLeave={this._onMouseLeave}
         >
             <div ref={ref => this.imageContainer = ref} className={classes.imageContainer}>
-                <img src={imageURL} className={classes.image}/>
+                <img src={imageURL} onLoad={this._onImageLoad} {...imageProps}/>
                 {title && <Typography variant='subheading' className={classes.title}>{title}</Typography>}
             </div>
             <div
-                ref={ref => this.shadow = ref}
                 style={{
-                    zIndex: selected ? -1 : 0,
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    boxShadow: (!selected && hover) || (!selected && selectMode) ? 'inset 0px 135px 78px -105px rgba(189,189,189,1)' : 'none'
                 }}
             />
             {
