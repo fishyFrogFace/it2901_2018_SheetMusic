@@ -37,7 +37,7 @@ class AsyncDialog extends React.Component {
     render() {
         const {title='Dialog', confirmText='Confirm'} = this.props;
         const {open} = this.state;
-
+        
         return <Dialog open={open} onClose={() => this._onCancelClick()}>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column'}}>

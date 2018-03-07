@@ -110,6 +110,17 @@ class Band extends Component {
         );
 
         this.unsubscribeCallbacks.push(
+            firebase.firestore().collection(`bands/${bandId}/setlists`).onSnapshot(async snapshot => {
+                const setlists = await Promise.all(snapshot.docs.map(async doc => {
+                    const setlistDoc = await doc.data().ref.get();
+                    return {id: setlistDoc.id, ...setlistDoc.data()};
+                }));
+
+                this.setState({band: {...this.state.band, setlists: setlists}});
+            })
+        )
+
+        this.unsubscribeCallbacks.push(
             firebase.firestore().collection(`bands/${bandId}/members`).onSnapshot(async snapshot => {
                 const members = await Promise.all(snapshot.docs.map(async doc => {
                     const memberDoc = await doc.data().ref.get();
@@ -201,6 +212,32 @@ class Band extends Component {
         }
     }
 
+    async _onAddSetlist() {
+        let uid = this.props.user.uid;
+        let bandId = this.props.detail;
+
+        const {title, place, date} = await this.setlistDialog.open();
+
+        try {
+            const setlist = {
+                title: title,
+                place: place,
+                date: date._d,
+                creator: firebase.firestore().doc(`users/${uid}`),
+                band: firebase.firestore().doc(`bands/${bandId}`)
+            };
+
+            let ref = await firebase.firestore().collection('setlists').add(setlist);
+
+            await firebase.firestore().collection(`bands/${bandId}/setlists`).add({
+                ref: firebase.firestore().doc(`setlists/${ref.id}`)
+            });
+            // window.location.hash = `#/score/${ref.id}`;
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     async _onMenuClick(type) {
 
         this.setState({anchorEl: null});
@@ -210,7 +247,7 @@ class Band extends Component {
 
                 break;
             case 'setlist':
-                const {name} = await this.setlistDialog.open();
+                this._onAddSetlist();
                 break;
             default:
                 break;
@@ -318,7 +355,29 @@ class Band extends Component {
                                     </div>
                                 </div>;
                             case 2:
-                                return <div className={classes.pageContainer}>Setlists</div>;
+                                return <div className={classes.pageContainer}>
+                                    <div style={{display: 'flex', width: 900, flexWrap: 'wrap'}}>
+                                        {band.setlists && band.setlists.map((setlist, index) =>
+                                            <Card key={index} className={classes.card}
+                                                  onClick={() => window.location.hash = `#/setlist/${setlist.id}`}
+                                                  elevation={1}>
+                                                <CardMedia
+                                                    className={classes.media}
+                                                    image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
+                                                    title=""
+                                                />
+                                                <CardContent>
+                                                    <Typography variant="headline" component="h2">
+                                                        {setlist.title}
+                                                    </Typography>
+                                                    <Typography component="p">
+                                                        {setlist.date.toLocaleString()}
+                                                    </Typography>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </div>
+                                </div>;
                             case 3:
                                 return <div className={classes.pageContainer}>
                                     <div style={{display: 'flex', justifyContent: 'space-between', width: 600}}>
