@@ -42,7 +42,8 @@ class Selectable extends React.Component {
     state = {
         hover: false,
         iconHover: false,
-        imageLoaded: false
+        imageLoaded: false,
+        canFireClick: false
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -86,6 +87,21 @@ class Selectable extends React.Component {
         return nextState.imageLoaded;
     }
 
+    _onMouseDown = e => {
+        if (this.props.selectMode) {
+            this.props.onSelect(e);
+            this.setState({canFireClick: false})
+        } else {
+            this.setState({canFireClick: true})
+        }
+    };
+
+    _onMouseClick = e => {
+        if (this.state.canFireClick) {
+            this.props.onClick();
+        }
+    };
+
     render() {
         const {classes, imageURL, selected, title, selectMode, zoomed} = this.props;
         const {hover, iconHover} = this.state;
@@ -94,10 +110,8 @@ class Selectable extends React.Component {
 
         return <div
             className={classes.root}
-            onClick={!selectMode ? this.props.onClick : () => {
-            }}
-            onMouseDown={selectMode ? this.props.onSelect : () => {
-            }}
+            onMouseDown={this._onMouseDown}
+            onClick={this._onMouseClick}
             onMouseEnter={this._onMouseEnter}
             onMouseLeave={this._onMouseLeave}
         >
