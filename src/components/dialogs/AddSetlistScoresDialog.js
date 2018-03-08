@@ -46,8 +46,10 @@ class AddSetlistScoresDialog extends Component {
         const {scores} = this.state;
         const {classes} = this.props
         
-        return <AsyncDialog title={`Add scores to setlist`} confirmText='Add Scores' onRef={ref => this.dialog = ref}>
+        return <AsyncDialog fullscreen title={`Add scores to setlist`} confirmText='Add Scores' onRef={ref => this.dialog = ref}>
             {scores.map((arr, index) =>
+                <div>
+                <h3>{arr.title} by {arr.composer}</h3>
                 <Selectable
                     classes={{root: classes.selectable}}
                     key={index}
@@ -55,6 +57,7 @@ class AddSetlistScoresDialog extends Component {
                     selected={arr.selected}
                     onClick={(i => () => this._onSelectableClick(i))(index)}
                 />
+                </div>
             )}
         </AsyncDialog>
     }

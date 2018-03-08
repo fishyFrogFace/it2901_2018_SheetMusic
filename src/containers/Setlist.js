@@ -18,6 +18,7 @@ import firebase from 'firebase';
 import 'firebase/storage';
 
 import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog";
+import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 
@@ -85,7 +86,6 @@ class Setlist extends Component {
     addScoreDialog = null;
 
     async addSetListScores (setlistid, arrIds, currLength){
-        let doc = await firebase.firestore().doc(`setlists/${setlistid}`);
         let promise = await Promise.all(arrIds.map(async (arr, index) =>
             await firebase.firestore().collection(`setlists/${setlistid}/scores`).add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
 
@@ -99,6 +99,10 @@ class Setlist extends Component {
 
     async onScoresUpdate(setlistId, scores){
         let doc = await firebase.firestore().doc();
+    }
+
+    async addSetlistEvent(setlistId, eventTitle, eventDesc, currLength){
+        await firebase.firestore().collection(`setlists/${setlistId}/events`).add({order: currLength, title:eventTitle, desc:eventDesc});
     }
 
     _onDragEnd = result => {
@@ -115,24 +119,30 @@ class Setlist extends Component {
         };
 
 
-        const scores = reorder(
-            this.state.setlist.scores,
+        const combinedArray = reorder(
+            this.state.setlist.combinedArray,
             result.source.index,
             result.destination.index
         ).map((arr, index) => arr = {...arr, order: index});
 
 
 
-        this.setState({setlist:{...this.state.setlist, scores: scores}})
+        this.setState({setlist:{...this.state.setlist, scores: combinedArray}})
 
-        this.updateFirebaseOrders(this.state.setlist.id, scores);
+        this.updateFirebaseOrders(this.state.setlist.id, combinedArray);
     };
+
+    unsubscribeCallbacks = [];
 
     async _onMenuClick(type) {
         switch(type){
             case 'addScore':
                 var selectedScores = await this.addScoreDialog.open(this.state.bandScores);
-                this.addSetListScores(this.state.setlist.id, selectedScores, this.state.setlist.scores.length);
+                this.addSetListScores(this.state.setlist.id, selectedScores, this.state.setlist.combinedArray.length);
+                break;
+            case 'addEvent':
+                const {title, description} = await this.addEventDialog.open();
+                this.addSetlistEvent(this.state.setlist.id, title, description, this.state.setlist.combinedArray.length);
                 break;
         }
         this.setState({anchorEl: null});
@@ -145,13 +155,33 @@ class Setlist extends Component {
             var collection = await firebase.firestore().collection(`setlists/${setlistID}/scores`).get();
             var setlistScores = await Promise.all(collection.docs.map(async doc => {
                 let score = await doc.data().ref.get();
-                return {id: doc.id, order: doc.data().order, ...score.data()};
+                return {id: doc.id, order: doc.data().order, ...score.data(), type:0};
             }));
             setlistScores = setlistScores.sort((a, b) => a.order - b.order);
         }catch(e){
             console.log(e);
             var setlistScores = [];
         }
+
+        try{
+            var collection = await firebase.firestore().collection(`setlists/${setlistID}/events`).get();
+            var events = await Promise.all(collection.docs.map(async doc => {
+                return {id: doc.id, ...doc.data(), type:1};
+            }));
+            events = events.sort((a, b) => a.order - b.order);
+        }catch(e){
+            console.log(e);
+            var events = [];
+        }
+
+        console.log(setlistScores);
+
+        let combinedArray = Array.from(events);
+        combinedArray.push.apply(combinedArray, setlistScores);
+        combinedArray = combinedArray.sort((a, b) => a.order - b.order);
+        console.log(setlistScores)
+        console.log(events)
+
         let bandSnapshot = await setlist.band.get();
         const bandScoresSnapshot =  await firebase.firestore().collection(`bands/${bandSnapshot.id}/scores`).get();
 
@@ -160,37 +190,81 @@ class Setlist extends Component {
 
             return {id: score.id, ...score.data()};
         }));
-        this.setState({setlist: {id: setlistID, ...setlist, scores: setlistScores}, bandid: bandSnapshot.id, bandScores:bandScores } );
+        this.setState({setlist: {id: setlistID, ...setlist, scores: setlistScores, events: events, combinedArray: combinedArray}, bandid: bandSnapshot.id, bandScores:bandScores } );
     }
 
 
-    componentWillMount() {
+    async componentWillMount() {
         let setlistId = this.props.detail;
 
-        this.fetchSetlistData(setlistId);
+        await this.fetchSetlistData(setlistId);
 
-        this.unsubscribe = firebase.firestore().collection(`setlists/${setlistId}/scores`).onSnapshot(async snapshot => {
+        this.unsubscribeCallbacks.push( firebase.firestore().collection(`setlists/${setlistId}/scores`).onSnapshot(async snapshot => {
             const scores = await Promise.all(
                 snapshot.docs.map(async doc => {
                     let score = await doc.data().ref.get();
-                    return {id: doc.id, order: doc.data().order, ...score.data()}
+                    return {id: doc.id, order: doc.data().order, ...score.data(), type:0}
                 })
             );
+
+            let combinedArray = this.state.setlist.combinedArray;
+            for(var e in scores){
+                var score = combinedArray.find( (arr) => arr.id == scores[e].id);
+
+                if (!score){
+                    combinedArray.push(scores[e]);
+                }else{
+                    score.order = scores[e].order;
+                }
+            }
+        
             this.setState({
-                setlist: {...this.state.setlist, scores: scores.sort((a, b) => a.order - b.order)}
+                setlist: {...this.state.setlist, scores: scores, combinedArray: combinedArray.sort((a, b) => a.order - b.order)}
             });
-        });
+        }));
+
+        this.unsubscribeCallbacks.push( firebase.firestore().collection(`setlists/${setlistId}/events`).onSnapshot(async snapshot => {
+            const events = await Promise.all(
+                snapshot.docs.map(async doc => {
+                    return {id: doc.id, order: doc.data().order, ...doc.data(), type:1}
+                })
+            );
+
+            let combinedArray = this.state.setlist.combinedArray;
+            for(var e in events){
+                var event = combinedArray.find( (arr) => arr.id == events[e].id);
+
+                if (!event){
+                    combinedArray.push(events[e]);
+                }else{
+                    event.order = events[e].order;
+                }
+            }
+
+            this.setState({
+                setlist: {...this.state.setlist, events: events, combinedArray: combinedArray.sort((a, b) => a.order - b.order)}
+            });
+        }));
     }
 
     componentWillUnmount(){
-        this.unsubscribe();
+        this.unsubscribeCallbacks.forEach(c => c());
     }
 
 
-    async updateFirebaseOrders(setlistId, scores){
-        Promise.all(scores.map(async (score, index) => {
-            await firebase.firestore().doc(`setlists/${setlistId}/scores/${score.id}`).update({order:index});
-        }))
+    async updateFirebaseOrders(setlistId, combined){
+        Promise.all(combined.map(async (score, index) => {
+            switch(score.type){
+                case 0:
+                    await firebase.firestore().doc(`setlists/${setlistId}/scores/${score.id}`).update({order:index});
+                    break;
+                case 1:
+                    await firebase.firestore().doc(`setlists/${setlistId}/events/${score.id}`).update({order:index});
+                    break;
+                default:
+                    break;
+            }
+        }));
     }
 
     async _onArrowBackButtonClick() {
@@ -198,7 +272,7 @@ class Setlist extends Component {
     }
 
     render() {
-        const { anchorEl, addArrDialogOpen, addPauseDialogOpen, setlist, bandScores} = this.state;
+        const { anchorEl, addArrDialogOpen, addPauseDialogOpen, setlist} = this.state;
         const {classes} = this.props;
 
         return (
@@ -221,7 +295,7 @@ class Setlist extends Component {
                             onClose={() => this._onMenuClose()}
                         >
                             <MenuItem onClick={() => this._onMenuClick('addScore')}>Add Score</MenuItem>
-                            <MenuItem onClick={() => this._onMenuClick('addEvent')}>Add Pause</MenuItem>
+                            <MenuItem onClick={() => this._onMenuClick('addEvent')}>Add Event</MenuItem>
                         </Menu>
                     </Toolbar>
                 </AppBar>
@@ -233,10 +307,10 @@ class Setlist extends Component {
                             {(provided, snapshot) => 
                                 <div ref={provided.innerRef}>
                                     {
-                                        setlist.scores && setlist.scores.map((score, index) =>
+                                        setlist.combinedArray && setlist.combinedArray.map((score, index) =>
                                             <Draggable 
-                                                key={score.id}
-                                                draggableId={score.id}
+                                                key={score.id + score.type}
+                                                draggableId={score.id + score.type}
                                                 index={index}
                                             >
                                                 {(provided, snapshot) =>
@@ -251,7 +325,7 @@ class Setlist extends Component {
                                                                 height: 50,
                                                                 border: '1px solid black'
                                                             }}>
-                                                                {score.order + 1}. {score.title} by {score.composer}
+                                                                {(score.type == 0 ) ? `${score.order}. ${score.title} by ${score.composer}`: `${score.order} ${score.title}` }
                                                             </div>
                                                         </div>
                                                         {provided.placeholder}
@@ -267,6 +341,7 @@ class Setlist extends Component {
                 </div>
                 </DragDropContext>
                 <AddSetlistScoresDialog onRef= {ref => this.addScoreDialog = ref}/>
+                <AddSetlistEventDialog onRef= {ref => this.addEventDialog = ref}/>
             </div>
         );
     }
