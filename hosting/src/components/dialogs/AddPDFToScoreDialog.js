@@ -90,11 +90,8 @@ class AddPDFToScoreDialog extends React.Component {
     };
 
     _onBackClick = () => {
-        if (this.state.activeStep === 1) {
-            this.setState({activeStep: 0, scoreCreated: false})
-        } else if (this.state.activeStep) {
-            this.setState({activeStep: this.state.scoreCreated ? 1 : 0})
-        }
+        const {activeStep, scoreCreated} = this.state;
+        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
     };
 
     _onScoreDataChange = (type, e) => {
