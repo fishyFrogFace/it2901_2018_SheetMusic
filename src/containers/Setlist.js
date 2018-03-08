@@ -86,7 +86,6 @@ class Setlist extends Component {
 
     async addSetListScores (setlistid, arrIds, currLength){
         let doc = await firebase.firestore().doc(`setlists/${setlistid}`);
-    
         let promise = await Promise.all(arrIds.map(async (arr, index) =>
             await firebase.firestore().collection(`setlists/${setlistid}/scores`).add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
 
@@ -98,10 +97,42 @@ class Setlist extends Component {
         this.setState({anchorEl: null});
     }
 
-    _onMenuClick(type) {
+    async onScoresUpdate(setlistId, scores){
+        let doc = await firebase.firestore().doc();
+    }
+
+    _onDragEnd = result => {
+        // dropped outside the list
+        if (!result.destination) {
+            return;
+        }
+
+        const reorder = (list, startIndex, endIndex) => {
+            const result = Array.from(list);
+            const [removed] = result.splice(startIndex, 1);
+            result.splice(endIndex, 0, removed);
+            return result;
+        };
+
+
+        const scores = reorder(
+            this.state.setlist.scores,
+            result.source.index,
+            result.destination.index
+        ).map((arr, index) => arr = {...arr, order: index});
+
+
+
+        this.setState({setlist:{...this.state.setlist, scores: scores}})
+
+        this.updateFirebaseOrders(this.state.setlist.id, scores);
+    };
+
+    async _onMenuClick(type) {
         switch(type){
             case 'addScore':
-                var selectedScores = this.addScoreDialog.open(this.state.bandScores);
+                var selectedScores = await this.addScoreDialog.open(this.state.bandScores);
+                this.addSetListScores(this.state.setlist.id, selectedScores, this.state.setlist.scores.length);
                 break;
         }
         this.setState({anchorEl: null});
@@ -110,16 +141,26 @@ class Setlist extends Component {
     async fetchSetlistData (setlistID){
         let doc = await firebase.firestore().doc(`setlists/${setlistID}`).get();
         let setlist = doc.data();
-
+        try{
+            var collection = await firebase.firestore().collection(`setlists/${setlistID}/scores`).get();
+            var setlistScores = await Promise.all(collection.docs.map(async doc => {
+                let score = await doc.data().ref.get();
+                return {id: doc.id, order: doc.data().order, ...score.data()};
+            }));
+            setlistScores = setlistScores.sort((a, b) => a.order - b.order);
+        }catch(e){
+            console.log(e);
+            var setlistScores = [];
+        }
         let bandSnapshot = await setlist.band.get();
-        const scoresSnapshot =  await firebase.firestore().collection(`bands/${bandSnapshot.id}/scores`).get();
+        const bandScoresSnapshot =  await firebase.firestore().collection(`bands/${bandSnapshot.id}/scores`).get();
 
-        let scores = await Promise.all(scoresSnapshot.docs.map(async doc => {
+        let bandScores = await Promise.all(bandScoresSnapshot.docs.map(async doc => {
             let score = await doc.data().ref.get();
 
-            return {id: doc.id, ...score.data()};
+            return {id: score.id, ...score.data()};
         }));
-        this.setState({setlist: setlist, bandid: bandSnapshot.id, bandScores:scores } );
+        this.setState({setlist: {id: setlistID, ...setlist, scores: setlistScores}, bandid: bandSnapshot.id, bandScores:bandScores } );
     }
 
 
@@ -130,15 +171,26 @@ class Setlist extends Component {
 
         this.unsubscribe = firebase.firestore().collection(`setlists/${setlistId}/scores`).onSnapshot(async snapshot => {
             const scores = await Promise.all(
-                snapshot.docs.map(async doc => ({
-                    ...doc.data(),
-                    id: doc.id
-                }))
+                snapshot.docs.map(async doc => {
+                    let score = await doc.data().ref.get();
+                    return {id: doc.id, order: doc.data().order, ...score.data()}
+                })
             );
             this.setState({
-                setlist: {...this.state.setlist, scores: scores}
+                setlist: {...this.state.setlist, scores: scores.sort((a, b) => a.order - b.order)}
             });
         });
+    }
+
+    componentWillUnmount(){
+        this.unsubscribe();
+    }
+
+
+    async updateFirebaseOrders(setlistId, scores){
+        Promise.all(scores.map(async (score, index) => {
+            await firebase.firestore().doc(`setlists/${setlistId}/scores/${score.id}`).update({order:index});
+        }))
     }
 
     async _onArrowBackButtonClick() {
@@ -151,6 +203,7 @@ class Setlist extends Component {
 
         return (
             <div className={classes.root}>
+            <DragDropContext onDragEnd={this._onDragEnd}>
                  <AppBar position="static">
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
@@ -174,20 +227,45 @@ class Setlist extends Component {
                 </AppBar>
                 <div>
 
-                    <div className={classes.listView}>{setlist.scores && setlist.scores.sort((a, b) => a.order - b.order).map((arr, id) => 
-                        <Card className={classes.listCard} key={id} order={arr.order} onMouseDown={this._onMouseDown} >
-                            <CardContent>
-                                <Typography variant="headline" component="h2">
-                                    {arr.order + 1}. {arr.title}
-                                </Typography>
-                                <Typography component="p">
-                                    {arr.composer}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <div className={classes.listView}>
+
+                        <Droppable droppableId="droppable">
+                            {(provided, snapshot) => 
+                                <div ref={provided.innerRef}>
+                                    {
+                                        setlist.scores && setlist.scores.map((score, index) =>
+                                            <Draggable 
+                                                key={score.id}
+                                                draggableId={score.id}
+                                                index={index}
+                                            >
+                                                {(provided, snapshot) =>
+                                                    <div>
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                        >
+                                                            <div style={{
+                                                                width: '100%',
+                                                                height: 50,
+                                                                border: '1px solid black'
+                                                            }}>
+                                                                {score.order + 1}. {score.title} by {score.composer}
+                                                            </div>
+                                                        </div>
+                                                        {provided.placeholder}
+                                                    </div>
+                                                }
+                                            </Draggable>
+                                        )   
+                                    }
+                                </div>
+                            }
+                        </Droppable>
                     </div>
                 </div>
+                </DragDropContext>
                 <AddSetlistScoresDialog onRef= {ref => this.addScoreDialog = ref}/>
             </div>
         );
