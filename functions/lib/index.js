@@ -65,7 +65,7 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
         console.log(err);
     }
 }));
-// Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
+//Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
 exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, void 0, void 0, function* () {
     const object = event.data;
     if (object.resourceState === 'not_exists')
@@ -112,16 +112,16 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
         });
         const upload = (outputType) => __awaiter(this, void 0, void 0, function* () {
             // Read files
-            let fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
+            const fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
             // Upload files
-            let uploadResponses = yield Promise.all(fileNames.map((name, index) => bucket.upload(`/tmp/output-${outputType}/${name}`, {
+            const uploadResponses = yield Promise.all(fileNames.map((name, index) => bucket.upload(`/tmp/output-${outputType}/${name}`, {
                 destination: `bands/${bandId}/pdfs/${docRef.id}/${outputType}/${index}.png`,
                 metadata: {
                     contentType: 'image/png'
                 }
             })));
             // Generate urls
-            let urlResponses = yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
+            const urlResponses = yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
                 action: 'read',
                 expires: '03-09-2491'
             })));

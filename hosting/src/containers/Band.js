@@ -6,12 +6,11 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {
-    Avatar, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Paper, Tab,
+    Avatar, Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Paper,
+    Snackbar,
+    Tab,
     Tabs,
 } from "material-ui";
-import AddIcon from 'material-ui-icons/Add';
-import MenuIcon from 'material-ui-icons/Menu';
-import FileUploadIcon from 'material-ui-icons/FileUpload';
 
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
@@ -20,7 +19,10 @@ import PDFList from "./Band/PDFList";
 import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
 import Drawer from '../components/Drawer.js';
-import {Home} from "material-ui-icons";
+import {
+    Description, FileUpload, LibraryAdd, LibraryMusic, PlaylistAdd, QueueMusic,
+    SupervisorAccount
+} from "material-ui-icons";
 
 const styles = {
     root: {
@@ -66,7 +68,8 @@ class Band extends Component {
         anchorEl: null,
         selectedPage: 3,
         band: {scores: []},
-        uploadSheetsDialogOpen: false
+        uploadSheetsDialogOpen: false,
+        message: null
     };
 
     unsubscribeCallbacks = [];
@@ -245,9 +248,26 @@ class Band extends Component {
 
     };
 
-    async _onFileUploadButtonClick() {
-        this.setState({uploadSheetsDialogOpen: true});
-    }
+    _onFileChange = async e => {
+        // https://reactjs.org/docs/events.html#event-pooling
+        e.persist();
+
+        if (!e.target.files.length) return;
+
+        this.setState({message: 'Uploading...'});
+
+        await Promise.all(
+            Array.from(e.target.files).map(file =>
+                firebase.storage().ref(`bands/${this.props.detail}/input/${file.name}`).put(file)
+            )
+        );
+
+        this.setState({message: null});
+    };
+
+    _onFileUploadButtonClick = () => {
+        this.fileBrowser.click();
+    };
 
     _onSheetsChange = async (scoreId, sheetMusicId, sheets) => {
         const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
@@ -255,7 +275,7 @@ class Band extends Component {
     };
 
     render() {
-        const {anchorEl, selectedPage, band, uploadSheetsDialogOpen} = this.state;
+        const {anchorEl, selectedPage, band, uploadSheetsDialogOpen, message} = this.state;
 
         const {classes, user} = this.props;
 
@@ -269,19 +289,8 @@ class Band extends Component {
                             {band.name}
                         </Typography>
                         <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
-                            <FileUploadIcon/>
+                            <FileUpload/>
                         </IconButton>
-                        <IconButton color="inherit" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon/>
-                        </IconButton>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={() => this._onMenuClose()}
-                        >
-                            <MenuItem onClick={() => this._onMenuClick('score')}>Create Score</MenuItem>
-                            <MenuItem onClick={() => this._onMenuClick('setlist')}>Create Setlist</MenuItem>
-                        </Menu>
                     </Toolbar>
                 </AppBar>
                 <div style={{display: 'flex', paddingTop: 64, height: 'calc(100% - 64px)', overflow: 'hidden'}}>
@@ -291,7 +300,10 @@ class Band extends Component {
                                 const props = index === selectedPage ? {style: {backgroundColor: 'rgba(0, 0, 0, 0.08)'}} : {};
 
                                 return <ListItem key={index} button {...props} onClick={() => this._onNavClick(index)}>
-                                    <Home style={{color: '#757575'}}/>
+                                    {name === 'Scores' && <LibraryMusic style={{color: '#757575'}}/>}
+                                    {name === 'Setlists' && <QueueMusic style={{color: '#757575'}}/>}
+                                    {name === 'Members' && <SupervisorAccount style={{color: '#757575'}}/>}
+                                    {name === 'PDFs' && <Description style={{color: '#757575'}}/>}
                                     <ListItemText inset primary={name}/>
                                 </ListItem>
                             })}
@@ -365,13 +377,39 @@ class Band extends Component {
                         />
                         }
                     </div>
-                    <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
-                    <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
-                    <AddInstrumentDialog
-                        band={band}
-                        onRef={ref => this.addInstrumentDialog = ref}
-                    />
                 </div>
+                <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
+                <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
+                <AddInstrumentDialog
+                    band={band}
+                    onRef={ref => this.addInstrumentDialog = ref}
+                />
+                <input
+                    ref={ref => this.fileBrowser = ref}
+                    type='file'
+                    style={{display: 'none'}}
+                    onChange={this._onFileChange}
+                    multiple
+                />
+                <Snackbar
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    open={Boolean(message)}
+                    message={message}
+                />
+                {selectedPage === 1 &&
+                <Button variant="fab" color="secondary" style={{position: 'fixed', bottom: 32, right: 32}}>
+                    <PlaylistAdd />
+                </Button>
+                }
+                {selectedPage === 3 &&
+                    <Button variant="fab" color="secondary" style={{position: 'fixed', bottom: 32, right: 32}}>
+                        <LibraryAdd />
+                    </Button>
+                }
+
             </div>
         );
     }

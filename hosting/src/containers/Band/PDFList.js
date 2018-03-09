@@ -129,21 +129,6 @@ class PDFList extends Component {
         this.fileBrowser.click();
     }
 
-    async _onFileChange(e) {
-        // https://reactjs.org/docs/events.html#event-pooling
-        e.persist();
-
-        if (!e.target.files.length) return;
-
-        let reader = new FileReader();
-
-        reader.addEventListener('load', () => {
-
-        });
-
-        reader.readAsArrayBuffer(e.target.files[0]);
-    }
-
     _onPDFClick = index => {
         this.setState({selectedPDF: index});
     };
@@ -302,7 +287,7 @@ class PDFList extends Component {
                             key={doc.id}
                             classes={{root: classes.selectable}}
                             title={doc.name}
-                            imageURL={doc.pagesCropped && doc.pagesCropped[0]}
+                            imageURL={doc.pagesCropped ? doc.pagesCropped[0] : ''}
                             selected={selectedItems.has(docIndex)}
                             onClick={e => this._onPDFClick(docIndex)}
                             onSelect={e => this._onItemSelect(docIndex)}
@@ -325,16 +310,8 @@ class PDFList extends Component {
                         />
                     )}
             </div>
-            <input
-                ref={ref => this.fileBrowser = ref}
-                type='file'
-                style={{display: 'none'}}
-                onChange={e => this._onFileChange(e)}
-            />
-
             <AddPDFToScoreDialog band={band} onRef={ref => this.addPDFToScoreDialog = ref}/>
             <AddCompletePDFDialog band={band} onRef={ref => this.addCompletePDFDialog = ref}/>
-
         </div>;
     }
 }

@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as path from 'path';
 import * as Storage from '@google-cloud/storage';
-import {spawn, exec} from 'child-process-promise';
+import {spawn} from 'child-process-promise';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
@@ -74,7 +74,7 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 });
 
 
-// Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
+//Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
 exports.addPDF = functions.storage.object().onChange(async event => {
     const object = event.data;
 
@@ -134,10 +134,10 @@ exports.addPDF = functions.storage.object().onChange(async event => {
 
         const upload = async outputType => {
             // Read files
-            let fileNames = await fs.readdir(`/tmp/output-${outputType}`);
+            const fileNames = await fs.readdir(`/tmp/output-${outputType}`);
 
             // Upload files
-            let uploadResponses = await Promise.all(
+            const uploadResponses = await Promise.all(
                 fileNames.map((name, index) =>
                     bucket.upload(`/tmp/output-${outputType}/${name}`, {
                         destination: `bands/${bandId}/pdfs/${docRef.id}/${outputType}/${index}.png`,
@@ -148,7 +148,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
                 ));
 
             // Generate urls
-            let urlResponses = await Promise.all(
+            const urlResponses = await Promise.all(
                 uploadResponses.map(([file]) =>
                     file.getSignedUrl({
                         action: 'read',

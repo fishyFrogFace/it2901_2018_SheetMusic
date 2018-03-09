@@ -160,7 +160,7 @@ class Home extends Component {
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
-                        horizontal: 'left',
+                        horizontal: 'right',
                     }}
                     open={Boolean(message)}
                     message={message}
