@@ -109,6 +109,7 @@ class Band extends Component {
             })
         );
 
+        // Setlists
         this.unsubscribeCallbacks.push(
             firebase.firestore().collection(`bands/${bandId}/setlists`).onSnapshot(async snapshot => {
                 const setlists = await Promise.all(snapshot.docs.map(async doc => {

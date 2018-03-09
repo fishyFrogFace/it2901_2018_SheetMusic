@@ -8,6 +8,7 @@ import Moment from 'moment';
 
 class AddSetlistEventDialog extends React.Component {
     data = {
+        description: ''
     };
 
     componentDidMount() {
@@ -29,7 +30,7 @@ class AddSetlistEventDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Add Event' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField label='Name' onChange={e => this._onTextFieldChange(e, 'title')}/>
+            <TextField required label='Name' onChange={e => this._onTextFieldChange(e, 'title')}/>
             <TextField label='Description' onChange={e => this._onTextFieldChange(e, 'description')}/>            
         </AsyncDialog>
     }

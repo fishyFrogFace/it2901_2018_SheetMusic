@@ -6,13 +6,10 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {
-    Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
-    Snackbar,
-    TextField
+    IconButton, Menu, MenuItem
 } from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import AddIcon from 'material-ui-icons/Add';
-import MoreVertIcon from 'material-ui-icons/MoreVert';
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -86,8 +83,10 @@ class Setlist extends Component {
     addScoreDialog = null;
 
     async addSetListScores (setlistid, arrIds, currLength){
-        let promise = await Promise.all(arrIds.map(async (arr, index) =>
-            await firebase.firestore().collection(`setlists/${setlistid}/scores`).add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
+        console.log();
+       await Promise.all(arrIds.map(async (arr, index) =>
+            await   firebase.firestore().collection(`setlists/${setlistid}/scores`)
+                    .add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
 
     }
     _onAddButtonClick(e) {
@@ -97,12 +96,12 @@ class Setlist extends Component {
         this.setState({anchorEl: null});
     }
 
-    async onScoresUpdate(setlistId, scores){
-        let doc = await firebase.firestore().doc();
-    }
-
     async addSetlistEvent(setlistId, eventTitle, eventDesc, currLength){
-        await firebase.firestore().collection(`setlists/${setlistId}/events`).add({order: currLength, title:eventTitle, desc:eventDesc});
+        try{
+            await firebase.firestore().collection(`setlists/${setlistId}/events`).add({order: currLength, title:eventTitle, desc:eventDesc});
+        }catch(err){
+            console.error(err);
+        }
     }
 
     _onDragEnd = result => {
@@ -144,6 +143,8 @@ class Setlist extends Component {
                 const {title, description} = await this.addEventDialog.open();
                 this.addSetlistEvent(this.state.setlist.id, title, description, this.state.setlist.combinedArray.length);
                 break;
+            default:
+                break;
         }
         this.setState({anchorEl: null});
     }
@@ -152,8 +153,8 @@ class Setlist extends Component {
         let doc = await firebase.firestore().doc(`setlists/${setlistID}`).get();
         let setlist = doc.data();
         try{
-            var collection = await firebase.firestore().collection(`setlists/${setlistID}/scores`).get();
-            var setlistScores = await Promise.all(collection.docs.map(async doc => {
+            var scoresCollection = await firebase.firestore().collection(`setlists/${setlistID}/scores`).get();
+            var setlistScores = await Promise.all(scoresCollection.docs.map(async doc => {
                 let score = await doc.data().ref.get();
                 return {id: doc.id, order: doc.data().order, ...score.data(), type:0};
             }));
@@ -164,8 +165,8 @@ class Setlist extends Component {
         }
 
         try{
-            var collection = await firebase.firestore().collection(`setlists/${setlistID}/events`).get();
-            var events = await Promise.all(collection.docs.map(async doc => {
+            var eventCollection = await firebase.firestore().collection(`setlists/${setlistID}/events`).get();
+            var events = await Promise.all(eventCollection.docs.map(async doc => {
                 return {id: doc.id, ...doc.data(), type:1};
             }));
             events = events.sort((a, b) => a.order - b.order);
@@ -174,13 +175,10 @@ class Setlist extends Component {
             var events = [];
         }
 
-        console.log(setlistScores);
 
         let combinedArray = Array.from(events);
         combinedArray.push.apply(combinedArray, setlistScores);
         combinedArray = combinedArray.sort((a, b) => a.order - b.order);
-        console.log(setlistScores)
-        console.log(events)
 
         let bandSnapshot = await setlist.band.get();
         const bandScoresSnapshot =  await firebase.firestore().collection(`bands/${bandSnapshot.id}/scores`).get();
@@ -209,7 +207,7 @@ class Setlist extends Component {
 
             let combinedArray = this.state.setlist.combinedArray;
             for(var e in scores){
-                var score = combinedArray.find( (arr) => arr.id == scores[e].id);
+                var score = combinedArray.find((arr) => arr.id === scores[e].id);
 
                 if (!score){
                     combinedArray.push(scores[e]);
@@ -232,7 +230,7 @@ class Setlist extends Component {
 
             let combinedArray = this.state.setlist.combinedArray;
             for(var e in events){
-                var event = combinedArray.find( (arr) => arr.id == events[e].id);
+                var event = combinedArray.find( (arr) => arr.id === events[e].id);
 
                 if (!event){
                     combinedArray.push(events[e]);
@@ -272,7 +270,7 @@ class Setlist extends Component {
     }
 
     render() {
-        const { anchorEl, addArrDialogOpen, addPauseDialogOpen, setlist} = this.state;
+        const { anchorEl, setlist} = this.state;
         const {classes} = this.props;
 
         return (
@@ -325,7 +323,7 @@ class Setlist extends Component {
                                                                 height: 50,
                                                                 border: '1px solid black'
                                                             }}>
-                                                                {(score.type == 0 ) ? `${score.order}. ${score.title} by ${score.composer}`: `${score.order} ${score.title}` }
+                                                                {(score.type === 0 ) ? `${score.order + 1}. ${score.title} by ${score.composer}`: `${score.order + 1} ${score.title} | ${score.desc}` }
                                                             </div>
                                                         </div>
                                                         {provided.placeholder}
