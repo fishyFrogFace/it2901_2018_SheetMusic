@@ -19,7 +19,7 @@ const styles = {
 };
 
 
-class AddCompleteScoreDialog extends React.Component {
+class AddFullScoreDialog extends React.Component {
     state = {
         pdfData: [],
         activeStep: 0,
@@ -250,4 +250,4 @@ class AddCompleteScoreDialog extends React.Component {
 }
 
 
-export default withStyles(styles)(AddCompleteScoreDialog);
+export default withStyles(styles)(AddFullScoreDialog);

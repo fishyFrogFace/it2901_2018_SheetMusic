@@ -10,7 +10,9 @@ import 'firebase/firestore';
 import 'firebase/auth';
 
 class App extends React.Component {
-    state = {};
+    state = {
+        user: {}
+    };
 
     constructor() {
         super();
@@ -28,23 +30,29 @@ class App extends React.Component {
         window.addEventListener('hashchange', () => this._onHashChange());
     }
 
-    _onUserStateChanged(user) {
-        this.setState({user: user});
-
+    async _onUserStateChanged(user) {
         if (user) {
-            firebase.firestore().doc(`users/${user.uid}`).get().then(async userSnapshot => {
+            firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async userSnapshot => {
                 if (!userSnapshot.exists) {
                     await userSnapshot.ref.set({email: user.email, displayName: user.displayName, photoURL: user.photoURL});
+
+                    let bandRef = await firebase.firestore().collection('bands').add({
+                        name: `${user.displayName.split(' ')[0]}'s band`
+                    });
+
+                    await userSnapshot.ref.collection('bands').add({
+                        ref: bandRef
+                    });
+
+                    await userSnapshot.ref.update({defaultBand: bandRef});
                 }
+
+                this.setState({user: {...this.state.user, ...userSnapshot.data()}});
             });
 
-            firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
-                const bands = await Promise.all(snapshot.docs.map(async doc => {
-                    const bandDoc = await doc.data().ref.get();
-                    return {id: bandDoc.id, ...bandDoc.data()};
-                }));
 
-                this.setState({user: {...this.state.user, bands: bands}});
+            firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
+                this.setState({user: {...this.state.user, bands: snapshot.docs}});
             })
         }
 
@@ -72,7 +80,6 @@ class App extends React.Component {
         let [page, detail] = hash.split('/').slice(1);
 
         const page2component = {
-            band: 'Band',
             home: 'Home',
             score: 'Score',
             setlist: 'Setlist',
@@ -109,8 +116,8 @@ const theme = createMuiTheme({
             contrastText: 'rgb(115, 115, 115)',
         },
         secondary: {
-            light: '#1E88E5',
-            main: '#1E88E5',
+            light: '#448AFF',
+            main: '#448AFF',
             contrastText: '#fff',
         },
         // secondary: cyan.A700

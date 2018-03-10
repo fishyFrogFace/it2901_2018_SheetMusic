@@ -12,7 +12,7 @@ import {Add} from "material-ui-icons";
 const styles = {};
 
 
-class AddPartsDialog extends React.Component {
+class AddPartDialog extends React.Component {
     state = {
         scoreData: {},
         pdfData: {},
@@ -195,4 +195,4 @@ class AddPartsDialog extends React.Component {
 }
 
 
-export default withStyles(styles)(AddPartsDialog);
+export default withStyles(styles)(AddPartDialog);

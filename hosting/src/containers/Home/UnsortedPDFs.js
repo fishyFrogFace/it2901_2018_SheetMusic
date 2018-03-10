@@ -12,8 +12,8 @@ import {
 } from "material-ui-icons";
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import Selectable from "../../components/Selectable";
-import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
-import AddCompleteScoreDialog from "../../components/dialogs/AddCompleteScoreDialog";
+import AddPartDialog from "../../components/dialogs/AddPartDialog";
+import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
 
 
 const drawerWidth = 240;
@@ -91,6 +91,10 @@ const styles = {
         position: 'absolute',
         top: 0,
         left: 0
+    },
+
+    appBar__root: {
+        boxShadow: 'none',
     }
 };
 
@@ -98,7 +102,7 @@ function Transition(props) {
     return <Slide direction="up" {...props} />;
 }
 
-class PDFList extends Component {
+class UnsortedPDFs extends Component {
     state = {
         selectedItems: new Set(),
         lastClicked: null,
@@ -226,18 +230,18 @@ class PDFList extends Component {
         this.setState({selectedItems: new Set()});
     };
 
-    _onAddAsInstruments = async () => {
+    _onAddAsPart = async () => {
         const pdfs = Array.from(this.state.selectedItems).map(i => this.props.band.pdfs[i]);
-        const {score, instruments} = await this.addPDFToScoreDialog.open(pdfs);
-        this.props.onAddPDF(score, instruments);
         this.setState({selectedItems: new Set()});
+        const {score, instruments} = await this.addPartDialog.open(pdfs);
+        this.props.onAddPart(score, instruments);
     };
 
-    _onAddAsScore = async () => {
+    _onAddAsFullScore = async () => {
         const pdf = this.props.band.pdfs[Array.from(this.state.selectedItems)[0]];
-        const {score, instruments} = await this.addCompletePDFDialog.open(pdf);
-        this.props.onAddScore(score, instruments);
-        this.setState({selectedItems: new Set()})
+        this.setState({selectedItems: new Set()});
+        const {score, instruments} = await this.addFullScoreDialog.open(pdf);
+        this.props.onAddFullScore(score, instruments);
     };
 
     _onAddAsInstrument = () => {
@@ -250,7 +254,7 @@ class PDFList extends Component {
 
         return <div>
             {selectedItems.size > 0 &&
-            <AppBar className={classes.appBar}>
+            <AppBar className={classes.appBar} color='secondary' classes={{root: classes.appBar__root}}>
                 <Toolbar>
                     <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
                         <Close/>
@@ -259,9 +263,9 @@ class PDFList extends Component {
                         {selectedItems.size} selected
                     </Typography>
                     {selectedPDF === null && selectedItems.size === 1 &&
-                    <Button color='inherit' onClick={this._onAddAsScore}>Add as complete score</Button>}
+                    <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>}
                     {selectedPDF === null &&
-                    <Button color='inherit' onClick={this._onAddAsInstruments}>Add as parts</Button>}
+                    <Button color='inherit' onClick={this._onAddAsPart}>Add as part</Button>}
                     {selectedPDF !== null &&
                     <Button color='inherit' onClick={this._onAddAsInstrument}>Add as part</Button>}
                 </Toolbar>
@@ -310,10 +314,10 @@ class PDFList extends Component {
                         />
                     )}
             </div>
-            <AddPartsDialog band={band} onRef={ref => this.addPDFToScoreDialog = ref}/>
-            <AddCompleteScoreDialog band={band} onRef={ref => this.addCompletePDFDialog = ref}/>
+            <AddPartDialog band={band} onRef={ref => this.addPartDialog = ref}/>
+            <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref}/>
         </div>;
     }
 }
 
-export default withStyles(styles)(PDFList);
+export default withStyles(styles)(UnsortedPDFs);
