@@ -215,7 +215,7 @@ class Setlist extends Component {
                     score.order = scores[e].order;
                 }
             }
-        
+
             this.setState({
                 setlist: {...this.state.setlist, scores: scores, combinedArray: combinedArray.sort((a, b) => a.order - b.order)}
             });
@@ -251,18 +251,23 @@ class Setlist extends Component {
 
 
     async updateFirebaseOrders(setlistId, combined){
-        Promise.all(combined.map(async (score, index) => {
+        let batch = firebase.firestore().batch();
+        await combined.map(async (score, index) => {
+            let doc;
             switch(score.type){
                 case 0:
-                    await firebase.firestore().doc(`setlists/${setlistId}/scores/${score.id}`).update({order:index});
+                    doc = await firebase.firestore().doc(`setlists/${setlistId}/scores/${score.id}`);
+                    batch.update(doc, {order:index})
                     break;
                 case 1:
-                    await firebase.firestore().doc(`setlists/${setlistId}/events/${score.id}`).update({order:index});
+                    doc = await firebase.firestore().doc(`setlists/${setlistId}/events/${score.id}`);
+                    batch.update(doc, {order:index})
                     break;
                 default:
                     break;
             }
-        }));
+        });
+        await batch.commit();
     }
 
     async _onArrowBackButtonClick() {
@@ -283,6 +288,9 @@ class Setlist extends Component {
                         </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {setlist.title}
+                            <Typography variant='subheading' color='inherit' className={classes.flex}>
+                                {setlist.date && setlist.date.toLocaleString()} | {setlist.place}
+                            </Typography>
                         </Typography>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
