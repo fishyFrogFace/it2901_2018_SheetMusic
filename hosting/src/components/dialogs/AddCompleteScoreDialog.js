@@ -19,9 +19,9 @@ const styles = {
 };
 
 
-class AddCompletePDF extends React.Component {
+class AddCompleteScoreDialog extends React.Component {
     state = {
-        pdfData: {},
+        pdfData: [],
         activeStep: 0,
         open: false,
         pdf: null,
@@ -48,7 +48,7 @@ class AddCompletePDF extends React.Component {
     }
 
     _onSelectChange(type, index, e) {
-        const pdfData = {...this.state.pdfData};
+        const pdfData = [...this.state.pdfData];
         pdfData[index][type] = e.target.value;
         this.setState({pdfData: pdfData})
     }
@@ -74,26 +74,43 @@ class AddCompletePDF extends React.Component {
         }
 
         if (activeStep === 2) {
-            this.setState({pdfData: Array.from(selectedItems).map(_ => ({instrument: 0, instrumentNumber: 0}))});
+            this.setState({pdfData: Array.from(selectedItems).map(page => ({page: page, instrument: 0, instrumentNumber: 0}))});
         }
 
         if (activeStep === 3) {
-            // this.__resolve({
-            //     score: scoreData,
-            //     instruments: Object.keys(pdfData).map(i => ({
-            //         pdfId: pdfs[i].id,
-            //         instrumentId: band.instruments[pdfData[i].instrument].id,
-            //         instrumentNumber: pdfData[i].instrumentNumber
-            //     }))
-            // });
-            //
-            // this.setState({
-            //     open: false,
-            //     activeStep: 0,
-            //     scoreCreated: false,
-            //     selectionData: {pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0}))},
-            //     scoreData: {}
-            // });
+            const instruments = [];
+
+            const lastPage = pdf.pagesCropped.length - 1;
+
+            for (let i = 0; i < pdfData.length; i++) {
+                let data = pdfData[i];
+
+                const pages = [];
+                const nextPageIndex = i === pdfData.length - 1 ? lastPage : pdfData[i + 1].page;
+                for (let j = data.page; j < nextPageIndex; j++) {
+                    pages.push(j);
+                }
+
+                instruments.push({
+                    instrumentId: band.instruments[data.instrument].id,
+                    instrumentNumber: data.instrumentNumber,
+                    pagesCropped: pages.map(page => pdf.pagesCropped[page]),
+                    pagesOriginal: pages.map(page => pdf.pagesOriginal[page])
+                });
+            }
+
+            this.__resolve({
+                score: scoreData,
+                instruments: instruments
+            });
+
+            this.setState({
+                open: false,
+                activeStep: 0,
+                scoreCreated: false,
+                scoreData: {},
+                pdfData: []
+            });
         }
     };
 
@@ -233,4 +250,4 @@ class AddCompletePDF extends React.Component {
 }
 
 
-export default withStyles(styles)(AddCompletePDF);
+export default withStyles(styles)(AddCompleteScoreDialog);

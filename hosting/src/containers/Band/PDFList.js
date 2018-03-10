@@ -12,8 +12,8 @@ import {
 } from "material-ui-icons";
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import Selectable from "../../components/Selectable";
-import AddPDFToScoreDialog from "../../components/dialogs/AddPDFToScoreDialog";
-import AddCompletePDFDialog from "../../components/dialogs/AddCompletePDFDialog";
+import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
+import AddCompleteScoreDialog from "../../components/dialogs/AddCompleteScoreDialog";
 
 
 const drawerWidth = 240;
@@ -236,8 +236,8 @@ class PDFList extends Component {
     _onAddAsScore = async () => {
         const pdf = this.props.band.pdfs[Array.from(this.state.selectedItems)[0]];
         const {score, instruments} = await this.addCompletePDFDialog.open(pdf);
-        // this.props.onAddPDF(score, instruments);
-        // this.setState({selectedPDFs: new Set()});
+        this.props.onAddScore(score, instruments);
+        this.setState({selectedItems: new Set()})
     };
 
     _onAddAsInstrument = () => {
@@ -261,9 +261,9 @@ class PDFList extends Component {
                     {selectedPDF === null && selectedItems.size === 1 &&
                     <Button color='inherit' onClick={this._onAddAsScore}>Add as complete score</Button>}
                     {selectedPDF === null &&
-                    <Button color='inherit' onClick={this._onAddAsInstruments}>Add as instruments</Button>}
+                    <Button color='inherit' onClick={this._onAddAsInstruments}>Add as parts</Button>}
                     {selectedPDF !== null &&
-                    <Button color='inherit' onClick={this._onAddAsInstrument}>Add as instrument</Button>}
+                    <Button color='inherit' onClick={this._onAddAsInstrument}>Add as part</Button>}
                 </Toolbar>
             </AppBar>
             }
@@ -310,8 +310,8 @@ class PDFList extends Component {
                         />
                     )}
             </div>
-            <AddPDFToScoreDialog band={band} onRef={ref => this.addPDFToScoreDialog = ref}/>
-            <AddCompletePDFDialog band={band} onRef={ref => this.addCompletePDFDialog = ref}/>
+            <AddPartsDialog band={band} onRef={ref => this.addPDFToScoreDialog = ref}/>
+            <AddCompleteScoreDialog band={band} onRef={ref => this.addCompletePDFDialog = ref}/>
         </div>;
     }
 }

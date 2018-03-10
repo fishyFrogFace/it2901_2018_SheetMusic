@@ -104,13 +104,13 @@ class App extends React.Component {
 const theme = createMuiTheme({
     palette: {
         primary: {
-            light: 'rgb(0,188,212)',
-            main: 'rgb(0,188,212)',
-            contrastText: '#fff',
+            light: '#ffffff',
+            main: '#ffffff',
+            contrastText: 'rgb(115, 115, 115)',
         },
         secondary: {
-            light: 'rgb(0,151,170)',
-            main: 'rgb(0,151,170)',
+            light: '#1E88E5',
+            main: '#1E88E5',
             contrastText: '#fff',
         },
         // secondary: cyan.A700

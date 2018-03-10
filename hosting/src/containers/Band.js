@@ -16,7 +16,6 @@ import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import CreateScoreDialog from "../components/dialogs/CreateScoreDialog";
 import PDFList from "./Band/PDFList";
-import AddInstrumentDialog from "../components/dialogs/AddInstrumentDialog";
 
 import Drawer from '../components/Drawer.js';
 import {
@@ -170,30 +169,55 @@ class Band extends Component {
 
     }
 
-    async _onAddScore() {
-        let uid = this.props.user.uid;
-        let bandId = this.props.detail;
+    // _onAddScore = async () => {
+    //     let uid = this.props.user.uid;
+    //     let bandId = this.props.detail;
+    //
+    //     const {title, composer} = await this.scoreDialog.open();
+    //
+    //     try {
+    //         const score = {
+    //             title: title,
+    //             composer: composer,
+    //             creator: firebase.firestore().doc(`users/${uid}`),
+    //             band: firebase.firestore().doc(`bands/${bandId}`)
+    //         };
+    //
+    //         let ref = await firebase.firestore().collection('scores').add(score);
+    //
+    //         await firebase.firestore().collection(`bands/${bandId}/scores`).add({
+    //             ref: firebase.firestore().doc(`scores/${ref.id}`)
+    //         });
+    //         // window.location.hash = `#/score/${ref.id}`;
+    //     } catch (err) {
+    //         console.log(err);
+    //     }
+    // }
 
-        const {title, composer} = await this.scoreDialog.open();
-
-        try {
-            const score = {
-                title: title,
-                composer: composer,
-                creator: firebase.firestore().doc(`users/${uid}`),
-                band: firebase.firestore().doc(`bands/${bandId}`)
-            };
-
-            let ref = await firebase.firestore().collection('scores').add(score);
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: firebase.firestore().doc(`scores/${ref.id}`)
+    _onAddScore = async (score, instruments) => {
+        let scoreRef;
+        if (score.id) {
+            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
+        } else {
+            scoreRef = await firebase.firestore().collection('scores').add({
+                title: score.title,
+                composer: score.composer || ''
             });
-            // window.location.hash = `#/score/${ref.id}`;
-        } catch (err) {
-            console.log(err);
+
+            await firebase.firestore().collection(`bands/${this.props.detail}/scores`).add({
+                ref: scoreRef
+            })
         }
-    }
+
+        for (let instrument of instruments) {
+            await scoreRef.collection('sheetMusic').add({
+                pagesCropped: instrument.pagesCropped,
+                pagesOriginal: instrument.pagesOriginal,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                instrument: firebase.firestore().doc(`instruments/${instrument.instrumentId}`)
+            });
+        }
+    };
 
     _onAddInstrument = async (scoreId) => {
         try {
@@ -207,22 +231,6 @@ class Band extends Component {
             console.log(err);
         }
     };
-
-    async _onMenuClick(type) {
-
-        this.setState({anchorEl: null});
-
-        switch (type) {
-            case 'score':
-
-                break;
-            case 'setlist':
-                const {name} = await this.setlistDialog.open();
-                break;
-            default:
-                break;
-        }
-    }
 
     _onNavClick = index => {
         this.setState({selectedPage: index});
@@ -245,7 +253,32 @@ class Band extends Component {
     };
 
     _onAddPDF = async (score, instruments) => {
+        let scoreRef;
+        if (score.id) {
+            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
+        } else {
+            scoreRef = await firebase.firestore().collection('scores').add({
+                title: score.title,
+                composer: score.composer || ''
+            });
 
+            await firebase.firestore().collection(`bands/${this.props.detail}/scores`).add({
+                ref: scoreRef
+            })
+        }
+
+        for (let instrument of instruments) {
+            const pdfDocRef = firebase.firestore().doc(`bands/${this.props.detail}/pdfs/${instrument.pdfId}`);
+
+            const doc = await pdfDocRef.get();
+
+            await scoreRef.collection('sheetMusic').add({
+                pagesCropped: doc.data().pagesCropped,
+                pagesOriginal: doc.data().pagesOriginal,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                instrument: firebase.firestore().doc(`instruments/${instrument.instrumentId}`)
+            });
+        }
     };
 
     _onFileChange = async e => {
@@ -284,8 +317,7 @@ class Band extends Component {
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        <Drawer onSignOut={() => this.signOut()} bands={user.bands}/>
-                        <Typography variant="title" color="inherit" className={classes.flex}>
+                        <Typography style={{marginLeft: 50}} variant="title" color="inherit" className={classes.flex}>
                             {band.name}
                         </Typography>
                         <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
@@ -296,14 +328,14 @@ class Band extends Component {
                 <div style={{display: 'flex', paddingTop: 64, height: 'calc(100% - 64px)', overflow: 'hidden'}}>
                     <div style={{width: 250, paddingTop: 20}}>
                         <List>
-                            {['Scores', 'Setlists', 'Members', 'PDFs'].map((name, index) => {
+                            {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
                                 const props = index === selectedPage ? {style: {backgroundColor: 'rgba(0, 0, 0, 0.08)'}} : {};
 
                                 return <ListItem key={index} button {...props} onClick={() => this._onNavClick(index)}>
                                     {name === 'Scores' && <LibraryMusic style={{color: '#757575'}}/>}
                                     {name === 'Setlists' && <QueueMusic style={{color: '#757575'}}/>}
                                     {name === 'Members' && <SupervisorAccount style={{color: '#757575'}}/>}
-                                    {name === 'PDFs' && <Description style={{color: '#757575'}}/>}
+                                    {name === 'Unsorted PDFs' && <Description style={{color: '#757575'}}/>}
                                     <ListItemText inset primary={name}/>
                                 </ListItem>
                             })}
@@ -369,7 +401,7 @@ class Band extends Component {
                         {selectedPage === 3 &&
                         <PDFList
                             band={band}
-                            onAddScore={() => this._onAddScore()}
+                            onAddScore={this._onAddScore}
                             onAddInstrument={this._onAddInstrument}
                             onUploadSheets={this._onUploadSheets}
                             onSheetsChange={this._onSheetsChange}
@@ -378,12 +410,7 @@ class Band extends Component {
                         }
                     </div>
                 </div>
-                <CreateScoreDialog onRef={ref => this.scoreDialog = ref}/>
                 <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
-                <AddInstrumentDialog
-                    band={band}
-                    onRef={ref => this.addInstrumentDialog = ref}
-                />
                 <input
                     ref={ref => this.fileBrowser = ref}
                     type='file'
