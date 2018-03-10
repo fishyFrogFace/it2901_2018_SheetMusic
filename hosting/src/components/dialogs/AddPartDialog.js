@@ -2,7 +2,8 @@ import React from 'react';
 
 import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle,
-    FormControl, Input, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper, TextField,
+    FormControl, Input, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper, SvgIcon,
+    TextField,
     Typography,
     withStyles
 } from "material-ui";
@@ -11,6 +12,24 @@ import {Add} from "material-ui-icons";
 
 const styles = {};
 
+function StepIcon(props) {
+    const extraProps = {};
+
+    if (props.active) {
+        extraProps.color = 'secondary';
+    } else {
+        extraProps.nativeColor = 'rgba(0, 0, 0, 0.38)';
+    }
+
+    return props.completed ?
+        <SvgIcon color='secondary'>
+            <path d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm-2 17l-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9z"/>
+        </SvgIcon> :
+        <SvgIcon {...props} {...extraProps}>
+            <circle cx="12" cy="12" r="12"/>
+            <text x="12" y="16" textAnchor="middle" style={{fill: '#fff', fontSize: '0.75rem', fontFamily: 'Roboto'}}>{props.number}</text>
+        </SvgIcon>;
+}
 
 class AddPartDialog extends React.Component {
     state = {
@@ -110,13 +129,13 @@ class AddPartDialog extends React.Component {
             <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
                 <Stepper activeStep={activeStep}>
                     <Step>
-                        <StepLabel>Select score</StepLabel>
-                    </Step>
-                    <Step completed={scoreCreated}>
-                        <StepLabel>Create new</StepLabel>
+                        <StepLabel icon={<StepIcon active={activeStep === 0 ? 1 : 0} completed={activeStep > 0 ? 1 : 0} number={1}/>}>Select score</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel>Select instrument</StepLabel>
+                        <StepLabel icon={<StepIcon active={activeStep === 1 ? 1 : 0} completed={scoreCreated ? 1 : 0} number={2}/>}>Create new</StepLabel>
+                    </Step>
+                    <Step >
+                        <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} number={3}/>}>Select instruments</StepLabel>
                     </Step>
                 </Stepper>
                 <div>
@@ -186,9 +205,9 @@ class AddPartDialog extends React.Component {
                 </div>
             </DialogContent>
             <DialogActions>
-                <Button color="primary" onClick={this._onCancelClick}>Cancel</Button>
-                <Button color="primary" onClick={this._onBackClick} disabled={activeStep === 0}>Back</Button>
-                <Button color="primary" onClick={this._onNextClick} disabled={activeStep === 0}>{activeStep === 2 ? 'Done' : 'Next'}</Button>
+                <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
+                <Button color="secondary" onClick={this._onBackClick} disabled={activeStep === 0}>Back</Button>
+                <Button color="secondary" onClick={this._onNextClick} disabled={activeStep === 0}>{activeStep === 2 ? 'Done' : 'Next'}</Button>
             </DialogActions>
         </Dialog>
     }
