@@ -31,14 +31,14 @@ function StepIcon(props) {
         </SvgIcon>;
 }
 
-class AddPartsDialog extends React.Component {
+class AddPartDialog extends React.Component {
     state = {
         scoreData: {},
-        pdfData: {},
+        partData: {},
         activeStep: 0,
         scoreCreated: false,
         open: false,
-        pdfs: []
+        pages: []
     };
 
     componentDidMount() {
@@ -49,13 +49,12 @@ class AddPartsDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
-    async open(pdfs) {
+    async open() {
         return new Promise((resolve, reject) => {
             this.setState({
                 open: true,
-                pdfs: pdfs,
-                pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0})),
-                scoreData: {title: pdfs[0].name}
+                partData: {instrument: 0, instrumentNumber: 0},
+                scoreData: {title: ''},
             });
 
             this.__resolve = resolve;
@@ -63,10 +62,10 @@ class AddPartsDialog extends React.Component {
         });
     }
 
-    _onSelectChange(type, index, e) {
-        const pdfData = {...this.state.pdfData};
-        pdfData[index][type] = e.target.value;
-        this.setState({pdfData: pdfData})
+    _onSelectChange(type, e) {
+        const partData = {...this.state.partData};
+        partData[type] = e.target.value;
+        this.setState({partData: partData})
     }
 
     _onScoreClick(scoreId) {
@@ -78,26 +77,25 @@ class AddPartsDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, pdfData, scoreData, pdfs} = this.state;
+        const {activeStep, partData, scoreData} = this.state;
         const {band} = this.props;
 
-        if (this.state.activeStep === 1) {
+        if (activeStep === 1) {
             this.setState({activeStep: 2, scoreCreated: true});
         } else {
             this.__resolve({
                 score: scoreData,
-                instruments: Object.keys(pdfData).map(i => ({
-                    pdfId: pdfs[i].id,
-                    instrumentId: band.instruments[pdfData[i].instrument].id,
-                    instrumentNumber: pdfData[i].instrumentNumber
-                }))
+                part: {
+                    instrumentId: band.instruments[partData.instrument].id,
+                    instrumentNumber: partData.instrumentNumber
+                }
             });
 
             this.setState({
                 open: false,
                 activeStep: 0,
                 scoreCreated: false,
-                selectionData: {pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0}))},
+                partData: {},
                 scoreData: {}
             });
         }
@@ -118,14 +116,14 @@ class AddPartsDialog extends React.Component {
     };
 
     render() {
-        const {pdfData, scoreData, activeStep, scoreCreated, open, pdfs} = this.state;
+        const {partData, scoreData, activeStep, scoreCreated, open} = this.state;
 
         const {band} = this.props;
 
         if (!open) return null;
 
         return <Dialog open={open}>
-            <DialogTitle>Add parts</DialogTitle>
+            <DialogTitle>Add part</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
                 <Stepper activeStep={activeStep}>
                     <Step>
@@ -135,7 +133,7 @@ class AddPartsDialog extends React.Component {
                         <StepLabel icon={<StepIcon active={activeStep === 1 ? 1 : 0} completed={scoreCreated ? 1 : 0} number={2}/>}>Create new</StepLabel>
                     </Step>
                     <Step >
-                        <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} number={3}/>}>Select instruments</StepLabel>
+                        <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} number={3}/>}>Select instrument</StepLabel>
                     </Step>
                 </Stepper>
                 <div>
@@ -165,40 +163,30 @@ class AddPartsDialog extends React.Component {
                     {
                         activeStep === 2 &&
                         <div>
-                            {
-                                pdfs && pdfs.map((pdf, index) =>
-                                    <div key={index} style={{display: 'flex', marginBottom: 30}}>
-                                        <FormControl style={{marginRight: 20, width: 200}} disabled>
-                                            <InputLabel htmlFor="pdf-name">PDF</InputLabel>
-                                            <Input id="pdf-name" value={pdf.name} />
-                                        </FormControl>
-                                        <FormControl style={{marginRight: 20, width: 150}}>
-                                            <InputLabel htmlFor="instrument">Instrument</InputLabel>
-                                            <Select
-                                                value={pdfData[index].instrument}
-                                                onChange={e => this._onSelectChange('instrument', index, e)}
-                                                inputProps={{id: 'instrument'}}
-                                            >
-                                                {
-                                                    band.instruments && band.instruments.map((instrument, index) =>
-                                                        <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
-                                                    )
-                                                }
-                                            </Select>
-                                        </FormControl>
-                                        <FormControl style={{width: 70}}>
-                                            <InputLabel htmlFor="number">Number</InputLabel>
-                                            <Select
-                                                value={pdfData[index].instrumentNumber}
-                                                onChange={e => this._onSelectChange('instrumentNumber', index, e)}
-                                            >
-                                                <MenuItem value={0}>None</MenuItem>
-                                                {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
-                                            </Select>
-                                        </FormControl>
-                                    </div>
-                                )
-                            }
+                            <FormControl style={{marginRight: 20, width: 150}}>
+                                <InputLabel htmlFor="instrument">Instrument</InputLabel>
+                                <Select
+                                    value={partData.instrument}
+                                    onChange={e => this._onSelectChange('instrument', e)}
+                                    inputProps={{id: 'instrument'}}
+                                >
+                                    {
+                                        band.instruments && band.instruments.map((instrument, index) =>
+                                            <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
+                                        )
+                                    }
+                                </Select>
+                            </FormControl>
+                            <FormControl style={{width: 70}}>
+                                <InputLabel htmlFor="number">Number</InputLabel>
+                                <Select
+                                    value={partData.instrumentNumber}
+                                    onChange={e => this._onSelectChange('instrumentNumber', e)}
+                                >
+                                    <MenuItem value={0}>None</MenuItem>
+                                    {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
+                                </Select>
+                            </FormControl>
                         </div>
 
                     }
@@ -214,4 +202,4 @@ class AddPartsDialog extends React.Component {
 }
 
 
-export default withStyles(styles)(AddPartsDialog);
+export default withStyles(styles)(AddPartDialog);

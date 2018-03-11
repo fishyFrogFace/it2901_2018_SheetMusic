@@ -7,6 +7,7 @@ import {Close, ArrowBack} from "material-ui-icons";
 import Selectable from "../../components/Selectable";
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
+import AddPartDialog from "../../components/dialogs/AddPartDialog";
 
 
 const drawerWidth = 240;
@@ -232,19 +233,28 @@ class UnsortedPDFs extends Component {
     _onAddAsParts = async () => {
         const pdfs = Array.from(this.state.selectedItems).map(i => this.props.band.pdfs[i]);
         this.setState({selectedItems: new Set()});
-        const {score, instruments} = await this.addPartsDialog.open(pdfs);
-        this.props.onAddParts(score, instruments);
+        const {score, parts} = await this.addPartsDialog.open(pdfs);
+        this.props.onAddParts(score, parts);
     };
 
     _onAddAsFullScore = async () => {
         const pdf = this.props.band.pdfs[Array.from(this.state.selectedItems)[0]];
         this.setState({selectedItems: new Set()});
-        const {score, instruments} = await this.addFullScoreDialog.open(pdf);
-        this.props.onAddFullScore(score, instruments);
+        const {score, parts} = await this.addFullScoreDialog.open(pdf);
+        this.props.onAddFullScore(score, parts);
     };
 
-    _onAddAsInstrument = () => {
+    _onAddAsPart = async () => {
+        const pages = Array.from(this.state.selectedItems);
+        this.setState({selectedItems: new Set()});
+        const {score, part} = await this.addPartDialog.open();
 
+        const pdf = this.props.band.pdfs[this.state.selectedPDF];
+
+        part.pagesCropped = pages.map(page => pdf.pagesCropped[page]);
+        part.pagesOriginal = pages.map(page => pdf.pagesOriginal[page]);
+
+        this.props.onAddPart(score, part);
     };
 
     render() {
@@ -266,7 +276,7 @@ class UnsortedPDFs extends Component {
                     {selectedPDF === null &&
                     <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>}
                     {selectedPDF !== null &&
-                    <Button color='inherit' onClick={this._onAddAsInstrument}>Add as part</Button>}
+                    <Button color='inherit' onClick={this._onAddAsPart}>Add as part</Button>}
                 </Toolbar>
             </AppBar>
             }
@@ -314,6 +324,7 @@ class UnsortedPDFs extends Component {
                         />
                     )}
             </div>
+            <AddPartDialog band={band} onRef={ref => this.addPartDialog = ref}/>
             <AddPartsDialog band={band} onRef={ref => this.addPartsDialog = ref}/>
             <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref}/>
         </div>;

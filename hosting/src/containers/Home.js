@@ -6,7 +6,19 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {
-    Avatar, Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Paper, Snackbar,
+    Avatar,
+    Button,
+    Card,
+    CardContent,
+    CardMedia,
+    IconButton,
+    List,
+    ListItem,
+    ListItemText,
+    Menu,
+    MenuItem,
+    Paper,
+    Snackbar,
 } from "material-ui";
 
 import firebase from 'firebase';
@@ -36,9 +48,10 @@ const styles = {
         flexDirection: 'column'
     },
     card: {
-        width: 270,
-        marginRight: 24,
-        marginBottom: 24,
+        width: 250,
+        height: 250,
+        marginRight: 20,
+        marginBottom: 20,
         cursor: 'pointer'
     },
     media: {
@@ -51,12 +64,6 @@ const styles = {
     },
 
     content: {},
-
-    pageContainer: {
-        display: 'flex',
-        paddingTop: 20,
-        justifyContent: 'center'
-    },
 
     instrumentSelector: {
         marginLeft: 25
@@ -94,7 +101,7 @@ class Home extends React.Component {
         this.setState({selectedPage: index});
     };
 
-    _onAddFullScore = async (score, instruments) => {
+    _onAddFullScore = async (score, parts) => {
         const bandId = this.props.user.defaultBand.id;
 
         let scoreRef;
@@ -115,12 +122,12 @@ class Home extends React.Component {
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
 
-        for (let instrument of instruments) {
+        for (let part of parts) {
             await scoreRef.collection('parts').add({
-                pagesCropped: instrument.pagesCropped,
-                pagesOriginal: instrument.pagesOriginal,
+                pagesCropped: part.pagesCropped,
+                pagesOriginal: part.pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${instrument.instrumentId}`)
+                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`)
             });
         }
 
@@ -129,7 +136,7 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
-    _onAddParts = async (score, instruments) => {
+    _onAddParts = async (score, parts) => {
         const bandId = this.props.user.defaultBand.id;
 
         let scoreRef;
@@ -147,8 +154,8 @@ class Home extends React.Component {
             })
         }
 
-        for (let instrument of instruments) {
-            const pdfDocRef = firebase.firestore().doc(`bands/${bandId}/pdfs/${instrument.pdfId}`);
+        for (let part of parts) {
+            const pdfDocRef = firebase.firestore().doc(`bands/${bandId}/pdfs/${part.pdfId}`);
 
             const doc = await pdfDocRef.get();
 
@@ -156,11 +163,41 @@ class Home extends React.Component {
                 pagesCropped: doc.data().pagesCropped,
                 pagesOriginal: doc.data().pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${instrument.instrumentId}`)
+                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`)
             });
         }
 
         this.setState({message: 'Parts added'});
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        this.setState({message: null});
+    };
+
+    _onAddPart = async (score, part) => {
+        const bandId = this.props.user.defaultBand.id;
+
+        let scoreRef;
+        if (score.id) {
+            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
+        } else {
+            scoreRef = await firebase.firestore().collection('scores').add({
+                title: score.title || 'Untitled Score',
+                composer: score.composer || '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
+                ref: scoreRef
+            })
+        }
+
+        await scoreRef.collection('parts').add({
+            pagesCropped: part.pagesCropped,
+            pagesOriginal: part.pagesOriginal,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`)
+        });
+
+        this.setState({message: 'Part added'});
         await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
     };
@@ -187,7 +224,7 @@ class Home extends React.Component {
     };
 
     _onBandClick = e => {
-      this.setState({anchorEl: e.currentTarget})
+        this.setState({anchorEl: e.currentTarget})
     };
 
     _onCreateBand = async () => {
@@ -265,7 +302,8 @@ class Home extends React.Component {
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
                         {
-                            band.name && <Button onClick={this._onBandClick} style={{marginLeft: 50, color: 'rgb(115, 115, 115)'}}>
+                            band.name &&
+                            <Button onClick={this._onBandClick} style={{marginLeft: 50, color: 'rgb(115, 115, 115)'}}>
                                 {band.name}
                                 <ArrowDropDown/>
                             </Button>
@@ -285,7 +323,8 @@ class Home extends React.Component {
                             <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
                             {
                                 user.bands && user.bands.map((band, index) =>
-                                    <MenuItem style={{height: 15}} key={index} onClick={() => this._onBandSelect(band.id)}>
+                                    <MenuItem style={{height: 15}} key={index}
+                                              onClick={() => this._onBandSelect(band.id)}>
                                         {band.name}
                                     </MenuItem>
                                 )
@@ -314,28 +353,26 @@ class Home extends React.Component {
                     </div>
                     <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
                         {selectedPage === 0 &&
-                        <div className={classes.pageContainer}>
-                            <div style={{display: 'flex', width: 600, flexWrap: 'wrap'}}>
-                                {band.scores && band.scores.map((arr, index) =>
-                                    <Card key={index} className={classes.card}
-                                          onClick={() => window.location.hash = `#/score/${arr.id}`}
-                                          elevation={1}>
-                                        <CardMedia
-                                            className={classes.media}
-                                            image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
-                                            title=""
-                                        />
-                                        <CardContent>
-                                            <Typography variant="headline" component="h2">
-                                                {arr.title}
-                                            </Typography>
-                                            <Typography component="p">
-                                                {arr.composer}
-                                            </Typography>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </div>
+                        <div style={{display: 'flex', flexWrap: 'wrap', paddingTop: 20, paddingLeft: 20}}>
+                            {band.scores && band.scores.map((arr, index) =>
+                                <Card key={index} className={classes.card}
+                                      onClick={() => window.location.hash = `#/score/${arr.id}`}
+                                      elevation={1}>
+                                    <CardMedia
+                                        className={classes.media}
+                                        image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
+                                        title=""
+                                    />
+                                    <CardContent>
+                                        <Typography variant="headline" component="h2">
+                                            {arr.title}
+                                        </Typography>
+                                        <Typography component="p">
+                                            {arr.composer}
+                                        </Typography>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                         }
                         {selectedPage === 1 &&
@@ -374,6 +411,7 @@ class Home extends React.Component {
                             band={band}
                             onAddFullScore={this._onAddFullScore}
                             onAddParts={this._onAddParts}
+                            onAddPart={this._onAddPart}
                         />
                         }
                     </div>
