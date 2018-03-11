@@ -3,16 +3,18 @@ import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
-import purple from 'material-ui/colors/purple';
-import green from 'material-ui/colors/green';
 
 import 'firebase/firestore';
 import 'firebase/auth';
 
 class App extends React.Component {
     state = {
-        user: {}
+        user: {
+            defaultBand: {}
+        }
     };
+
+    unsubscribeCallbacks = [];
 
     constructor() {
         super();
@@ -53,15 +55,110 @@ class App extends React.Component {
                     await userSnapshot.ref.collection('bands').add({ref: bandRef});
                 }
 
-                this.setState({user: {...this.state.user, ...userSnapshot.data(), id: userSnapshot.id}});
+                for (const cb of this.unsubscribeCallbacks) {
+                    cb();
+                }
+
+                const band = (await userSnapshot.ref.get()).data().defaultBand;
+
+                // Add everything except defaultBand
+                this.setState({
+                    user: {
+                        ...this.state.user,
+                        displayName: userSnapshot.data().displayName,
+                        photoURL: userSnapshot.data().photoURL,
+                        email: userSnapshot.data().email,
+                        id: userSnapshot.id
+                    }
+                });
+
+                this.unsubscribeCallbacks.push(
+                    band.onSnapshot(snapshot => {
+                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, ...snapshot.data(), id: snapshot.id}}});
+                    })
+                );
+
+                this.unsubscribeCallbacks.push(
+                    band.collection('scores').onSnapshot(async snapshot => {
+                        for (let change of snapshot.docChanges) {
+                            switch (change.type) {
+                                case 'added':
+                                    const scoreDoc = await change.doc.data().ref.get();
+
+                                    this.unsubscribeCallbacks.push(
+                                        scoreDoc.ref.collection('parts').onSnapshot(async snapshot => {
+                                            const parts = await Promise.all(
+                                                snapshot.docs.map(async doc => {
+                                                    const instrumentRef = await doc.data().instrument.get();
+                                                    return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
+                                                })
+                                            );
+
+                                            const scores = [...this.state.user.defaultBand.scores];
+
+                                            scores.find(score => score.id === scoreDoc.id).parts = parts;
+
+                                            this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, scores: scores}}})
+                                        })
+                                    );
+
+                                    const scores = [...(this.state.user.defaultBand.scores || []), {
+                                        ...scoreDoc.data(),
+                                        id: scoreDoc.id
+                                    }];
+
+                                    this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, scores: scores}}});
+                                    break;
+                                case 'modified':
+                                    break;
+                            }
+                        }
+                    })
+                );
+
+                this.unsubscribeCallbacks.push(
+                    band.collection('members').onSnapshot(async snapshot => {
+                        const members = await Promise.all(snapshot.docs.map(async doc => {
+                            const memberDoc = await doc.data().ref.get();
+                            return {id: memberDoc.id, ...memberDoc.data()};
+                        }));
+
+                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, members: members}}});
+                    })
+                );
+
+                this.unsubscribeCallbacks.push(
+                    band.collection('pdfs').onSnapshot(snapshot => {
+                        const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
+                        const pdfsSorted = pdfs.sort((a, b) => a.name.localeCompare(b.name));
+                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, pdfs: pdfsSorted}}});
+                    })
+                );
+
+
+                this.unsubscribeCallbacks.push(
+                    band.collection('instruments').onSnapshot(async snapshot => {
+                        const instruments = await Promise.all(
+                            snapshot.docs.map(async doc => {
+                                const instrumentRef = await doc.data().ref.get();
+                                return {...instrumentRef.data(), id: instrumentRef.id};
+                            })
+                        );
+
+                        const instrumentsSorted = instruments.sort((a, b) => a.name.localeCompare(b.name));
+                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, instruments: instrumentsSorted}}});
+                    })
+                );
             });
 
+            this.unsubscribeCallbacks.push(
+                firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
+                    const bandDocs = await Promise.all(snapshot.docs.map(doc => doc.data().ref.get()));
+                    const bandData = bandDocs.map(doc => ({...doc.data(), id: doc.id}));
 
-            firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
-                const bandDocs = await Promise.all(snapshot.docs.map(doc => doc.data().ref.get()));
-                const bandData = bandDocs.map(doc => ({...doc.data(), id: doc.id}));
-                this.setState({user: {...this.state.user, bands: bandData}});
-            })
+                    this.setState({user: {...this.state.user, bands: bandData}});
+                })
+            );
         }
 
         let hash = (() => {

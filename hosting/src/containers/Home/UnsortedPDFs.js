@@ -5,7 +5,7 @@ import {withStyles} from "material-ui/styles";
 
 import {Close, ArrowBack} from "material-ui-icons";
 import Selectable from "../../components/Selectable";
-import AddPartDialog from "../../components/dialogs/AddPartDialog";
+import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
 
 
@@ -229,11 +229,11 @@ class UnsortedPDFs extends Component {
         this.setState({selectedItems: new Set()});
     };
 
-    _onAddAsPart = async () => {
+    _onAddAsParts = async () => {
         const pdfs = Array.from(this.state.selectedItems).map(i => this.props.band.pdfs[i]);
         this.setState({selectedItems: new Set()});
-        const {score, instruments} = await this.addPartDialog.open(pdfs);
-        this.props.onAddPart(score, instruments);
+        const {score, instruments} = await this.addPartsDialog.open(pdfs);
+        this.props.onAddParts(score, instruments);
     };
 
     _onAddAsFullScore = async () => {
@@ -264,7 +264,7 @@ class UnsortedPDFs extends Component {
                     {selectedPDF === null && selectedItems.size === 1 &&
                     <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>}
                     {selectedPDF === null &&
-                    <Button color='inherit' onClick={this._onAddAsPart}>Add as part</Button>}
+                    <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>}
                     {selectedPDF !== null &&
                     <Button color='inherit' onClick={this._onAddAsInstrument}>Add as part</Button>}
                 </Toolbar>
@@ -314,7 +314,7 @@ class UnsortedPDFs extends Component {
                         />
                     )}
             </div>
-            <AddPartDialog band={band} onRef={ref => this.addPartDialog = ref}/>
+            <AddPartsDialog band={band} onRef={ref => this.addPartsDialog = ref}/>
             <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref}/>
         </div>;
     }

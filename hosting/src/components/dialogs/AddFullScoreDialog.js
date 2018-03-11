@@ -53,7 +53,7 @@ class AddFullScoreDialog extends React.Component {
         open: false,
         pdf: null,
         entered: false,
-        selectedItems: new Set(),
+        selectedPages: new Set(),
         scoreCreated: false,
         scoreData: {}
     };
@@ -89,7 +89,7 @@ class AddFullScoreDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, pdfData, scoreData, pdf, selectedItems} = this.state;
+        const {activeStep, pdfData, scoreData, pdf, selectedPages} = this.state;
         const {band} = this.props;
 
         if (activeStep < 3) {
@@ -101,7 +101,7 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            this.setState({pdfData: Array.from(selectedItems).map(page => ({page: page, instrument: 0, instrumentNumber: 0}))});
+            this.setState({pdfData: Array.from(selectedPages).map(page => ({page: page, instrument: 0, instrumentNumber: 0}))});
         }
 
         if (activeStep === 3) {
@@ -156,13 +156,13 @@ class AddFullScoreDialog extends React.Component {
     };
 
     _onItemSelect = index => {
-        const selectedItems = new Set(this.state.selectedItems);
-        if (selectedItems.has(index)) {
-            selectedItems.delete(index);
+        const selectedPages = new Set(this.state.selectedPages);
+        if (selectedPages.has(index)) {
+            selectedPages.delete(index);
         } else {
-            selectedItems.add(index);
+            selectedPages.add(index);
         }
-        this.setState({selectedItems: selectedItems});
+        this.setState({selectedPages: selectedPages});
     };
 
     _onScoreDataChange = (type, e) => {
@@ -170,13 +170,13 @@ class AddFullScoreDialog extends React.Component {
     };
 
     render() {
-        const {activeStep, open, pdf, entered, selectedItems, pdfData, scoreData, scoreCreated} = this.state;
+        const {activeStep, open, pdf, entered, selectedPages, pdfData, scoreData, scoreCreated} = this.state;
         const {classes, band} = this.props;
 
         if (!open) return null;
 
         return <Dialog open={open} onEntered={this._onDialogEntered} classes={{paper: classes.dialog__paper}}>
-            <DialogTitle>Create score</DialogTitle>
+            <DialogTitle>Add full score</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column'}}>
                 <Stepper activeStep={activeStep}>
                     <Step>
@@ -220,7 +220,7 @@ class AddFullScoreDialog extends React.Component {
                     {
                         activeStep === 2 && entered && pdf.pagesCropped.map((page, index) =>
                             <Selectable
-                                selected={selectedItems.has(index)}
+                                selected={selectedPages.has(index)}
                                 classes={{root: classes.selectable}}
                                 key={index}
                                 imageURL={page}
@@ -232,7 +232,7 @@ class AddFullScoreDialog extends React.Component {
 
 
                     {
-                        activeStep === 3 && pdf.pagesCropped.filter((_, index) => selectedItems.has(index)).map((page, index) =>
+                        activeStep === 3 && pdf.pagesCropped.filter((_, index) => selectedPages.has(index)).map((page, index) =>
                             <div key={index} style={{display: 'flex', alignItems: 'center', marginBottom: 20}}>
                                 <div style={{width: 200, height: 150, overflow: 'hidden', marginRight: 20, border: '1px solid #E8E8E8'}}>
                                     <img width="300%" src={page}/>
@@ -270,7 +270,7 @@ class AddFullScoreDialog extends React.Component {
             <DialogActions>
                 <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
                 <Button color="secondary" onClick={this._onBackClick} disabled={activeStep === 0}>Back</Button>
-                <Button color="secondary" onClick={this._onNextClick} disabled={activeStep === 0 || (activeStep === 2 && selectedItems.size === 0)}>{activeStep === 3 ? 'Done' : 'Next'}</Button>
+                <Button color="secondary" onClick={this._onNextClick} disabled={activeStep === 0 || (activeStep === 2 && selectedPages.size === 0)}>{activeStep === 3 ? 'Done' : 'Next'}</Button>
             </DialogActions>
         </Dialog>
     }

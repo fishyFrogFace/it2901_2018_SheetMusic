@@ -74,105 +74,9 @@ class Home extends React.Component {
     state = {
         anchorEl: null,
         selectedPage: 3,
-        band: {},
         uploadSheetsDialogOpen: false,
         message: null
     };
-
-    unsubscribeCallbacks = [];
-
-
-    componentWillReceiveProps(nextProps) {
-        if (this.props.user.defaultBand !== nextProps.user.defaultBand) {
-            for (const cb of this.unsubscribeCallbacks) {
-                cb();
-            }
-
-            const band = nextProps.user.defaultBand;
-
-            this.unsubscribeCallbacks.push(
-                band.onSnapshot(snapshot => {
-                    this.setState({band: {...this.state.band, ...snapshot.data()}});
-                })
-            );
-
-            this.unsubscribeCallbacks.push(
-                band.collection('scores').onSnapshot(async snapshot => {
-                    for (let change of snapshot.docChanges) {
-                        switch (change.type) {
-                            case 'added':
-                                const scoreDoc = await change.doc.data().ref.get();
-
-                                this.unsubscribeCallbacks.push(
-                                    scoreDoc.ref.collection('parts').onSnapshot(async snapshot => {
-                                        const parts = await Promise.all(
-                                            snapshot.docs.map(async doc => {
-                                                const instrumentRef = await doc.data().instrument.get();
-                                                return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
-                                            })
-                                        );
-
-                                        const scores = [...this.state.band.scores];
-
-                                        scores.find(score => score.id === scoreDoc.id).parts = parts;
-
-                                        this.setState({band: {...this.state.band, scores: scores}})
-                                    })
-                                );
-
-                                const scores = [...(this.state.band.scores || []), {
-                                    ...scoreDoc.data(),
-                                    id: scoreDoc.id
-                                }];
-
-                                this.setState({band: {...this.state.band, scores: scores}});
-                                break;
-                            case 'modified':
-                                break;
-                        }
-                    }
-                })
-            );
-
-            this.unsubscribeCallbacks.push(
-                band.collection('members').onSnapshot(async snapshot => {
-                    const members = await Promise.all(snapshot.docs.map(async doc => {
-                        const memberDoc = await doc.data().ref.get();
-                        return {id: memberDoc.id, ...memberDoc.data()};
-                    }));
-
-                    this.setState({band: {...this.state.band, members: members}});
-                })
-            );
-
-            this.unsubscribeCallbacks.push(
-                band.collection('pdfs').onSnapshot(snapshot => {
-                    const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
-                    const pdfsSorted = pdfs.sort((a, b) => a.name.localeCompare(b.name));
-                    this.setState({band: {...this.state.band, pdfs: pdfsSorted}});
-                })
-            );
-
-
-            this.unsubscribeCallbacks.push(
-                band.collection('instruments').onSnapshot(async snapshot => {
-                    const instruments = await Promise.all(
-                        snapshot.docs.map(async doc => {
-                            const instrumentRef = await doc.data().ref.get();
-                            return {...instrumentRef.data(), id: instrumentRef.id};
-                        })
-                    );
-
-                    const instrumentsSorted = instruments.sort((a, b) => a.name.localeCompare(b.name));
-                    this.setState({band: {...this.state.band, instruments: instrumentsSorted}});
-                })
-            );
-        }
-    }
-
-    componentWillUnmount() {
-        this.unsubscribeCallbacks.forEach(c => c());
-    }
 
     _onAddButtonClick(e) {
         this.setState({anchorEl: e.currentTarget});
@@ -199,13 +103,17 @@ class Home extends React.Component {
         } else {
             scoreRef = await firebase.firestore().collection('scores').add({
                 title: score.title || 'Untitled Score',
-                composer: score.composer || ''
+                composer: score.composer || '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             });
 
             await firebase.firestore().collection(`bands/${bandId}/scores`).add({
                 ref: scoreRef
             })
         }
+
+        const partsSnapshot = await scoreRef.collection('parts').get();
+        await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
 
         for (let instrument of instruments) {
             await scoreRef.collection('parts').add({
@@ -215,9 +123,13 @@ class Home extends React.Component {
                 instrument: firebase.firestore().doc(`instruments/${instrument.instrumentId}`)
             });
         }
+
+        this.setState({message: 'Score added'});
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        this.setState({message: null});
     };
 
-    _onAddPart = async (score, instruments) => {
+    _onAddParts = async (score, instruments) => {
         const bandId = this.props.user.defaultBand.id;
 
         let scoreRef;
@@ -226,7 +138,8 @@ class Home extends React.Component {
         } else {
             scoreRef = await firebase.firestore().collection('scores').add({
                 title: score.title || 'Untitled Score',
-                composer: score.composer || ''
+                composer: score.composer || '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             await firebase.firestore().collection(`bands/${bandId}/scores`).add({
@@ -246,6 +159,10 @@ class Home extends React.Component {
                 instrument: firebase.firestore().doc(`instruments/${instrument.instrumentId}`)
             });
         }
+
+        this.setState({message: 'Parts added'});
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        this.setState({message: null});
     };
 
     _onFileChange = async e => {
@@ -337,10 +254,11 @@ class Home extends React.Component {
     };
 
     render() {
-        const {anchorEl, selectedPage, band, uploadSheetsDialogOpen, message} = this.state;
+        const {anchorEl, selectedPage, message} = this.state;
 
         const {classes, user} = this.props;
 
+        const band = user.defaultBand;
 
         return (
             <div className={classes.root}>
@@ -455,7 +373,7 @@ class Home extends React.Component {
                         <UnsortedPDFs
                             band={band}
                             onAddFullScore={this._onAddFullScore}
-                            onAddPart={this._onAddPart}
+                            onAddParts={this._onAddParts}
                         />
                         }
                     </div>

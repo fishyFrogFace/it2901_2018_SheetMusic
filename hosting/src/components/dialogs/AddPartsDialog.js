@@ -125,7 +125,7 @@ class AddPartDialog extends React.Component {
         if (!open) return null;
 
         return <Dialog open={open}>
-            <DialogTitle>Add PDFs</DialogTitle>
+            <DialogTitle>Add parts</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
                 <Stepper activeStep={activeStep}>
                     <Step>
