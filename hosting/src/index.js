@@ -204,7 +204,7 @@ class App extends React.Component {
         const {page, user, detail, component: Component} = this.state;
 
         return (
-            <div>
+            <div style={{height: '100%'}}>
                 {Component && <Component {...this.props} user={user} detail={detail}/>}
             </div>
         )

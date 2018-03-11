@@ -34,8 +34,7 @@ import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 
 const styles = {
     root: {
-        height: '100%',
-        overflow: 'hidden'
+        height: '100%'
     },
     flex: {
         flex: 1
@@ -353,13 +352,13 @@ class Home extends React.Component {
                         </IconButton>
                     </Toolbar>
                 </AppBar>
-                <div style={{display: 'flex', paddingTop: 64, height: 'calc(100% - 64px)', overflow: 'hidden'}}>
-                    <div style={{width: 250, paddingTop: 20}}>
+                <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
+                    <div style={{width: 220, paddingTop: 16, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box'}}>
                         <List>
                             {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
                                 const selected = index === selectedPage;
                                 const color = selected ? '#db4437' : '#757575';
-                                return <ListItem key={index} button onClick={() => this._onNavClick(index)}>
+                                return <ListItem style={{paddingLeft: 24}} key={index} button onClick={() => this._onNavClick(index)}>
                                     {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
                                     {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
                                     {name === 'Members' && <SupervisorAccount style={{color: color}}/>}
@@ -372,6 +371,10 @@ class Home extends React.Component {
                                 </ListItem>
                             })}
                         </List>
+                        <div style={{flex: 1}}/>
+                        <div style={{paddingLeft: 24, paddingBottom: 24}}>
+                            <Typography variant='caption'>Band code: {band.code}</Typography>
+                        </div>
                     </div>
                     <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
                         {selectedPage === 0 &&
