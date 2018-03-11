@@ -1,16 +1,9 @@
 import React, {Component} from 'react';
-import {
-    AppBar, Button, CircularProgress, Dialog, IconButton,
-    List, ListItem, ListItemText, Menu, MenuItem, Paper, Slide, Toolbar, Typography
-} from "material-ui";
+import {AppBar, Button, IconButton, Slide, Toolbar, Typography} from "material-ui";
 
 import {withStyles} from "material-ui/styles";
 
-import {
-    ExpandLess, ChevronRight, Add, Close, Assistant, ExpandMore, ArrowBack, Home, Remove,
-    Delete
-} from "material-ui-icons";
-import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
+import {Close, ArrowBack} from "material-ui-icons";
 import Selectable from "../../components/Selectable";
 import AddPartDialog from "../../components/dialogs/AddPartDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";

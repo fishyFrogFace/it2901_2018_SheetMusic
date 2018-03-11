@@ -6,12 +6,7 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {
-    Avatar, Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemIcon, ListItemText, Menu,
-    MenuItem, Paper,
-    Select,
-    Snackbar,
-    Tab,
-    Tabs,
+    Avatar, Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Paper, Snackbar,
 } from "material-ui";
 
 import firebase from 'firebase';
@@ -19,13 +14,9 @@ import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
 
 import {
-    Add,
-    ArrowDropDown, Contacts,
-    Description, FileUpload, LibraryAdd, LibraryBooks, LibraryMusic, PlaylistAdd, QueueMusic,
+    ArrowDropDown, FileUpload, LibraryBooks, LibraryMusic, PlaylistAdd, QueueMusic,
     SupervisorAccount
 } from "material-ui-icons";
-import AddPartsDialog from "../components/dialogs/AddPartDialog";
-import AddCompleteScoreDialog from "../components/dialogs/AddFullScoreDialog";
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 
