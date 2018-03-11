@@ -32,27 +32,38 @@ class App extends React.Component {
 
     async _onUserStateChanged(user) {
         if (user) {
-            firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async userSnapshot => {
-                if (!userSnapshot.exists) {
-                    await userSnapshot.ref.set({email: user.email, displayName: user.displayName, photoURL: user.photoURL});
+            firebase.firestore().doc(`users/${user.uid}`).get().then(async userDoc => {
+                if (!userDoc.exists) {
+                    await userDoc.ref.set({
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL
+                    });
+
 
                     let bandRef = await firebase.firestore().collection('bands').add({
-                        name: `${user.displayName.split(' ')[0]}'s band`
+                        name: `${user.displayName.split(' ')[0]}'s band`,
+                        creator: firebase.firestore().doc(`users/${userDoc.id}`),
+                        code: Math.random().toString(36).substring(2, 7)
                     });
 
-                    await userSnapshot.ref.collection('bands').add({
-                        ref: bandRef
-                    });
+                    const instrumentDocs = (await firebase.firestore().collection('instruments').get()).docs;
 
-                    await userSnapshot.ref.update({defaultBand: bandRef});
+                    await Promise.all(instrumentDocs.map(doc => bandRef.collection('instruments').add({ref: doc})));
+
+                    await userDoc.ref.collection('bands').add({ref: bandRef});
+
+                    await userDoc.ref.update({defaultBand: bandRef});
                 }
 
-                this.setState({user: {...this.state.user, ...userSnapshot.data()}});
+                this.setState({user: {...this.state.user, ...userDoc.data(), id: userDoc.id}});
             });
 
 
             firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
-                this.setState({user: {...this.state.user, bands: snapshot.docs}});
+                const bandDocs = await Promise.all(snapshot.docs.map(doc => doc.data().ref.get()));
+                const bandData = bandDocs.map(doc => ({...doc.data(), id: doc.id}));
+                this.setState({user: {...this.state.user, bands: bandData}});
             })
         }
 
@@ -102,7 +113,7 @@ class App extends React.Component {
 
         return (
             <div>
-                {Component && <Component {...this.props} user={user} detail={detail} />}
+                {Component && <Component {...this.props} user={user} detail={detail}/>}
             </div>
         )
     }
