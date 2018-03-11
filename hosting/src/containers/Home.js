@@ -326,15 +326,13 @@ class Home extends React.Component {
                 code: Math.random().toString(36).substring(2, 7)
             };
 
-            let ref = await firebase.firestore().collection('bands').add(band);
+            let bandRef = await firebase.firestore().collection('bands').add(band);
 
-            const instrumentDocs = (await firebase.firestore().collection('instruments').get()).docs;
+            const instrumentRefs = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.ref);
+            await Promise.all(instrumentRefs.map(ref => bandRef.collection('instruments').add({ref: ref})));
 
-            await Promise.all(instrumentDocs.map(doc => ref.collection('instruments').add({ref: doc})));
-
-            await firebase.firestore().collection(`users/${user.id}/bands`).add({
-                ref: firebase.firestore().doc(`bands/${ref.id}`)
-            });
+            await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: bandRef});
+            await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: bandRef});
         } catch (err) {
             console.log(err);
         }
@@ -350,16 +348,16 @@ class Home extends React.Component {
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
-            let docRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+            let bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
-            let userBandSnapshot = await firebase.firestore().collection(`users/${user.id}/bands`).where('ref', '==', docRef).get();
+            let userBandSnapshot = await firebase.firestore().collection(`users/${user.id}/bands`).where('ref', '==', bandRef).get();
 
             if (userBandSnapshot.docs.length > 0) {
                 this.setState({message: 'Band already joined!'});
             } else {
-                await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: docRef});
-                await docRef.collection('members').add({ref: firebase.firestore().doc(`users/${user.id}`)});
-                await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: docRef})
+                await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: bandRef});
+                await bandRef.collection('members').add({ref: firebase.firestore().doc(`users/${user.id}`)});
+                await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: bandRef})
             }
         } else {
             this.setState({message: 'Band does not exist!'});
@@ -371,7 +369,10 @@ class Home extends React.Component {
     };
 
     _onBandSelect = async bandId => {
-        console.log(bandId);
+        this.setState({anchorEl: null});
+        await firebase.firestore().doc(`users/${this.props.user.id}`).update({
+            defaultBand: firebase.firestore().doc(`bands/${bandId}`)
+        });
     };
 
     render() {

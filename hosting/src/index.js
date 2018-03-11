@@ -32,31 +32,28 @@ class App extends React.Component {
 
     async _onUserStateChanged(user) {
         if (user) {
-            firebase.firestore().doc(`users/${user.uid}`).get().then(async userDoc => {
-                if (!userDoc.exists) {
-                    await userDoc.ref.set({
-                        email: user.email,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL
-                    });
-
-
+            firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async userSnapshot => {
+                if (!userSnapshot.exists) {
                     let bandRef = await firebase.firestore().collection('bands').add({
                         name: `${user.displayName.split(' ')[0]}'s band`,
-                        creator: firebase.firestore().doc(`users/${userDoc.id}`),
+                        creator: firebase.firestore().doc(`users/${userSnapshot.id}`),
                         code: Math.random().toString(36).substring(2, 7)
                     });
 
-                    const instrumentDocs = (await firebase.firestore().collection('instruments').get()).docs;
+                    const instrumentRefs = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.ref);
+                    await Promise.all(instrumentRefs.map(ref => bandRef.collection('instruments').add({ref: ref})));
 
-                    await Promise.all(instrumentDocs.map(doc => bandRef.collection('instruments').add({ref: doc})));
+                    await userSnapshot.ref.set({
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        defaultBand: bandRef
+                    });
 
-                    await userDoc.ref.collection('bands').add({ref: bandRef});
-
-                    await userDoc.ref.update({defaultBand: bandRef});
+                    await userSnapshot.ref.collection('bands').add({ref: bandRef});
                 }
 
-                this.setState({user: {...this.state.user, ...userDoc.data(), id: userDoc.id}});
+                this.setState({user: {...this.state.user, ...userSnapshot.data(), id: userSnapshot.id}});
             });
 
 
