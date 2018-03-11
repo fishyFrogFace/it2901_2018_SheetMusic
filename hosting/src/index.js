@@ -151,14 +151,12 @@ class App extends React.Component {
                 );
             });
 
-            this.unsubscribeCallbacks.push(
-                firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
-                    const bandDocs = await Promise.all(snapshot.docs.map(doc => doc.data().ref.get()));
-                    const bandData = bandDocs.map(doc => ({...doc.data(), id: doc.id}));
+            firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
+                const bandDocs = await Promise.all(snapshot.docs.map(doc => doc.data().ref.get()));
+                const bandData = bandDocs.map(doc => ({...doc.data(), id: doc.id}));
 
-                    this.setState({user: {...this.state.user, bands: bandData}});
-                })
-            );
+                this.setState({user: {...this.state.user, bands: bandData}});
+            });
         }
 
         let hash = (() => {
