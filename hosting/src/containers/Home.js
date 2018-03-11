@@ -11,7 +11,7 @@ import {
     Card,
     CardContent,
     CardMedia,
-    IconButton,
+    IconButton, Input,
     List,
     ListItem,
     ListItemText,
@@ -26,7 +26,7 @@ import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
 
 import {
-    ArrowDropDown, FileUpload, LibraryBooks, LibraryMusic, PlaylistAdd, QueueMusic,
+    ArrowDropDown, Dehaze, FileUpload, LibraryBooks, LibraryMusic, PlaylistAdd, QueueMusic,
     SupervisorAccount
 } from "material-ui-icons";
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
@@ -75,6 +75,18 @@ const styles = {
     instrumentSelector__icon: {
         fill: 'white'
     },
+
+    input: {
+        width: '600px',
+        outline: 'none',
+        border: 'none',
+        padding: '11px 16px',
+        background: 'rgba(0,0,0,0.07)',
+        height: '46px',
+        boxSizing: 'border-box',
+        borderRadius: '4px',
+        font: 'normal 16px Roboto'
+    }
 };
 
 class Home extends React.Component {
@@ -301,13 +313,19 @@ class Home extends React.Component {
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        {
-                            band.name &&
-                            <Button onClick={this._onBandClick} style={{marginLeft: 50, color: 'rgb(115, 115, 115)'}}>
-                                {band.name}
-                                <ArrowDropDown/>
-                            </Button>
-                        }
+                        <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
+                        <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
+                        <div style={{width: 130}}>
+                            {
+                                band.name &&
+                                <Button onClick={this._onBandClick} size='small'
+                                        style={{color: 'rgb(115, 115, 115)'}}>
+                                    {band.name}
+                                </Button>
+                            }
+                        </div>
+                        <input className={classes.input} style={{marginLeft: 20}}
+                               placeholder='Search for scores and setlists'/>
                         <div className={classes.flex}/>
                         <Menu
                             anchorEl={anchorEl}
@@ -339,14 +357,18 @@ class Home extends React.Component {
                     <div style={{width: 250, paddingTop: 20}}>
                         <List>
                             {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
-                                const props = index === selectedPage ? {style: {backgroundColor: 'rgba(0, 0, 0, 0.08)'}} : {};
-
-                                return <ListItem key={index} button {...props} onClick={() => this._onNavClick(index)}>
-                                    {name === 'Scores' && <LibraryMusic style={{color: '#757575'}}/>}
-                                    {name === 'Setlists' && <QueueMusic style={{color: '#757575'}}/>}
-                                    {name === 'Members' && <SupervisorAccount style={{color: '#757575'}}/>}
-                                    {name === 'Unsorted PDFs' && <LibraryBooks style={{color: '#757575'}}/>}
-                                    <ListItemText inset primary={name}/>
+                                const selected = index === selectedPage;
+                                const color = selected ? '#db4437' : '#757575';
+                                return <ListItem key={index} button onClick={() => this._onNavClick(index)}>
+                                    {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
+                                    {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
+                                    {name === 'Members' && <SupervisorAccount style={{color: color}}/>}
+                                    {name === 'Unsorted PDFs' && <LibraryBooks style={{color: color}}/>}
+                                    <ListItemText
+                                        disableTypography
+                                        inset
+                                        primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
+                                    />
                                 </ListItem>
                             })}
                         </List>
