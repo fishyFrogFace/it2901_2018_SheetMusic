@@ -374,9 +374,29 @@ class Setlist extends Component {
                                                             <div style={{
                                                                 width: '100%',
                                                                 height: 50,
+                                                                padding: 5,
                                                                 border: '1px solid black'
                                                             }}>
-                                                                {(score.type === 0 ) ? `${score.order + 1}. ${score.title} by ${score.composer}`: `${score.order + 1} ${score.title} | ${score.desc} | ${score.time} Minutes` }
+                                                                {
+                                                                 (score.type === 0 ) ? 
+                                                                    <div>
+                                                                        <Typography variant='headline'>
+                                                                            {index + 1}. {score.title}
+                                                                        </Typography>
+                                                                        <Typography variant='subheading'>
+                                                                            by {score.composer}
+                                                                        </Typography>
+                                                                    </div>
+                                                                    :
+                                                                    <div>
+                                                                        <Typography variant='headline'>
+                                                                            {index + 1} {score.title} | {score.time} minutes
+                                                                        </Typography>
+                                                                        <Typography variant='subheading'>
+                                                                            {score.desc}
+                                                                        </Typography>
+                                                                    </div>
+                                                                }
                                                             </div>
                                                         </div>
                                                         {provided.placeholder}
