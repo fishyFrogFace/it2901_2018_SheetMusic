@@ -38,7 +38,7 @@ const styles = {
 
     selectable2: {
         width: '100%',
-        height: 300,
+        height: 200,
         marginBottom: 20,
     },
 

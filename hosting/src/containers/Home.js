@@ -113,8 +113,8 @@ class Home extends React.Component {
                                 const scoreDoc = await change.doc.data().ref.get();
 
                                 this.unsubscribeCallbacks.push(
-                                    scoreDoc.ref.collection('sheetMusic').onSnapshot(async snapshot => {
-                                        const sheetMusic = await Promise.all(
+                                    scoreDoc.ref.collection('parts').onSnapshot(async snapshot => {
+                                        const parts = await Promise.all(
                                             snapshot.docs.map(async doc => {
                                                 const instrumentRef = await doc.data().instrument.get();
                                                 return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
@@ -123,7 +123,7 @@ class Home extends React.Component {
 
                                         const scores = [...this.state.band.scores];
 
-                                        scores.find(score => score.id === scoreDoc.id).sheetMusic = sheetMusic;
+                                        scores.find(score => score.id === scoreDoc.id).parts = parts;
 
                                         this.setState({band: {...this.state.band, scores: scores}})
                                     })
@@ -195,23 +195,29 @@ class Home extends React.Component {
 
     }
 
-    _onAddScore = async (score, instruments) => {
+    _onNavClick = index => {
+        this.setState({selectedPage: index});
+    };
+
+    _onAddFullScore = async (score, instruments) => {
+        const bandId = this.props.user.defaultBand.id;
+
         let scoreRef;
         if (score.id) {
             scoreRef = firebase.firestore().doc(`scores/${score.id}`);
         } else {
             scoreRef = await firebase.firestore().collection('scores').add({
-                title: score.title,
+                title: score.title || 'Untitled Score',
                 composer: score.composer || ''
             });
 
-            await firebase.firestore().collection(`bands/${this.props.detail}/scores`).add({
+            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
                 ref: scoreRef
             })
         }
 
         for (let instrument of instruments) {
-            await scoreRef.collection('sheetMusic').add({
+            await scoreRef.collection('parts').add({
                 pagesCropped: instrument.pagesCropped,
                 pagesOriginal: instrument.pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -220,60 +226,29 @@ class Home extends React.Component {
         }
     };
 
-    _onAddInstrument = async (scoreId) => {
-        try {
-            let {instrument, instrumentNumber} = await this.addInstrumentDialog.open();
+    _onAddPart = async (score, instruments) => {
+        const bandId = this.props.user.defaultBand.id;
 
-            await firebase.firestore().collection(`scores/${scoreId}/sheetMusic`).add({
-                instrument: firebase.firestore().doc(`instruments/${instrument.id}`),
-                instrumentNumber
-            })
-        } catch (err) {
-            console.log(err);
-        }
-    };
-
-    _onNavClick = index => {
-        this.setState({selectedPage: index});
-    };
-
-    _onUploadSheets = async (scoreId, sheetMusicId, sheetImages) => {
-        const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
-
-        await sheetMusicRef.update({uploading: true});
-
-        const taskSnapshots = await Promise.all(
-            sheetImages.map((image, index) =>
-                firebase.storage().ref(`sheets/${scoreId}/${sheetMusicId}/${index}`).putString(image, 'data_url', {contentType: 'image/png'}))
-        );
-
-        await sheetMusicRef.update({
-            uploading: firebase.firestore.FieldValue.delete(),
-            sheets: taskSnapshots.map(snap => snap.downloadURL)
-        });
-    };
-
-    _onAddPDF = async (score, instruments) => {
         let scoreRef;
         if (score.id) {
             scoreRef = firebase.firestore().doc(`scores/${score.id}`);
         } else {
             scoreRef = await firebase.firestore().collection('scores').add({
-                title: score.title,
+                title: score.title || 'Untitled Score',
                 composer: score.composer || ''
             });
 
-            await firebase.firestore().collection(`bands/${this.props.detail}/scores`).add({
+            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
                 ref: scoreRef
             })
         }
 
         for (let instrument of instruments) {
-            const pdfDocRef = firebase.firestore().doc(`bands/${this.props.detail}/pdfs/${instrument.pdfId}`);
+            const pdfDocRef = firebase.firestore().doc(`bands/${bandId}/pdfs/${instrument.pdfId}`);
 
             const doc = await pdfDocRef.get();
 
-            await scoreRef.collection('sheetMusic').add({
+            await scoreRef.collection('parts').add({
                 pagesCropped: doc.data().pagesCropped,
                 pagesOriginal: doc.data().pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -301,11 +276,6 @@ class Home extends React.Component {
 
     _onFileUploadButtonClick = () => {
         this.fileBrowser.click();
-    };
-
-    _onSheetsChange = async (scoreId, sheetMusicId, sheets) => {
-        const sheetMusicRef = firebase.firestore().doc(`scores/${scoreId}/sheetMusic/${sheetMusicId}`);
-        await sheetMusicRef.update({sheets: sheets});
     };
 
     _onBandClick = e => {
@@ -385,10 +355,12 @@ class Home extends React.Component {
             <div className={classes.root}>
                 <AppBar position="fixed" className={classes.appBar}>
                     <Toolbar>
-                        <Button onClick={this._onBandClick} style={{marginLeft: 50, color: 'rgb(115, 115, 115)'}}>
-                            {band.name}
-                            <ArrowDropDown/>
-                        </Button>
+                        {
+                            band.name && <Button onClick={this._onBandClick} style={{marginLeft: 50, color: 'rgb(115, 115, 115)'}}>
+                                {band.name}
+                                <ArrowDropDown/>
+                            </Button>
+                        }
                         <div className={classes.flex}/>
                         <Menu
                             anchorEl={anchorEl}
@@ -491,11 +463,8 @@ class Home extends React.Component {
                         {selectedPage === 3 &&
                         <UnsortedPDFs
                             band={band}
-                            onAddScore={this._onAddScore}
-                            onAddInstrument={this._onAddInstrument}
-                            onUploadSheets={this._onUploadSheets}
-                            onSheetsChange={this._onSheetsChange}
-                            onAddPDF={this._onAddPDF}
+                            onAddFullScore={this._onAddFullScore}
+                            onAddPart={this._onAddPart}
                         />
                         }
                     </div>
