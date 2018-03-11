@@ -6,4 +6,4 @@ node_js:
 notifications:
   slack: it2901group21:c1b3uho1igakiwKfGh62PvrD
 
-before_script: cd hosting
+before_install: cd hosting
