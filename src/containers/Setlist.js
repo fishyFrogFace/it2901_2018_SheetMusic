@@ -10,12 +10,14 @@ import {
 } from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import AddIcon from 'material-ui-icons/Add';
+import Input from 'material-ui-icons/Input'
 
 import firebase from 'firebase';
 import 'firebase/storage';
 
 import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog";
 import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
+import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 
@@ -81,6 +83,8 @@ class Setlist extends Component {
     };
 
     addScoreDialog = null;
+    addEventDialog = null;
+    editSetlistDialog = null;
 
     async addSetListScores (setlistid, arrIds, currLength){
         console.log();
@@ -96,11 +100,19 @@ class Setlist extends Component {
         this.setState({anchorEl: null});
     }
 
-    async addSetlistEvent(setlistId, eventTitle, eventDesc, currLength){
+    async addSetlistEvent(setlistId, eventTitle, eventDesc, eventTime, currLength){
         try{
-            await firebase.firestore().collection(`setlists/${setlistId}/events`).add({order: currLength, title:eventTitle, desc:eventDesc});
+            await firebase.firestore().collection(`setlists/${setlistId}/events`).add({order: currLength, title:eventTitle, time: eventTime, desc:eventDesc});
         }catch(err){
             console.error(err);
+        }
+    }
+
+    async updateSetlistData(setlistId, title, place, date){
+        try{
+            await firebase.firestore().doc(`setlists/${setlistId}`).update({title: title, place: place, date: date});
+        }catch(err){
+            console.log(err);
         }
     }
 
@@ -160,9 +172,12 @@ class Setlist extends Component {
                 this.addSetListScores(this.state.setlist.id, selectedScores, this.state.setlist.combinedArray.length);
                 break;
             case 'addEvent':
-                const {title, description} = await this.addEventDialog.open();
-                this.addSetlistEvent(this.state.setlist.id, title, description, this.state.setlist.combinedArray.length);
+                const {eventTitle, description, time} = await this.addEventDialog.open();
+                this.addSetlistEvent(this.state.setlist.id, eventTitle, description, time, this.state.setlist.combinedArray.length);
                 break;
+            case 'editSetlist':
+                const {title, place, date} = await this.editSetlistDialog.open(this.state.setlist);
+                this.updateSetlistData(this.state.setlist.id, title, place, date._d);
             default:
                 break;
         }
@@ -244,7 +259,7 @@ class Setlist extends Component {
         this.unsubscribeCallbacks.push( firebase.firestore().collection(`setlists/${setlistId}/events`).onSnapshot(async snapshot => {
             const events = await Promise.all(
                 snapshot.docs.map(async doc => {
-                    return {id: doc.id, order: doc.data().order, ...doc.data(), type:1}
+                    return {id: doc.id, ...doc.data(), type:1}
                 })
             );
 
@@ -262,6 +277,11 @@ class Setlist extends Component {
             this.setState({
                 setlist: {...this.state.setlist, events: events, combinedArray: combinedArray.sort((a, b) => a.order - b.order)}
             });
+        }));
+
+        this.unsubscribeCallbacks.push( firebase.firestore().doc(`setlists/${setlistId}`).onSnapshot(async snapshot => {
+            const setlist = await snapshot.data();
+            this.setState({setlist: {...this.state.setlist, ...setlist}})
         }));
     }
 
@@ -306,12 +326,17 @@ class Setlist extends Component {
                         <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
                             <ArrowBackIcon/>
                         </IconButton>
-                        <Typography variant="title" color="inherit" className={classes.flex}>
-                            {setlist.title}
+                        <div className={classes.flex}>
+                            <Typography variant="title" color="inherit" className={classes.flex}>
+                                {setlist.title} 
+                                <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
+                                    <Input />
+                                </IconButton>
+                            </Typography>
                             <Typography variant='subheading' color='inherit' className={classes.flex}>
                                 {setlist.date && setlist.date.toLocaleString()} | {setlist.place}
                             </Typography>
-                        </Typography>
+                        </div>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
@@ -351,7 +376,7 @@ class Setlist extends Component {
                                                                 height: 50,
                                                                 border: '1px solid black'
                                                             }}>
-                                                                {(score.type === 0 ) ? `${score.order + 1}. ${score.title} by ${score.composer}`: `${score.order + 1} ${score.title} | ${score.desc}` }
+                                                                {(score.type === 0 ) ? `${score.order + 1}. ${score.title} by ${score.composer}`: `${score.order + 1} ${score.title} | ${score.desc} | ${score.time} Minutes` }
                                                             </div>
                                                         </div>
                                                         {provided.placeholder}
@@ -368,6 +393,7 @@ class Setlist extends Component {
                 </DragDropContext>
                 <AddSetlistScoresDialog onRef= {ref => this.addScoreDialog = ref}/>
                 <AddSetlistEventDialog onRef= {ref => this.addEventDialog = ref}/>
+                <EditSetlistDialog onRef= {ref => this.editSetlistDialog = ref}/>
             </div>
         );
     }
