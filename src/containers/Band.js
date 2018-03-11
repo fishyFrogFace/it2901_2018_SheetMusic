@@ -233,7 +233,7 @@ class Band extends Component {
             await firebase.firestore().collection(`bands/${bandId}/setlists`).add({
                 ref: firebase.firestore().doc(`setlists/${ref.id}`)
             });
-            // window.location.hash = `#/score/${ref.id}`;
+            window.location.hash = `#/setlist/${ref.id}`;
         } catch (err) {
             console.log(err);
         }
