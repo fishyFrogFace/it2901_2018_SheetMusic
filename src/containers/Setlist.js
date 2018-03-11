@@ -125,8 +125,28 @@ class Setlist extends Component {
         ).map((arr, index) => arr = {...arr, order: index});
 
 
+        let scores = this.state.setlist.scores;
+        let events = this.state.setlist.events;
 
-        this.setState({setlist:{...this.state.setlist, scores: combinedArray}})
+        for(var c in combinedArray){
+            switch(combinedArray[c].type){
+                case 0:
+                    var item = scores.find( (arr) => arr.id === combinedArray[c].id);
+                    item.order = c;
+                    break;
+                
+                case 1:
+                    var item = events.find( (arr) => arr.id === combinedArray[c].id);
+                    item.order = c;
+                    break;
+                
+                default:
+                break;
+            }
+            
+        }
+
+        this.setState({setlist:{...this.state.setlist, scores: scores, events: events, combinedArray: combinedArray}})
 
         this.updateFirebaseOrders(this.state.setlist.id, combinedArray);
     };
