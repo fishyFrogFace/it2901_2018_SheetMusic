@@ -29,11 +29,17 @@ const styles = {
         zIndex: 10000,
     },
 
-    selectable: {
+    selectable1: {
         height: 250,
         width: 250,
         marginRight: 20,
         marginBottom: 20
+    },
+
+    selectable2: {
+        width: '100%',
+        height: 300,
+        marginBottom: 20,
     },
 
     content: {
@@ -289,7 +295,7 @@ class UnsortedPDFs extends Component {
                         <Selectable
                             zoomed
                             key={doc.id}
-                            classes={{root: classes.selectable}}
+                            classes={{root: classes.selectable1}}
                             title={doc.name}
                             imageURL={doc.pagesCropped ? doc.pagesCropped[0] : ''}
                             selected={selectedItems.has(docIndex)}
@@ -297,14 +303,15 @@ class UnsortedPDFs extends Component {
                             onSelect={e => this._onItemSelect(docIndex)}
                             selectMode={selectedItems.size > 0}
                         />
-                    )}
-
+                    )
+                }
+            </div>
+            <div style={{padding: '0 20px'}}>
                 {
                     selectedPDF !== null && band.pdfs[selectedPDF].pagesCropped.map((page, index) =>
                         <Selectable
-                            zoomed
                             key={index}
-                            classes={{root: classes.selectable}}
+                            classes={{root: classes.selectable2}}
                             selected={selectedItems.has(index)}
                             imageURL={page}
                             onClick={e => {

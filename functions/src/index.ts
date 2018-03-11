@@ -109,7 +109,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
         const gsProcess = await spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
-            '-sDEVICE=pngmono',
+            '-sDEVICE=pngmonod',
             `-sOutputFile=/tmp/output-original/${fileName}-%03d.png`,
             '-r300',
             `/tmp/${fileName}.pdf`
@@ -126,11 +126,10 @@ exports.addPDF = functions.storage.object().onChange(async event => {
 
         mogrifyProcess.childProcess.kill();
 
-        // Add document
-        const docRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
-            name: fileName,
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+
+        // Create document
+        const docRef = admin.firestore().collection(`bands/${bandId}/pdfs`).doc();
+
 
         const upload = async outputType => {
             // Read files
@@ -148,7 +147,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
                 ));
 
             // Generate urls
-            const urlResponses = await Promise.all(
+            return await Promise.all(
                 uploadResponses.map(([file]) =>
                     file.getSignedUrl({
                         action: 'read',
@@ -156,13 +155,18 @@ exports.addPDF = functions.storage.object().onChange(async event => {
                     })
                 )
             );
-
-            // Add pages to document
-            await docRef.update({[`pages${outputType[0].toUpperCase()}${outputType.slice(1)}`]: urlResponses.map(([url]) => url)});
         };
 
-        await upload('original');
-        await upload('cropped');
+        let croppedUrlResponses = await upload('cropped');
+        let originalUrlResponses = await upload('original');
+
+        // Add pages to document
+        await docRef.set({
+            name: fileName,
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+            pagesCropped: croppedUrlResponses.map(([url]) => url),
+            pagesOriginal: originalUrlResponses.map(([url]) => url)
+        });
 
         // Clean up
         await Promise.all([

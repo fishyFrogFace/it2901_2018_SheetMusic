@@ -92,7 +92,7 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
         const gsProcess = yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
-            '-sDEVICE=pngmono',
+            '-sDEVICE=pngmonod',
             `-sOutputFile=/tmp/output-original/${fileName}-%03d.png`,
             '-r300',
             `/tmp/${fileName}.pdf`
@@ -105,11 +105,8 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
             '*.png'
         ], { cwd: '/tmp/output-original' });
         mogrifyProcess.childProcess.kill();
-        // Add document
-        const docRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
-            name: fileName,
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        // Create document
+        const docRef = admin.firestore().collection(`bands/${bandId}/pdfs`).doc();
         const upload = (outputType) => __awaiter(this, void 0, void 0, function* () {
             // Read files
             const fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
@@ -121,15 +118,20 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
                 }
             })));
             // Generate urls
-            const urlResponses = yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
+            return yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
                 action: 'read',
                 expires: '03-09-2491'
             })));
-            // Add pages to document
-            yield docRef.update({ [`pages${outputType[0].toUpperCase()}${outputType.slice(1)}`]: urlResponses.map(([url]) => url) });
         });
-        yield upload('original');
-        yield upload('cropped');
+        let croppedUrlResponses = yield upload('cropped');
+        let originalUrlResponses = yield upload('original');
+        // Add pages to document
+        yield docRef.set({
+            name: fileName,
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+            pagesCropped: croppedUrlResponses.map(([url]) => url),
+            pagesOriginal: originalUrlResponses.map(([url]) => url)
+        });
         // Clean up
         yield Promise.all([
             fs.remove(`/tmp/${fileName}.pdf`),

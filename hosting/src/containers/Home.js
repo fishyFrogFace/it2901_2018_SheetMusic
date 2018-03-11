@@ -137,7 +137,6 @@ class Home extends React.Component {
                 })
             );
 
-
             this.unsubscribeCallbacks.push(
                 band.collection('pdfs').onSnapshot(snapshot => {
                     const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));

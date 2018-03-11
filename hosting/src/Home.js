@@ -10,10 +10,11 @@ import AddIcon from 'material-ui-icons/Add';
 import MenuIcon from 'material-ui-icons/Menu';
 
 import firebase from 'firebase';
-import CreateBandDialog from "../components/dialogs/CreateBandDialog";
-import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 
-import Drawer from "../components/Drawer.js";
+// import CreateBandDialog from "../components/dialogs/CreateBandDialog";
+// import JoinBandDialog from "../components/dialogs/JoinBandDialog";
+//
+// import Drawer from "../components/Drawer.js";
 
 const styles = {
     root: {},
