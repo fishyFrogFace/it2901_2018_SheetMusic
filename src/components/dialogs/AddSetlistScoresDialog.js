@@ -1,15 +1,14 @@
 import React, {Component} from 'react';
 import {withStyles} from 'material-ui/styles';
 
+import Typography from 'material-ui/Typography';
 import AsyncDialog from "./AsyncDialog";
-import Selectable from "../Selectable";
+import {List, ListItem, Checkbox} from 'material-ui';
 
 const styles = {
-
-    selectable: {
-        height: 150,
-        flex: 2,
-        marginBottom: 20
+    no_margin:{
+        margin:0,
+        padding:0
     }
 }
 
@@ -47,18 +46,20 @@ class AddSetlistScoresDialog extends Component {
         const {classes} = this.props
         
         return <AsyncDialog fullscreen title={`Add scores to setlist`} confirmText='Add Scores' onRef={ref => this.dialog = ref}>
+            <List className={classes.no_margin}>
             {scores.map((arr, index) =>
-                <div>
-                <h3>{arr.title} by {arr.composer}</h3>
-                <Selectable
-                    classes={{root: classes.selectable}}
-                    key={index}
-                    imageURL={"https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"}
-                    selected={arr.selected}
-                    onClick={(i => () => this._onSelectableClick(i))(index)}
-                />
-                </div>
+                <ListItem onClick={e => this._onSelectableClick(index)} className={classes.no_margin}>
+                   
+                   <Typography variant='subheading'>
+                    <Checkbox 
+                        color='inherit'
+                        checked = {arr.selected}
+                    />
+                        {arr.title} by {arr.composer}
+                    </Typography>
+                </ListItem>
             )}
+            </List>
         </AsyncDialog>
     }
 }

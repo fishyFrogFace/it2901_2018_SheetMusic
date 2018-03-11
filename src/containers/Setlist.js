@@ -6,11 +6,11 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {
-    IconButton, Menu, MenuItem
+    IconButton, Menu, MenuItem, Card, CardContent
 } from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import AddIcon from 'material-ui-icons/Add';
-import Input from 'material-ui-icons/Input'
+import Edit from 'material-ui-icons/Edit'
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -33,10 +33,7 @@ const styles = {
         flexDirection: 'column'
     },
     card: {
-        width: 300,
-        marginRight: 24,
-        marginBottom: 24,
-        cursor: 'pointer'
+        marginBottom: 10
     },
     listCard: {
         width: '100%',
@@ -328,15 +325,15 @@ class Setlist extends Component {
                         </IconButton>
                         <div className={classes.flex}>
                             <Typography variant="title" color="inherit" className={classes.flex}>
-                                {setlist.title} 
-                                <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
-                                    <Input />
-                                </IconButton>
+                                {setlist.title} | {setlist.date && setlist.date.toLocaleString()}
                             </Typography>
                             <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                {setlist.date && setlist.date.toLocaleString()} | {setlist.place}
+                                {setlist.place}
                             </Typography>
                         </div>
+                        <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
+                            <Edit />
+                        </IconButton>
                         <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                             <AddIcon/>
                         </IconButton>
@@ -371,33 +368,28 @@ class Setlist extends Component {
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
                                                         >
-                                                            <div style={{
-                                                                width: '100%',
-                                                                height: 50,
-                                                                padding: 5,
-                                                                border: '1px solid black'
-                                                            }}>
+                                                            <Card className={classes.card}>
                                                                 {
                                                                  (score.type === 0 ) ? 
-                                                                    <div>
+                                                                    <CardContent>
                                                                         <Typography variant='headline'>
                                                                             {index + 1}. {score.title}
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
                                                                             by {score.composer}
                                                                         </Typography>
-                                                                    </div>
+                                                                    </CardContent>
                                                                     :
-                                                                    <div>
+                                                                    <CardContent>
                                                                         <Typography variant='headline'>
                                                                             {index + 1} {score.title} | {score.time} minutes
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
                                                                             {score.desc}
                                                                         </Typography>
-                                                                    </div>
+                                                                    </CardContent>
                                                                 }
-                                                            </div>
+                                                            </Card>
                                                         </div>
                                                         {provided.placeholder}
                                                     </div>
