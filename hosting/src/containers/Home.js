@@ -120,7 +120,8 @@ class Home extends React.Component {
                 pagesCropped: part.pagesCropped,
                 pagesOriginal: part.pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`)
+                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                instrumentNumber: part.instrumentNumber
             });
         }
 
@@ -156,7 +157,8 @@ class Home extends React.Component {
                 pagesCropped: doc.data().pagesCropped,
                 pagesOriginal: doc.data().pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`)
+                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                instrumentNumber: part.instrumentNumber
             });
         }
 
@@ -187,7 +189,8 @@ class Home extends React.Component {
             pagesCropped: part.pagesCropped,
             pagesOriginal: part.pagesOriginal,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`)
+            instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+            instrumentNumber: part.instrumentNumber
         });
 
         this.setState({message: 'Part added'});
