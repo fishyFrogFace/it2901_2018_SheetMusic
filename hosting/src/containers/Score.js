@@ -21,13 +21,6 @@ const styles = {
         marginLeft: 25
     },
 
-    instrumentSelector__select: {
-        color: 'white'
-    },
-    instrumentSelector__icon: {
-        fill: 'white'
-    },
-
     flex: {
         flex: 1
     },
@@ -176,10 +169,6 @@ class Score extends React.Component {
                             hasParts &&
                             <Select
                                 className={classes.instrumentSelector}
-                                classes={{
-                                    select: classes.instrumentSelector__select,
-                                    icon: classes.instrumentSelector__icon
-                                }}
                                 value={selectedPartId}
                                 onChange={e => this._onInstrumentSelectChange(e)}
                                 disableUnderline={true}
