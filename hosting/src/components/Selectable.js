@@ -79,7 +79,7 @@ class Selectable extends React.Component {
     };
 
     _onImageLoad = () => {
-      this.setState({imageLoaded: true})
+        this.setState({imageLoaded: true})
     };
 
 

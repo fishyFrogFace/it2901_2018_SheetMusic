@@ -283,6 +283,32 @@ class Home extends React.Component {
         });
     };
 
+    _onCreateSetlist = async () => {
+        let uid = this.props.user.uid;
+        let bandId = this.props.user.defaultBand.id;
+
+        const {title, place, date} = await this.setlistDialog.open();
+
+        try {
+            const setlist = {
+                title: title,
+                place: place,
+                date: date._d,
+                creator: firebase.firestore().doc(`users/${uid}`),
+                band: firebase.firestore().doc(`bands/${bandId}`)
+            };
+
+            let ref = await firebase.firestore().collection('setlists').add(setlist);
+
+            await firebase.firestore().collection(`bands/${bandId}/setlists`).add({
+                ref: firebase.firestore().doc(`setlists/${ref.id}`)
+            });
+            window.location.hash = `#/setlist/${ref.id}`;
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     render() {
         const {anchorEl, selectedPage, message} = this.state;
 
@@ -364,7 +390,10 @@ class Home extends React.Component {
                         }
                         {
                             selectedPage === 1 &&
-                            <Setlists/>
+                            <Setlists
+                                band={band}
+                                onCreateSetlist={this._onCreateSetlist}
+                            />
                         }
                         {
                             selectedPage === 2 &&

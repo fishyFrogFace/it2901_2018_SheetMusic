@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
+import { MuiPickersUtilsProvider } from 'material-ui-pickers';
+import MomentUtils from 'material-ui-pickers/utils/moment-utils';
 
 import 'firebase/firestore';
 import 'firebase/auth';
@@ -149,6 +151,20 @@ class App extends React.Component {
                         this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, instruments: instrumentsSorted}}});
                     })
                 );
+
+                this.unsubscribeCallbacks.push(
+                    band.collection('setlists').onSnapshot(async snapshot => {
+                        const setlists = await Promise.all(
+                            snapshot.docs.map(async doc => {
+                                const setlistRef = await doc.data().ref.get();
+                                return {...setlistRef.data(), id: setlistRef.id};
+                            })
+                        );
+
+                        const setlistsSorted = setlists.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, setlists: setlistsSorted}}});
+                    })
+                );
             });
 
             firebase.firestore().collection(`users/${user.uid}/bands`).onSnapshot(async snapshot => {
@@ -230,6 +246,8 @@ const theme = createMuiTheme({
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
+    <MuiPickersUtilsProvider  utils={MomentUtils}>
         <App/>
+    </MuiPickersUtilsProvider >
     </MuiThemeProvider>,
     document.getElementById('root'));
