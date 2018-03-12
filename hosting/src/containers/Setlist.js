@@ -85,9 +85,9 @@ class Setlist extends Component {
 
     async addSetListScores (setlistid, arrIds, currLength){
         console.log();
-       await Promise.all(arrIds.map(async (arr, index) =>
+        await Promise.all(arrIds.map(async (arr, index) =>
             await   firebase.firestore().collection(`setlists/${setlistid}/scores`)
-                    .add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
+                .add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
 
     }
     _onAddButtonClick(e) {
@@ -143,16 +143,16 @@ class Setlist extends Component {
                     var item = scores.find( (arr) => arr.id === combinedArray[c].id);
                     item.order = c;
                     break;
-                
+
                 case 1:
                     var item = events.find( (arr) => arr.id === combinedArray[c].id);
                     item.order = c;
                     break;
-                
+
                 default:
-                break;
+                    break;
             }
-            
+
         }
 
         this.setState({setlist:{...this.state.setlist, scores: scores, events: events, combinedArray: combinedArray}})
@@ -317,91 +317,91 @@ class Setlist extends Component {
 
         return (
             <div className={classes.root}>
-            <DragDropContext onDragEnd={this._onDragEnd}>
-                 <AppBar position="static">
-                    <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                            <ArrowBackIcon/>
-                        </IconButton>
-                        <div className={classes.flex}>
-                            <Typography variant="title" color="inherit" className={classes.flex}>
-                                {setlist.title} | {setlist.date && setlist.date.toLocaleString()}
-                            </Typography>
-                            <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                {setlist.place}
-                            </Typography>
-                        </div>
-                        <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
-                            <Edit />
-                        </IconButton>
-                        <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                            <AddIcon/>
-                        </IconButton>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={() => this._onMenuClose()}
-                        >
-                            <MenuItem onClick={() => this._onMenuClick('addScore')}>Add Score</MenuItem>
-                            <MenuItem onClick={() => this._onMenuClick('addEvent')}>Add Event</MenuItem>
-                        </Menu>
-                    </Toolbar>
-                </AppBar>
-                <div>
+                <DragDropContext onDragEnd={this._onDragEnd}>
+                    <AppBar position="static">
+                        <Toolbar>
+                            <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
+                                <ArrowBackIcon/>
+                            </IconButton>
+                            <div className={classes.flex}>
+                                <Typography variant="title" color="inherit" className={classes.flex}>
+                                    {setlist.title} | {setlist.date && setlist.date.toLocaleString()}
+                                </Typography>
+                                <Typography variant='subheading' color='inherit' className={classes.flex}>
+                                    {setlist.place}
+                                </Typography>
+                            </div>
+                            <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
+                                <Edit />
+                            </IconButton>
+                            <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
+                                <AddIcon/>
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={() => this._onMenuClose()}
+                            >
+                                <MenuItem onClick={() => this._onMenuClick('addScore')}>Add Score</MenuItem>
+                                <MenuItem onClick={() => this._onMenuClick('addEvent')}>Add Event</MenuItem>
+                            </Menu>
+                        </Toolbar>
+                    </AppBar>
+                    <div>
 
-                    <div className={classes.listView}>
+                        <div className={classes.listView}>
 
-                        <Droppable droppableId="droppable">
-                            {(provided, snapshot) => 
-                                <div ref={provided.innerRef}>
-                                    {
-                                        setlist.combinedArray && setlist.combinedArray.map((score, index) =>
-                                            <Draggable 
-                                                key={score.id + score.type}
-                                                draggableId={score.id + score.type}
-                                                index={index}
-                                            >
-                                                {(provided, snapshot) =>
-                                                    <div>
-                                                        <div
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                        >
-                                                            <Card className={classes.card}>
-                                                                {
-                                                                 (score.type === 0 ) ? 
-                                                                    <CardContent>
-                                                                        <Typography variant='headline'>
-                                                                            {index + 1}. {score.title}
-                                                                        </Typography>
-                                                                        <Typography variant='subheading'>
-                                                                            by {score.composer}
-                                                                        </Typography>
-                                                                    </CardContent>
-                                                                    :
-                                                                    <CardContent>
-                                                                        <Typography variant='headline'>
-                                                                            {index + 1} {score.title} | {score.time} minutes
-                                                                        </Typography>
-                                                                        <Typography variant='subheading'>
-                                                                            {score.desc}
-                                                                        </Typography>
-                                                                    </CardContent>
-                                                                }
-                                                            </Card>
+                            <Droppable droppableId="droppable">
+                                {(provided, snapshot) =>
+                                    <div ref={provided.innerRef}>
+                                        {
+                                            setlist.combinedArray && setlist.combinedArray.map((score, index) =>
+                                                <Draggable
+                                                    key={score.id + score.type}
+                                                    draggableId={score.id + score.type}
+                                                    index={index}
+                                                >
+                                                    {(provided, snapshot) =>
+                                                        <div>
+                                                            <div
+                                                                ref={provided.innerRef}
+                                                                {...provided.draggableProps}
+                                                                {...provided.dragHandleProps}
+                                                            >
+                                                                <Card className={classes.card}>
+                                                                    {
+                                                                        (score.type === 0 ) ?
+                                                                            <CardContent>
+                                                                                <Typography variant='headline'>
+                                                                                    {index + 1}. {score.title}
+                                                                                </Typography>
+                                                                                <Typography variant='subheading'>
+                                                                                    by {score.composer}
+                                                                                </Typography>
+                                                                            </CardContent>
+                                                                            :
+                                                                            <CardContent>
+                                                                                <Typography variant='headline'>
+                                                                                    {index + 1} {score.title} | {score.time} minutes
+                                                                                </Typography>
+                                                                                <Typography variant='subheading'>
+                                                                                    {score.desc}
+                                                                                </Typography>
+                                                                            </CardContent>
+                                                                    }
+                                                                </Card>
+                                                            </div>
+                                                            {provided.placeholder}
                                                         </div>
-                                                        {provided.placeholder}
-                                                    </div>
-                                                }
-                                            </Draggable>
-                                        )   
-                                    }
-                                </div>
-                            }
-                        </Droppable>
+                                                    }
+                                                </Draggable>
+                                            )
+                                        }
+                                    </div>
+                                }
+                            </Droppable>
+                        </div>
                     </div>
-                </div>
                 </DragDropContext>
                 <AddSetlistScoresDialog onRef= {ref => this.addScoreDialog = ref}/>
                 <AddSetlistEventDialog onRef= {ref => this.addEventDialog = ref}/>
