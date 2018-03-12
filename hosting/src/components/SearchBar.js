@@ -4,7 +4,7 @@ import {Paper} from "material-ui";
 
 const styles = theme => ({
     input: {
-        width: '700px',
+        width: '600px',
         outline: 'none',
         border: 'none',
         padding: '11px 16px',

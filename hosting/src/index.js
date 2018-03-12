@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
-import { MuiPickersUtilsProvider } from 'material-ui-pickers';
+import {MuiPickersUtilsProvider} from 'material-ui-pickers';
 import MomentUtils from 'material-ui-pickers/utils/moment-utils';
 
 import 'firebase/firestore';
@@ -17,6 +17,7 @@ class App extends React.Component {
     };
 
     unsubscribeCallbacks = [];
+    unsubscribeCallbacksScore = [];
 
     constructor() {
         super();
@@ -57,11 +58,11 @@ class App extends React.Component {
                     await userSnapshot.ref.collection('bands').add({ref: bandRef});
                 }
 
-                for (const cb of this.unsubscribeCallbacks) {
-                    cb();
-                }
+                this.unsubscribeCallbacks.forEach(cb => cb());
+                this.unsubscribeCallbacksScore.forEach(cb => cb());
 
                 const band = (await userSnapshot.ref.get()).data().defaultBand;
+
 
                 // Add everything except defaultBand
                 this.setState({
@@ -76,45 +77,55 @@ class App extends React.Component {
 
                 this.unsubscribeCallbacks.push(
                     band.onSnapshot(snapshot => {
-                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, ...snapshot.data(), id: snapshot.id}}});
+                        this.setState({
+                            user: {
+                                ...this.state.user,
+                                defaultBand: {...this.state.user.defaultBand, ...snapshot.data(), id: snapshot.id}
+                            }
+                        });
                     })
                 );
 
                 this.unsubscribeCallbacks.push(
                     band.collection('scores').onSnapshot(async snapshot => {
-                        for (let change of snapshot.docChanges) {
-                            switch (change.type) {
-                                case 'added':
-                                    const scoreDoc = await change.doc.data().ref.get();
+                        this.unsubscribeCallbacksScore.forEach(cb => cb());
 
-                                    this.unsubscribeCallbacks.push(
-                                        scoreDoc.ref.collection('parts').onSnapshot(async snapshot => {
-                                            const parts = await Promise.all(
-                                                snapshot.docs.map(async doc => {
-                                                    const instrumentRef = await doc.data().instrument.get();
-                                                    return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
-                                                })
-                                            );
+                        const scores = await Promise.all(
+                            snapshot.docs.map(async doc => {
+                                const scoreDoc = await doc.data().ref.get();
 
-                                            const scores = [...this.state.user.defaultBand.scores];
+                                this.unsubscribeCallbacksScore.push(
+                                    scoreDoc.ref.collection('parts').onSnapshot(async snapshot => {
+                                        const parts = await Promise.all(
+                                            snapshot.docs.map(async doc => {
+                                                const instrumentRef = await doc.data().instrument.get();
+                                                return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
+                                            })
+                                        );
 
-                                            scores.find(score => score.id === scoreDoc.id).parts = parts;
+                                        const scores = [...this.state.user.defaultBand.scores];
 
-                                            this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, scores: scores}}})
+                                        scores.find(score => score.id === scoreDoc.id).parts = parts;
+
+                                        this.setState({
+                                            user: {
+                                                ...this.state.user,
+                                                defaultBand: {...this.state.user.defaultBand, scores: scores}
+                                            }
                                         })
-                                    );
+                                    })
+                                );
 
-                                    const scores = [...(this.state.user.defaultBand.scores || []), {
-                                        ...scoreDoc.data(),
-                                        id: scoreDoc.id
-                                    }];
+                                return {...scoreDoc.data(), id: scoreDoc.id};
+                            })
+                        );
 
-                                    this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, scores: scores}}});
-                                    break;
-                                case 'modified':
-                                    break;
+                        this.setState({
+                            user: {
+                                ...this.state.user,
+                                defaultBand: {...this.state.user.defaultBand, scores: scores}
                             }
-                        }
+                        });
                     })
                 );
 
@@ -125,7 +136,12 @@ class App extends React.Component {
                             return {id: memberDoc.id, ...memberDoc.data()};
                         }));
 
-                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, members: members}}});
+                        this.setState({
+                            user: {
+                                ...this.state.user,
+                                defaultBand: {...this.state.user.defaultBand, members: members}
+                            }
+                        });
                     })
                 );
 
@@ -133,7 +149,12 @@ class App extends React.Component {
                     band.collection('pdfs').onSnapshot(snapshot => {
                         const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
                         const pdfsSorted = pdfs.sort((a, b) => a.name.localeCompare(b.name));
-                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, pdfs: pdfsSorted}}});
+                        this.setState({
+                            user: {
+                                ...this.state.user,
+                                defaultBand: {...this.state.user.defaultBand, pdfs: pdfsSorted}
+                            }
+                        });
                     })
                 );
 
@@ -148,7 +169,12 @@ class App extends React.Component {
                         );
 
                         const instrumentsSorted = instruments.sort((a, b) => a.name.localeCompare(b.name));
-                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, instruments: instrumentsSorted}}});
+                        this.setState({
+                            user: {
+                                ...this.state.user,
+                                defaultBand: {...this.state.user.defaultBand, instruments: instrumentsSorted}
+                            }
+                        });
                     })
                 );
 
@@ -162,7 +188,12 @@ class App extends React.Component {
                         );
 
                         const setlistsSorted = setlists.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        this.setState({user: {...this.state.user, defaultBand: {...this.state.user.defaultBand, setlists: setlistsSorted}}});
+                        this.setState({
+                            user: {
+                                ...this.state.user,
+                                defaultBand: {...this.state.user.defaultBand, setlists: setlistsSorted}
+                            }
+                        });
                     })
                 );
             });
@@ -246,8 +277,8 @@ const theme = createMuiTheme({
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
-    <MuiPickersUtilsProvider  utils={MomentUtils}>
-        <App/>
-    </MuiPickersUtilsProvider >
+        <MuiPickersUtilsProvider utils={MomentUtils}>
+            <App/>
+        </MuiPickersUtilsProvider>
     </MuiThemeProvider>,
     document.getElementById('root'));
