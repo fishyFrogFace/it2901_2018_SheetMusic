@@ -105,7 +105,7 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 3) {
-            const instruments = [];
+            const parts = [];
 
             const lastPage = pdf.pagesCropped.length - 1;
 
@@ -118,7 +118,7 @@ class AddFullScoreDialog extends React.Component {
                     pages.push(j);
                 }
 
-                instruments.push({
+                parts.push({
                     instrumentId: band.instruments[data.instrument].id,
                     instrumentNumber: data.instrumentNumber,
                     pagesCropped: pages.map(page => pdf.pagesCropped[page]),
@@ -128,7 +128,7 @@ class AddFullScoreDialog extends React.Component {
 
             this.__resolve({
                 score: scoreData,
-                instruments: instruments
+                parts: parts
             });
 
             this.setState({
