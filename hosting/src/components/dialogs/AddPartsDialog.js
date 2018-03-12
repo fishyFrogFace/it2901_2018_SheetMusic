@@ -86,7 +86,7 @@ class AddPartsDialog extends React.Component {
         } else {
             this.__resolve({
                 score: scoreData,
-                instruments: Object.keys(pdfData).map(i => ({
+                parts: Object.keys(pdfData).map(i => ({
                     pdfId: pdfs[i].id,
                     instrumentId: band.instruments[pdfData[i].instrument].id,
                     instrumentNumber: pdfData[i].instrumentNumber
