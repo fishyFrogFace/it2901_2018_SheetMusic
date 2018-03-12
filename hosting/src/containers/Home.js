@@ -31,6 +31,7 @@ import {
 } from "material-ui-icons";
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
+import SearchBar from '../components/SearchBar';
 
 const styles = {
     root: {
@@ -73,18 +74,6 @@ const styles = {
     },
     instrumentSelector__icon: {
         fill: 'white'
-    },
-
-    input: {
-        width: '600px',
-        outline: 'none',
-        border: 'none',
-        padding: '11px 16px',
-        background: 'rgba(0,0,0,0.07)',
-        height: '46px',
-        boxSizing: 'border-box',
-        borderRadius: '4px',
-        font: 'normal 16px Roboto'
     }
 };
 
@@ -323,8 +312,7 @@ class Home extends React.Component {
                                 </Button>
                             }
                         </div>
-                        <input className={classes.input} style={{marginLeft: 20}}
-                               placeholder='Search for scores and setlists'/>
+                        <SearchBar/>
                         <div className={classes.flex}/>
                         <Menu
                             anchorEl={anchorEl}
@@ -357,7 +345,7 @@ class Home extends React.Component {
                         <List>
                             {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
                                 const selected = index === selectedPage;
-                                const color = selected ? '#db4437' : '#757575';
+                                const color = selected ? '#448AFF' : '#757575';
                                 return <ListItem style={{paddingLeft: 24}} key={index} button onClick={() => this._onNavClick(index)}>
                                     {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
                                     {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
