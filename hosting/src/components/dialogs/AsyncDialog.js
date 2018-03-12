@@ -44,8 +44,8 @@ class AsyncDialog extends React.Component {
                 {this.props.children}
             </DialogContent>
             <DialogActions>
-                <Button color="primary" onClick={() => this._onCancelClick()}>Cancel</Button>
-                <Button color="primary" onClick={() => this._onConfirmClick()} autoFocus>{confirmText}</Button>
+                <Button color="secondary" onClick={() => this._onCancelClick()}>Cancel</Button>
+                <Button color="secondary" onClick={() => this._onConfirmClick()} autoFocus>{confirmText}</Button>
             </DialogActions>
         </Dialog>
     }

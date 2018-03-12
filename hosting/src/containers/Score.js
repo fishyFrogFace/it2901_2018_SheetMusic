@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {withStyles} from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
@@ -39,57 +39,58 @@ const styles = {
     }
 };
 
-class Score extends Component {
+class Score extends React.Component {
     state = {
         fileUploaderOpen: false,
-        selectedSheetMusicId: null,
+        selectedPartId: null,
         anchorEl: null,
         score: {}
     };
 
-    async componentWillMount() {
+    unsubscribeCallbacks = [];
+
+    componentDidMount() {
         const scoreId = this.props.detail;
 
-        this.unsubscribe = firebase.firestore().collection(`scores/${scoreId}/sheetMusic`).onSnapshot(async snapshot => {
-            const sheetMusic = await Promise.all(
-                snapshot.docs.map(async doc => ({
-                    ...doc.data(),
-                    id: doc.id,
-                    instrument: (await doc.data().instrument.get()).data()
-                }))
-            );
+        this.unsubscribeCallbacks.push(
+            firebase.firestore().doc(`scores/${scoreId}`).onSnapshot(async snapshot => {
+                this.setState({score: {...this.state.score, ...snapshot.data()}});
+            })
+        );
 
-            const sheetMusicSorted = sheetMusic
-                .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
+        this.unsubscribeCallbacks.push(
+            firebase.firestore().collection(`scores/${scoreId}/parts`).onSnapshot(async snapshot => {
+                const parts = await Promise.all(
+                    snapshot.docs.map(async doc => ({
+                        ...doc.data(),
+                        id: doc.id,
+                        instrument: (await doc.data().instrument.get()).data()
+                    }))
+                );
 
-            console.log(sheetMusicSorted);
+                const partsSorted = parts
+                    .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
 
-            this.setState({
-                score: {...this.state.score, sheetMusic: sheetMusicSorted},
-                selectedSheetMusicId: sheetMusicSorted.length > 0 ? sheetMusicSorted[0].id : null
-            });
-        });
-
-        // Score
-
-        const scoreDoc = await firebase.firestore().doc(`scores/${scoreId}`).get();
-        const band = await scoreDoc.data().band.get();
-
-        this.setState({
-            score: {...this.state.score, ...scoreDoc.data(), band: {...band.data(), id: band.id}}
-        });
+                this.setState({
+                    score: {...this.state.score, parts: partsSorted},
+                    selectedPartId: partsSorted.length > 0 ? partsSorted[0].id : null
+                });
+            })
+        );
     }
 
     componentWillUnmount() {
-        this.unsubscribe();
+        for (let cb of this.unsubscribeCallbacks) {
+            cb();
+        }
     }
 
     _onInstrumentSelectChange(e) {
-        this.setState({selectedSheetMusicId: e.target.value});
+        this.setState({selectedPartId: e.target.value});
     }
 
     async _onArrowBackButtonClick() {
-        window.location.hash = `#/band/${this.state.score.band.id}`;
+        window.location.hash = ``;
     }
 
     _onMenuClose() {
@@ -106,11 +107,11 @@ class Score extends Component {
         switch (type) {
             case 'download':
                 try {
-                    const {score, selectedSheetMusicId} = this.state;
+                    const {score, selectedPartId} = this.state;
 
-                    const sheetMusic = score.sheetMusic.find(s => s.id === selectedSheetMusicId);
+                    const part = score.parts.find(part => part.id === selectedPartId);
 
-                    const {} = await this.downloadDialog.open(sheetMusic.instrument);
+                    const {} = await this.downloadDialog.open(part.instrument);
 
                     const jsPDF = await import('jspdf');
 
@@ -119,17 +120,17 @@ class Score extends Component {
                     const {width, height} = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
-                        img.src = sheetMusic.sheets[0];
+                        img.src = part.sheets[0];
                     });
 
                     const doc = new jsPDF('p', 'px', [width, height]);
 
-                    for (let i = 0; i < sheetMusic.sheets.length; i++) {
+                    for (let i = 0; i < part.sheets.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = sheetMusic.sheets[i];
+                        const url = part.sheets[i];
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -141,7 +142,7 @@ class Score extends Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${score.band.name}     ${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${sheetMusic.sheets.length}`, 20, height - 20);
+                        doc.text(`${score.band.name}     ${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.sheets.length}`, 20, height - 20);
                     }
 
                     doc.save(`${score.title}.pdf`);
@@ -157,9 +158,9 @@ class Score extends Component {
 
     render() {
         const {classes} = this.props;
-        const {selectedSheetMusicId, anchorEl, score, message} = this.state;
+        const {selectedPartId, anchorEl, score, message} = this.state;
 
-        const hasSheetMusic = Boolean(score.sheetMusic && score.sheetMusic.length);
+        const hasParts = Boolean(score.parts && score.parts.length);
 
         return (
             <div className={classes.root}>
@@ -172,20 +173,21 @@ class Score extends Component {
                             {score.title}
                         </Typography>
                         {
-                            hasSheetMusic &&
+                            hasParts &&
                             <Select
                                 className={classes.instrumentSelector}
                                 classes={{
                                     select: classes.instrumentSelector__select,
                                     icon: classes.instrumentSelector__icon
                                 }}
-                                value={selectedSheetMusicId}
+                                value={selectedPartId}
                                 onChange={e => this._onInstrumentSelectChange(e)}
                                 disableUnderline={true}
                             >
                                 {
-                                    score.sheetMusic.map((s, index) =>
-                                        <MenuItem key={index} value={s.id}>{s.instrument.name} {s.instrumentNumber > 0 ? s.instrumentNumber : ''}</MenuItem>
+                                    score.parts.map((part, index) =>
+                                        <MenuItem key={index}
+                                                  value={part.id}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}</MenuItem>
                                     )
                                 }
                             </Select>
@@ -205,9 +207,9 @@ class Score extends Component {
                 </AppBar>
                 <div className={classes.sheetContainer}>
                     {
-                        hasSheetMusic &&
-                        (score.sheetMusic.find(s => s.id === selectedSheetMusicId).sheets || []).map((sheet, index) =>
-                            <img key={index} className={classes.sheet} src={sheet}/>
+                        hasParts &&
+                        (score.parts.find(s => s.id === selectedPartId).pagesOriginal || []).map((page, index) =>
+                            <img key={index} className={classes.sheet} src={page}/>
                         )
                     }
                 </div>
