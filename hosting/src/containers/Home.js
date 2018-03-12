@@ -32,6 +32,9 @@ import {
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 import SearchBar from '../components/SearchBar';
+import Members from "./Home/Members";
+import Scores from "./Home/Scores";
+import Setlists from "./Home/Setlists";
 
 const styles = {
     root: {
@@ -46,16 +49,6 @@ const styles = {
     dialogContent: {
         display: 'flex',
         flexDirection: 'column'
-    },
-    card: {
-        width: 250,
-        height: 250,
-        marginRight: 20,
-        marginBottom: 20,
-        cursor: 'pointer'
-    },
-    media: {
-        height: 150,
     },
     banner: {
         background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
@@ -365,67 +358,26 @@ class Home extends React.Component {
                         </div>
                     </div>
                     <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
-                        {selectedPage === 0 &&
-                        <div style={{display: 'flex', flexWrap: 'wrap', paddingTop: 20, paddingLeft: 20}}>
-                            {band.scores && band.scores.map((arr, index) =>
-                                <Card key={index} className={classes.card}
-                                      onClick={() => window.location.hash = `#/score/${arr.id}`}
-                                      elevation={1}>
-                                    <CardMedia
-                                        className={classes.media}
-                                        image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
-                                        title=""
-                                    />
-                                    <CardContent>
-                                        <Typography variant="headline" component="h2">
-                                            {arr.title}
-                                        </Typography>
-                                        <Typography component="p">
-                                            {arr.composer}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </div>
+                        {
+                            selectedPage === 0 &&
+                            <Scores band={band}/>
                         }
-                        {selectedPage === 1 &&
-                        <div>Setlists</div>
+                        {
+                            selectedPage === 1 &&
+                            <Setlists/>
                         }
-                        {selectedPage === 2 &&
-                        <div style={{display: 'flex', justifyContent: 'space-between', width: 600}}>
-                            <Paper style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '0 15px',
-                                width: 150,
-                                height: 50
-                            }}>
-                                <Typography variant='body1'>
-                                    Band code
-                                </Typography>
-                                <Typography variant='body1'>
-                                    <b>{band.code}</b>
-                                </Typography>
-                            </Paper>
-                            <Paper style={{width: 400}}>
-                                <List>
-                                    {band.members && band.members.map((member, index) =>
-                                        <ListItem key={index} dense button>
-                                            <Avatar src={member.photoURL}/>
-                                            <ListItemText primary={member.displayName}/>
-                                        </ListItem>)}
-                                </List>
-                            </Paper>
-                        </div>
+                        {
+                            selectedPage === 2 &&
+                            <Members band={band}/>
                         }
-                        {selectedPage === 3 &&
-                        <UnsortedPDFs
-                            band={band}
-                            onAddFullScore={this._onAddFullScore}
-                            onAddParts={this._onAddParts}
-                            onAddPart={this._onAddPart}
-                        />
+                        {
+                            selectedPage === 3 &&
+                            <UnsortedPDFs
+                                band={band}
+                                onAddFullScore={this._onAddFullScore}
+                                onAddParts={this._onAddParts}
+                                onAddPart={this._onAddPart}
+                            />
                         }
                     </div>
                 </div>
@@ -447,11 +399,6 @@ class Home extends React.Component {
                     open={Boolean(message)}
                     message={message}
                 />
-                {selectedPage === 1 &&
-                <Button variant="fab" color="secondary" style={{position: 'fixed', bottom: 32, right: 32}}>
-                    <PlaylistAdd/>
-                </Button>
-                }
             </div>
         );
     }
