@@ -283,9 +283,9 @@ class Home extends React.Component {
         });
     };
 
-    async _onAddSetlist() {
+    _onCreateSetlist = async () => {
         let uid = this.props.user.uid;
-        let bandId = this.props.detail;
+        let bandId = this.props.user.defaultBand.id;
 
         const {title, place, date} = await this.setlistDialog.open();
 
@@ -307,7 +307,7 @@ class Home extends React.Component {
         } catch (err) {
             console.log(err);
         }
-    }
+    };
 
     render() {
         const {anchorEl, selectedPage, message} = this.state;
@@ -390,7 +390,10 @@ class Home extends React.Component {
                         }
                         {
                             selectedPage === 1 &&
-                            <Setlists/>
+                            <Setlists
+                                band={band}
+                                onCreateSetlist={this._onCreateSetlist}
+                            />
                         }
                         {
                             selectedPage === 2 &&
