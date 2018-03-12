@@ -42,10 +42,11 @@ class CreateSetlistDialog extends React.Component {
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
             <TextField label='Name' onChange={e => this._onTextFieldChange(e, 'title')}/>
             <TextField label='Place' onChange={e => this._onTextFieldChange(e, 'place')}/>            
-            {/*<DateTimePicker*/}
-                {/*value={this.state.date}*/}
-                {/*onChange={date => this._onDateChange(date)}*/}
-            {/*/>*/}
+            <DateTimePicker
+                color='black'
+                value={this.state.date}
+                onChange={date => this._onDateChange(date)}
+            />
         </AsyncDialog>
     }
 }

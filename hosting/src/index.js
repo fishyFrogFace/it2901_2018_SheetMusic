@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
+import { MuiPickersUtilsProvider } from 'material-ui-pickers';
+import MomentUtils from 'material-ui-pickers/utils/moment-utils';
 
 import 'firebase/firestore';
 import 'firebase/auth';
@@ -244,6 +246,8 @@ const theme = createMuiTheme({
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
+    <MuiPickersUtilsProvider  utils={MomentUtils}>
         <App/>
+    </MuiPickersUtilsProvider >
     </MuiThemeProvider>,
     document.getElementById('root'));
