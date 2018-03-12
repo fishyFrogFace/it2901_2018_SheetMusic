@@ -308,7 +308,7 @@ class Setlist extends Component {
     }
 
     async _onArrowBackButtonClick() {
-        window.location.hash = `#/band/${this.state.bandid}`;
+        window.location.hash = '';
     }
 
     render() {
