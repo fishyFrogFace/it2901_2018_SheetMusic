@@ -12,16 +12,21 @@ class Members extends React.Component {
 
     render() {
         const {classes, band} = this.props;
-        return <div style={{display: 'flex', justifyContent: 'space-between', width: 600}}>
-            <Paper style={{width: 400}}>
-                <List>
-                    {band.members && band.members.map((member, index) =>
-                        <ListItem key={index} dense button>
-                            <Avatar src={member.photoURL}/>
-                            <ListItemText primary={member.displayName}/>
-                        </ListItem>)}
-                </List>
-            </Paper>
+
+        return <div style={{display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20}}>
+            {band.members && band.members.length > 0 &&
+                <Paper style={{width: 400}}>
+                    <List>
+                        {
+                            band.members.map((member, index) =>
+                            <ListItem key={index} dense button>
+                                <Avatar src={member.photoURL}/>
+                                <ListItemText primary={member.displayName}/>
+                            </ListItem>)
+                        }
+                    </List>
+                </Paper>
+            }
         </div>
     }
 }
