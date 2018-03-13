@@ -5,30 +5,13 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {
-    Avatar,
-    Button,
-    Card,
-    CardContent,
-    CardMedia,
-    IconButton, Input,
-    List,
-    ListItem,
-    ListItemText,
-    Menu,
-    MenuItem,
-    Paper,
-    Snackbar,
-} from "material-ui";
+import {Button, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Snackbar,} from "material-ui";
 
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
 
-import {
-    ArrowDropDown, Dehaze, FileUpload, LibraryBooks, LibraryMusic, PlaylistAdd, QueueMusic,
-    SupervisorAccount
-} from "material-ui-icons";
+import {FileUpload, LibraryBooks, LibraryMusic, QueueMusic, SupervisorAccount} from "material-ui-icons";
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 import SearchBar from '../components/SearchBar';
@@ -67,6 +50,14 @@ const styles = {
     },
     instrumentSelector__icon: {
         fill: 'white'
+    },
+
+    button__label: {
+        width: 130,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        display: 'block'
     }
 };
 
@@ -75,19 +66,22 @@ class Home extends React.Component {
         anchorEl: null,
         selectedPage: 0,
         uploadSheetsDialogOpen: false,
-        message: null
+        message: null,
+        windowSize: null
     };
 
-    _onAddButtonClick(e) {
-        this.setState({anchorEl: e.currentTarget});
-    }
+    componentWillMount() {
+        this.setState({windowSize: window.innerWidth < 800 ? 'mobile' : 'desktop'});
 
-    _onMenuClose() {
-        this.setState({anchorEl: null});
-    }
+        window.onresize = event => {
+            if (event.target.innerWidth < 800 && this.state.windowSize === 'desktop') {
+                this.setState({windowSize: 'mobile'});
+            }
 
-    _onMenuButtonClick() {
-
+            if (event.target.innerWidth > 800 && this.state.windowSize === 'mobile') {
+                this.setState({windowSize: 'desktop'});
+            }
+        };
     }
 
     _onNavClick = index => {
@@ -313,124 +307,136 @@ class Home extends React.Component {
     };
 
     render() {
-        const {anchorEl, selectedPage, message} = this.state;
+        const {anchorEl, selectedPage, message, windowSize} = this.state;
 
         const {classes, user, band} = this.props;
 
-        return (
-            <div className={classes.root}>
-                <AppBar position="fixed" className={classes.appBar}>
-                    <Toolbar>
+        return <div className={classes.root}>
+            <AppBar position="fixed" className={classes.appBar}>
+                <Toolbar>
+                    {
+                        windowSize === 'desktop' &&
                         <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
+                    }
+                    {
+                        windowSize === 'desktop' &&
                         <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
-                        <div style={{width: 130}}>
-                            {
-                                band.name &&
-                                <Button onClick={this._onBandClick} size='small'
-                                        style={{color: 'rgb(115, 115, 115)'}}>
+                    }
+                    <Button
+                        onClick={this._onBandClick}
+                        size='small'
+                        classes={{label: classes.button__label}}
+                        style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
+                    >
+                        {band.name || ''}
+                    </Button>
+                    <SearchBar/>
+                    <div style={{flex: 1}}/>
+                    <Menu
+                        style={{marginLeft: 10}}
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={e => this.setState({anchorEl: null})}
+                    >
+                        <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
+                            Create band
+                        </MenuItem>
+                        <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
+                            Join Band
+                        </MenuItem>
+                        <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
+                        {
+                            user.bands && user.bands.map((band, index) =>
+                                <MenuItem style={{height: 15}} key={index}
+                                          onClick={() => this._onBandSelect(band.id)}>
                                     {band.name}
-                                </Button>
-                            }
-                        </div>
-                        <SearchBar/>
-                        <div className={classes.flex}/>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={e => this.setState({anchorEl: null})}
-                        >
-                            <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
-                                Create band
-                            </MenuItem>
-                            <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
-                                Join Band
-                            </MenuItem>
-                            <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
-                            {
-                                user.bands && user.bands.map((band, index) =>
-                                    <MenuItem style={{height: 15}} key={index}
-                                              onClick={() => this._onBandSelect(band.id)}>
-                                        {band.name}
-                                    </MenuItem>
-                                )
-                            }
-                        </Menu>
-                        <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
-                            <FileUpload/>
-                        </IconButton>
-                    </Toolbar>
-                </AppBar>
-                <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
-                    <div style={{width: 220, paddingTop: 16, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box'}}>
-                        <List>
-                            {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
-                                const selected = index === selectedPage;
-                                const color = selected ? '#448AFF' : '#757575';
-                                return <ListItem style={{paddingLeft: 24}} key={index} button onClick={() => this._onNavClick(index)}>
-                                    {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
-                                    {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
-                                    {name === 'Members' && <SupervisorAccount style={{color: color}}/>}
-                                    {name === 'Unsorted PDFs' && <LibraryBooks style={{color: color}}/>}
-                                    <ListItemText
-                                        disableTypography
-                                        inset
-                                        primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
-                                    />
-                                </ListItem>
-                            })}
-                        </List>
-                        <div style={{flex: 1}}/>
-                        <div style={{paddingLeft: 24, paddingBottom: 24}}>
-                            <Typography variant='caption'>Band code: {band.code}</Typography>
-                        </div>
-                    </div>
-                    <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
-                        {
-                            selectedPage === 0 &&
-                            <Scores band={band}/>
+                                </MenuItem>
+                            )
                         }
-                        {
-                            selectedPage === 1 &&
-                            <Setlists
-                                band={band}
-                                onCreateSetlist={this._onCreateSetlist}
-                            />
-                        }
-                        {
-                            selectedPage === 2 &&
-                            <Members band={band}/>
-                        }
-                        {
-                            selectedPage === 3 &&
-                            <UnsortedPDFs
-                                band={band}
-                                onAddFullScore={this._onAddFullScore}
-                                onAddParts={this._onAddParts}
-                                onAddPart={this._onAddPart}
-                            />
-                        }
+                    </Menu>
+                    <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
+                        <FileUpload/>
+                    </IconButton>
+                </Toolbar>
+            </AppBar>
+            <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
+                <div style={{
+                    width: 220,
+                    paddingTop: 16,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    boxSizing: 'border-box'
+                }}>
+                    <List>
+                        {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
+                            const selected = index === selectedPage;
+                            const color = selected ? '#448AFF' : '#757575';
+                            return <ListItem style={{paddingLeft: 24}} key={index} button
+                                             onClick={() => this._onNavClick(index)}>
+                                {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
+                                {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
+                                {name === 'Members' && <SupervisorAccount style={{color: color}}/>}
+                                {name === 'Unsorted PDFs' && <LibraryBooks style={{color: color}}/>}
+                                <ListItemText
+                                    disableTypography
+                                    inset
+                                    primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
+                                />
+                            </ListItem>
+                        })}
+                    </List>
+                    <div style={{flex: 1}}/>
+                    <div style={{paddingLeft: 24, paddingBottom: 24}}>
+                        <Typography variant='caption'>Band code: {band.code}</Typography>
                     </div>
                 </div>
-                <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
-                <CreateBandDialog onRef={ref => this.createDialog = ref}/>
-                <JoinBandDialog onRef={ref => this.joinDialog = ref}/>
-                <input
-                    ref={ref => this.fileBrowser = ref}
-                    type='file'
-                    style={{display: 'none'}}
-                    onChange={this._onFileChange}
-                    multiple
-                />
-                <Snackbar
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    open={Boolean(message)}
-                    message={message}
-                />
+                <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
+                    {
+                        selectedPage === 0 &&
+                        <Scores band={band}/>
+                    }
+                    {
+                        selectedPage === 1 &&
+                        <Setlists
+                            band={band}
+                            onCreateSetlist={this._onCreateSetlist}
+                        />
+                    }
+                    {
+                        selectedPage === 2 &&
+                        <Members band={band}/>
+                    }
+                    {
+                        selectedPage === 3 &&
+                        <UnsortedPDFs
+                            band={band}
+                            onAddFullScore={this._onAddFullScore}
+                            onAddParts={this._onAddParts}
+                            onAddPart={this._onAddPart}
+                        />
+                    }
+                </div>
             </div>
-        );
+            <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
+            <CreateBandDialog onRef={ref => this.createDialog = ref}/>
+            <JoinBandDialog onRef={ref => this.joinDialog = ref}/>
+            <input
+                ref={ref => this.fileBrowser = ref}
+                type='file'
+                style={{display: 'none'}}
+                onChange={this._onFileChange}
+                multiple
+            />
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                open={Boolean(message)}
+                message={message}
+            />
+        </div>
     }
 }
 

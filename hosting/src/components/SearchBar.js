@@ -4,7 +4,7 @@ import {Paper} from "material-ui";
 
 const styles = theme => ({
     input: {
-        width: '600px',
+        width: '100%',
         outline: 'none',
         border: 'none',
         padding: '11px 16px',
@@ -30,7 +30,7 @@ class SearchBar extends React.Component {
         const {classes} = this.props;
 
         return (
-            <div>
+            <div style={{width: '100%', maxWidth: '700px', position: 'relative'}}>
                 <input
                     className={classes.input}
                     placeholder="Search for scores and setlists"
@@ -38,7 +38,7 @@ class SearchBar extends React.Component {
                 />
                 {
                     value &&
-                    <Paper style={{position: 'absolute', top: 64, background: 'white', width: 700, height: 315}}>
+                    <Paper style={{position: 'absolute', top: 56, background: 'white', width: '100%', height: 315}}>
                     </Paper>
                 }
 
