@@ -16,7 +16,9 @@ class App extends React.Component {
         score: {}
     };
 
-    unsubscribeCallbacks = [];
+    bandUnsubscribeCallbacks = [];
+    scoreUnsubscribeCallbacks = [];
+    setlistUnsubscribeCallbacks = [];
 
     constructor() {
         super();
@@ -58,19 +60,19 @@ class App extends React.Component {
                     return;
                 }
 
-                this.unsubscribeCallbacks.forEach(cb => cb());
+                this.bandUnsubscribeCallbacks.forEach(cb => cb());
+
+                this.setState({user: {...this.state.user, ...userSnapshot.data(), id: userSnapshot.id}});
 
                 const band = userSnapshot.data().defaultBand;
 
-                this.setState({user: {...userSnapshot.data(), id: userSnapshot.id}});
-
-                this.unsubscribeCallbacks.push(
+                this.bandUnsubscribeCallbacks.push(
                     band.onSnapshot(snapshot => {
                         this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
                     })
                 );
 
-                this.unsubscribeCallbacks.push(
+                this.bandUnsubscribeCallbacks.push(
                     band.collection('scores').onSnapshot(async snapshot => {
                         const scores = await Promise.all(snapshot.docs.map(async doc => {
                             const scoreDoc = await doc.data().ref.get();
@@ -81,7 +83,7 @@ class App extends React.Component {
                     })
                 );
 
-                this.unsubscribeCallbacks.push(
+                this.bandUnsubscribeCallbacks.push(
                     band.collection('members').onSnapshot(async snapshot => {
                         const members = await Promise.all(snapshot.docs.map(async doc => {
                             const memberDoc = await doc.data().ref.get();
@@ -92,7 +94,7 @@ class App extends React.Component {
                     })
                 );
 
-                this.unsubscribeCallbacks.push(
+                this.bandUnsubscribeCallbacks.push(
                     band.collection('pdfs').onSnapshot(snapshot => {
                         const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
                         const pdfsSorted = pdfs.sort((a, b) => a.name.localeCompare(b.name));
@@ -102,7 +104,7 @@ class App extends React.Component {
                 );
 
 
-                this.unsubscribeCallbacks.push(
+                this.bandUnsubscribeCallbacks.push(
                     band.collection('instruments').onSnapshot(async snapshot => {
                         const instruments = await Promise.all(
                             snapshot.docs.map(async doc => {
@@ -117,7 +119,7 @@ class App extends React.Component {
                     })
                 );
 
-                this.unsubscribeCallbacks.push(
+                this.bandUnsubscribeCallbacks.push(
                     band.collection('setlists').onSnapshot(async snapshot => {
                         const setlists = await Promise.all(
                             snapshot.docs.map(async doc => {
@@ -164,6 +166,34 @@ class App extends React.Component {
 
         let [page, detail] = hash.split('/').slice(1);
 
+
+        if (page === 'score') {
+            this.scoreUnsubscribeCallbacks.forEach(cb => cb());
+
+            this.scoreUnsubscribeCallbacks.push(
+                firebase.firestore().doc(`scores/${detail}`).onSnapshot(async snapshot => {
+                    this.setState({score: {...this.state.score, ...snapshot.data()}});
+                })
+            );
+
+            this.scoreUnsubscribeCallbacks.push(
+                firebase.firestore().collection(`scores/${detail}/parts`).onSnapshot(async snapshot => {
+                    const parts = await Promise.all(
+                        snapshot.docs.map(async doc => ({
+                            ...doc.data(),
+                            id: doc.id,
+                            instrument: (await doc.data().instrument.get()).data()
+                        }))
+                    );
+
+                    const partsSorted = parts
+                        .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
+
+                    this.setState({score: {...this.state.score, parts: partsSorted}});
+                })
+            );
+        }
+
         const page2component = {
             home: 'Home',
             score: 'Score',
@@ -183,11 +213,11 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, user, band, detail, component: Component} = this.state;
+        const {user, band, score, detail, component: Component} = this.state;
 
         return (
             <div style={{height: '100%'}}>
-                {Component && <Component {...this.props} user={user} band={band} detail={detail}/>}
+                {Component && <Component {...this.props} user={user} band={band} score={score} detail={detail}/>}
             </div>
         )
     }

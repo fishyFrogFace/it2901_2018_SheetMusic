@@ -39,29 +39,16 @@ class Score extends React.Component {
         fileUploaderOpen: false,
         selectedPartId: null,
         anchorEl: null,
+        selectedPart: 0
     };
 
-    unsubscribeCallbacks = [];
-
-    componentDidMount() {
-        const scoreId = this.props.detail;
-
-        // const partsSorted = parts
-        //     .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
-        //
-        // this.setState({
-        //     score: {...this.state.score, parts: partsSorted},
-        //     selectedPartId: partsSorted.length > 0 ? partsSorted[0].id : null
-        // });
-    }
-
     _onInstrumentSelectChange(e) {
-        this.setState({selectedPartId: e.target.value});
+        this.setState({selectedPart: e.target.value});
     }
 
-    async _onArrowBackButtonClick() {
+    _onArrowBackButtonClick = () => {
         window.location.hash = ``;
-    }
+    };
 
     _onMenuClose() {
         this.setState({anchorEl: null});
@@ -131,12 +118,8 @@ class Score extends React.Component {
     }
 
     render() {
-        const {classes, user, detail} = this.props;
-        const {selectedPartId, anchorEl, message} = this.state;
-
-        if (!user.defaultBand || !user.defaultBand.scores || !detail) return null;
-
-        const score = user.defaultBand.scores.find(score => score.id === detail);
+        const {classes, score} = this.props;
+        const {anchorEl, message, selectedPart} = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
 
@@ -154,19 +137,19 @@ class Score extends React.Component {
                             hasParts &&
                             <Select
                                 className={classes.instrumentSelector}
-                                value={0}
+                                value={selectedPart}
                                 onChange={e => this._onInstrumentSelectChange(e)}
                                 disableUnderline={true}
                             >
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                                  value={0}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}</MenuItem>
+                                                  value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}</MenuItem>
                                     )
                                 }
                             </Select>
                         }
-                        <div className={classes.flex}></div>
+                        <div className={classes.flex}/>
                         <IconButton color="inherit" onClick={e => this._onMoreVertClick(e)}>
                             <MoreVertIcon/>
                         </IconButton>
