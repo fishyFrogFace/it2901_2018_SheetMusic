@@ -145,7 +145,7 @@ class App extends React.Component {
 
         let hash = (() => {
             if (user && window.location.hash === '#/signin') {
-                return '#/home';
+                return '#/scores';
             } else if (!user && window.location.hash !== '#/signin') {
                 return '#/signin';
             } else {
@@ -162,10 +162,9 @@ class App extends React.Component {
 
 
     async _onHashChange() {
-        const hash = window.location.hash || '#/home';
+        const hash = window.location.hash || '#/scores';
 
         let [page, detail] = hash.split('/').slice(1);
-
 
         if (page === 'score') {
             this.scoreUnsubscribeCallbacks.forEach(cb => cb());
@@ -195,7 +194,10 @@ class App extends React.Component {
         }
 
         const page2component = {
-            home: 'Home',
+            members: 'Home',
+            scores: 'Home',
+            setlists: 'Home',
+            pdfs: 'Home',
             score: 'Score',
             setlist: 'Setlist',
             signin: 'SignIn'
@@ -205,7 +207,6 @@ class App extends React.Component {
             const component = (await import(`./containers/${page2component[page]}.js`)).default;
 
             this.setState({page: page, detail: detail, component: component});
-
         } catch (err) {
             console.log(err);
             // Already imported or doesn't exists
@@ -213,11 +214,11 @@ class App extends React.Component {
     }
 
     render() {
-        const {user, band, score, detail, component: Component} = this.state;
+        const {page, user, band, score, detail, component: Component} = this.state;
 
         return (
             <div style={{height: '100%'}}>
-                {Component && <Component {...this.props} user={user} band={band} score={score} detail={detail}/>}
+                {Component && <Component {...this.props} user={user} band={band} score={score} page={page} detail={detail}/>}
             </div>
         )
     }

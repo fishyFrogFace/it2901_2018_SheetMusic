@@ -64,7 +64,6 @@ const styles = {
 class Home extends React.Component {
     state = {
         anchorEl: null,
-        selectedPage: 0,
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null
@@ -83,10 +82,6 @@ class Home extends React.Component {
             }
         };
     }
-
-    _onNavClick = index => {
-        this.setState({selectedPage: index});
-    };
 
     _onAddFullScore = async (score, parts) => {
         const bandId = this.props.band.id;
@@ -306,10 +301,14 @@ class Home extends React.Component {
         }
     };
 
-    render() {
-        const {anchorEl, selectedPage, message, windowSize} = this.state;
+    _onNavClick = nameShort => {
+        window.location.hash = `/${nameShort}`;
+    };
 
-        const {classes, user, band} = this.props;
+    render() {
+        const {anchorEl, message, windowSize} = this.state;
+
+        const {classes, user, band, page} = this.props;
 
         return <div className={classes.root}>
             <AppBar position="fixed" className={classes.appBar}>
@@ -369,15 +368,14 @@ class Home extends React.Component {
                     boxSizing: 'border-box'
                 }}>
                     <List>
-                        {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
-                            const selected = index === selectedPage;
+                        {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
+                            const selected = nameShort === page;
                             const color = selected ? '#448AFF' : '#757575';
-                            return <ListItem style={{paddingLeft: 24}} key={index} button
-                                             onClick={() => this._onNavClick(index)}>
-                                {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
-                                {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
-                                {name === 'Members' && <SupervisorAccount style={{color: color}}/>}
-                                {name === 'Unsorted PDFs' && <LibraryBooks style={{color: color}}/>}
+                            return <ListItem style={{paddingLeft: 24}} key={name} button onClick={() => this._onNavClick(nameShort)}>
+                                {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
+                                {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
+                                {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
+                                {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
                                 <ListItemText
                                     disableTypography
                                     inset
@@ -393,22 +391,22 @@ class Home extends React.Component {
                 </div>
                 <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
                     {
-                        selectedPage === 0 &&
+                        page === 'scores' &&
                         <Scores band={band}/>
                     }
                     {
-                        selectedPage === 1 &&
+                        page === 'setlists' &&
                         <Setlists
                             band={band}
                             onCreateSetlist={this._onCreateSetlist}
                         />
                     }
                     {
-                        selectedPage === 2 &&
+                        page === 'members' &&
                         <Members band={band}/>
                     }
                     {
-                        selectedPage === 3 &&
+                        page === 'pdfs' &&
                         <UnsortedPDFs
                             band={band}
                             onAddFullScore={this._onAddFullScore}
