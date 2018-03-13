@@ -73,7 +73,7 @@ const styles = {
 class Home extends React.Component {
     state = {
         anchorEl: null,
-        selectedPage: 3,
+        selectedPage: 0,
         uploadSheetsDialogOpen: false,
         message: null
     };
@@ -95,7 +95,7 @@ class Home extends React.Component {
     };
 
     _onAddFullScore = async (score, parts) => {
-        const bandId = this.props.user.defaultBand.id;
+        const bandId = this.props.band.id;
 
         let scoreRef;
         if (score.id) {
@@ -131,7 +131,7 @@ class Home extends React.Component {
     };
 
     _onAddParts = async (score, parts) => {
-        const bandId = this.props.user.defaultBand.id;
+        const bandId = this.props.band.id;
 
         let scoreRef;
         if (score.id) {
@@ -168,7 +168,7 @@ class Home extends React.Component {
     };
 
     _onAddPart = async (score, part) => {
-        const bandId = this.props.user.defaultBand.id;
+        const bandId = this.props.band.id;
 
         let scoreRef;
         if (score.id) {
@@ -208,7 +208,7 @@ class Home extends React.Component {
 
         await Promise.all(
             Array.from(e.target.files).map(file =>
-                firebase.storage().ref(`bands/${this.props.user.defaultBand.id}/input/${file.name}`).put(file)
+                firebase.storage().ref(`bands/${this.props.band.id}/input/${file.name}`).put(file)
             )
         );
 
@@ -287,8 +287,8 @@ class Home extends React.Component {
     };
 
     _onCreateSetlist = async () => {
-        let uid = this.props.user.uid;
-        let bandId = this.props.user.defaultBand.id;
+        let userId = this.props.user.id;
+        let bandId = this.props.band.id;
 
         const {title, place, date} = await this.setlistDialog.open();
 
@@ -297,7 +297,7 @@ class Home extends React.Component {
                 title: title,
                 place: place,
                 date: date._d,
-                creator: firebase.firestore().doc(`users/${uid}`),
+                creator: firebase.firestore().doc(`users/${userId}`),
                 band: firebase.firestore().doc(`bands/${bandId}`)
             };
 
@@ -315,9 +315,7 @@ class Home extends React.Component {
     render() {
         const {anchorEl, selectedPage, message} = this.state;
 
-        const {classes, user} = this.props;
-
-        const band = user.defaultBand;
+        const {classes, user, band} = this.props;
 
         return (
             <div className={classes.root}>

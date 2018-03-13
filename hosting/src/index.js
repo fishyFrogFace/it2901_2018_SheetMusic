@@ -11,13 +11,12 @@ import 'firebase/auth';
 
 class App extends React.Component {
     state = {
-        user: {
-            defaultBand: {}
-        }
+        user: {},
+        band: {},
+        score: {}
     };
 
     unsubscribeCallbacks = [];
-    unsubscribeCallbacksScore = [];
 
     constructor() {
         super();
@@ -56,76 +55,29 @@ class App extends React.Component {
                     });
 
                     await userSnapshot.ref.collection('bands').add({ref: bandRef});
+                    return;
                 }
 
                 this.unsubscribeCallbacks.forEach(cb => cb());
-                this.unsubscribeCallbacksScore.forEach(cb => cb());
 
-                const band = (await userSnapshot.ref.get()).data().defaultBand;
+                const band = userSnapshot.data().defaultBand;
 
-
-                // Add everything except defaultBand
-                this.setState({
-                    user: {
-                        ...this.state.user,
-                        displayName: userSnapshot.data().displayName,
-                        photoURL: userSnapshot.data().photoURL,
-                        email: userSnapshot.data().email,
-                        id: userSnapshot.id
-                    }
-                });
+                this.setState({user: {...userSnapshot.data(), id: userSnapshot.id}});
 
                 this.unsubscribeCallbacks.push(
                     band.onSnapshot(snapshot => {
-                        this.setState({
-                            user: {
-                                ...this.state.user,
-                                defaultBand: {...this.state.user.defaultBand, ...snapshot.data(), id: snapshot.id}
-                            }
-                        });
+                        this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
                     })
                 );
 
                 this.unsubscribeCallbacks.push(
                     band.collection('scores').onSnapshot(async snapshot => {
-                        this.unsubscribeCallbacksScore.forEach(cb => cb());
+                        const scores = await Promise.all(snapshot.docs.map(async doc => {
+                            const scoreDoc = await doc.data().ref.get();
+                            return {id: scoreDoc.id, ...scoreDoc.data()};
+                        }));
 
-                        const scores = await Promise.all(
-                            snapshot.docs.map(async doc => {
-                                const scoreDoc = await doc.data().ref.get();
-
-                                this.unsubscribeCallbacksScore.push(
-                                    scoreDoc.ref.collection('parts').onSnapshot(async snapshot => {
-                                        const parts = await Promise.all(
-                                            snapshot.docs.map(async doc => {
-                                                const instrumentRef = await doc.data().instrument.get();
-                                                return {...doc.data(), id: doc.id, instrument: instrumentRef.data()}
-                                            })
-                                        );
-
-                                        const scores = [...this.state.user.defaultBand.scores];
-
-                                        scores.find(score => score.id === scoreDoc.id).parts = parts;
-
-                                        this.setState({
-                                            user: {
-                                                ...this.state.user,
-                                                defaultBand: {...this.state.user.defaultBand, scores: scores}
-                                            }
-                                        })
-                                    })
-                                );
-
-                                return {...scoreDoc.data(), id: scoreDoc.id};
-                            })
-                        );
-
-                        this.setState({
-                            user: {
-                                ...this.state.user,
-                                defaultBand: {...this.state.user.defaultBand, scores: scores}
-                            }
-                        });
+                        this.setState({band: {...this.state.band, scores: scores}});
                     })
                 );
 
@@ -136,12 +88,7 @@ class App extends React.Component {
                             return {id: memberDoc.id, ...memberDoc.data()};
                         }));
 
-                        this.setState({
-                            user: {
-                                ...this.state.user,
-                                defaultBand: {...this.state.user.defaultBand, members: members}
-                            }
-                        });
+                        this.setState({band: {...this.state.band, members: members}});
                     })
                 );
 
@@ -149,12 +96,8 @@ class App extends React.Component {
                     band.collection('pdfs').onSnapshot(snapshot => {
                         const pdfs = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
                         const pdfsSorted = pdfs.sort((a, b) => a.name.localeCompare(b.name));
-                        this.setState({
-                            user: {
-                                ...this.state.user,
-                                defaultBand: {...this.state.user.defaultBand, pdfs: pdfsSorted}
-                            }
-                        });
+
+                        this.setState({band: {...this.state.band, pdfs: pdfsSorted}});
                     })
                 );
 
@@ -169,12 +112,8 @@ class App extends React.Component {
                         );
 
                         const instrumentsSorted = instruments.sort((a, b) => a.name.localeCompare(b.name));
-                        this.setState({
-                            user: {
-                                ...this.state.user,
-                                defaultBand: {...this.state.user.defaultBand, instruments: instrumentsSorted}
-                            }
-                        });
+
+                        this.setState({band: {...this.state.band, instruments: instrumentsSorted}});
                     })
                 );
 
@@ -188,12 +127,8 @@ class App extends React.Component {
                         );
 
                         const setlistsSorted = setlists.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        this.setState({
-                            user: {
-                                ...this.state.user,
-                                defaultBand: {...this.state.user.defaultBand, setlists: setlistsSorted}
-                            }
-                        });
+
+                        this.setState({band: {...this.state.band, setlists: setlistsSorted}});
                     })
                 );
             });
@@ -248,11 +183,11 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, user, detail, component: Component} = this.state;
+        const {page, user, band, detail, component: Component} = this.state;
 
         return (
             <div style={{height: '100%'}}>
-                {Component && <Component {...this.props} user={user} detail={detail}/>}
+                {Component && <Component {...this.props} user={user} band={band} detail={detail}/>}
             </div>
         )
     }
