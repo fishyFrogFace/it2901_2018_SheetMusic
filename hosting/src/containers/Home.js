@@ -329,10 +329,7 @@ class Home extends React.Component {
                     >
                         {band.name || ''}
                     </Button>
-                    <SearchBar/>
-                    <div style={{flex: 1}}/>
                     <Menu
-                        style={{marginLeft: 10}}
                         anchorEl={anchorEl}
                         open={Boolean(anchorEl)}
                         onClose={e => this.setState({anchorEl: null})}
@@ -353,7 +350,9 @@ class Home extends React.Component {
                             )
                         }
                     </Menu>
-                    <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
+                    <SearchBar/>
+                    <div style={{flex: 1}}/>
+                    <IconButton style={{marginLeft: 10}} color="inherit" onClick={() => this._onFileUploadButtonClick()}>
                         <FileUpload/>
                     </IconButton>
                 </Toolbar>

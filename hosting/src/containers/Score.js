@@ -13,6 +13,7 @@ import firebase from 'firebase';
 import 'firebase/storage';
 
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
+import {FileDownload} from "material-ui-icons";
 
 const styles = {
     root: {},
@@ -64,9 +65,10 @@ class Score extends React.Component {
         switch (type) {
             case 'download':
                 try {
-                    const {score, selectedPartId} = this.state;
+                    const {score} = this.props;
+                    const {selectedPart} = this.state;
 
-                    const part = score.parts.find(part => part.id === selectedPartId);
+                    const part = score.parts[selectedPart];
 
                     const {} = await this.downloadDialog.open(part.instrument);
 
@@ -99,7 +101,7 @@ class Score extends React.Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${score.band.name}     ${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.pagesOriginal.length}`, 20, height - 20);
+                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.pagesOriginal.length}`, 20, height - 20);
                     }
 
                     doc.save(`${score.title}.pdf`);
@@ -150,22 +152,15 @@ class Score extends React.Component {
                             </Select>
                         }
                         <div className={classes.flex}/>
-                        <IconButton color="inherit" onClick={e => this._onMoreVertClick(e)}>
-                            <MoreVertIcon/>
+                        <IconButton color="inherit" onClick={e => this._onMenuClick('download')}>
+                            <FileDownload/>
                         </IconButton>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={() => this._onMenuClose()}
-                        >
-                            <MenuItem onClick={() => this._onMenuClick('download')}>Download Instrument</MenuItem>
-                        </Menu>
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
                     {
                         hasParts &&
-                        (score.parts[0].pagesOriginal || []).map((page, index) =>
+                        (score.parts[selectedPart].pagesOriginal || []).map((page, index) =>
                             <img key={index} className={classes.sheet} src={page}/>
                         )
                     }
