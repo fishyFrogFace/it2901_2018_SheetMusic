@@ -26,7 +26,7 @@ class Scores extends React.Component {
         return <div style={{display: 'flex', flexWrap: 'wrap', paddingTop: 20, paddingLeft: 20}}>
             {band.scores && band.scores.map((arr, index) =>
                 <Card key={index} className={classes.card}
-                      onClick={() => window.location.hash = `#/score/${arr.id}`}
+                      onClick={() => window.location.hash = `#/score/${band.id}${arr.id}`}
                       elevation={1}>
                     <CardMedia
                         className={classes.media}

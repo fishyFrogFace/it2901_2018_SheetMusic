@@ -97,6 +97,13 @@ exports.addPDF = functions.storage.object().onChange(async event => {
     // Create storage bucket
     const bucket = storage.bucket(object.bucket);
 
+    // Create document
+    const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+        name: fileName,
+        uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+        processing: true
+    });
+
     try {
         // Download to local directory
         await bucket.file(filePath).download({destination: `/tmp/${fileName}.pdf`});
@@ -127,10 +134,6 @@ exports.addPDF = functions.storage.object().onChange(async event => {
         mogrifyProcess.childProcess.kill();
 
 
-        // Create document
-        const docRef = admin.firestore().collection(`bands/${bandId}/pdfs`).doc();
-
-
         const upload = async outputType => {
             // Read files
             const fileNames = await fs.readdir(`/tmp/output-${outputType}`);
@@ -139,7 +142,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             const uploadResponses = await Promise.all(
                 fileNames.map((name, index) =>
                     bucket.upload(`/tmp/output-${outputType}/${name}`, {
-                        destination: `bands/${bandId}/pdfs/${docRef.id}/${outputType}/${index}.png`,
+                        destination: `bands/${bandId}/pdfs/${pdfRef.id}/${outputType}/${index}.png`,
                         metadata: {
                             contentType: 'image/png'
                         }
@@ -161,11 +164,10 @@ exports.addPDF = functions.storage.object().onChange(async event => {
         let originalUrlResponses = await upload('original');
 
         // Add pages to document
-        await docRef.set({
-            name: fileName,
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+        await pdfRef.update({
             pagesCropped: croppedUrlResponses.map(([url]) => url),
-            pagesOriginal: originalUrlResponses.map(([url]) => url)
+            pagesOriginal: originalUrlResponses.map(([url]) => url),
+            processing: admin.firestore.FieldValue.delete()
         });
 
         // Clean up

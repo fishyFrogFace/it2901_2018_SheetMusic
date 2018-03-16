@@ -82,6 +82,12 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
     const fileName = path.basename(filePath, '.pdf');
     // Create storage bucket
     const bucket = storage.bucket(object.bucket);
+    // Create document
+    const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+        name: fileName,
+        uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+        processing: true
+    });
     try {
         // Download to local directory
         yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.pdf` });
@@ -105,14 +111,12 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
             '*.png'
         ], { cwd: '/tmp/output-original' });
         mogrifyProcess.childProcess.kill();
-        // Create document
-        const docRef = admin.firestore().collection(`bands/${bandId}/pdfs`).doc();
         const upload = (outputType) => __awaiter(this, void 0, void 0, function* () {
             // Read files
             const fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
             // Upload files
             const uploadResponses = yield Promise.all(fileNames.map((name, index) => bucket.upload(`/tmp/output-${outputType}/${name}`, {
-                destination: `bands/${bandId}/pdfs/${docRef.id}/${outputType}/${index}.png`,
+                destination: `bands/${bandId}/pdfs/${pdfRef.id}/${outputType}/${index}.png`,
                 metadata: {
                     contentType: 'image/png'
                 }
@@ -126,11 +130,10 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
         let croppedUrlResponses = yield upload('cropped');
         let originalUrlResponses = yield upload('original');
         // Add pages to document
-        yield docRef.set({
-            name: fileName,
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+        yield pdfRef.update({
             pagesCropped: croppedUrlResponses.map(([url]) => url),
-            pagesOriginal: originalUrlResponses.map(([url]) => url)
+            pagesOriginal: originalUrlResponses.map(([url]) => url),
+            processing: admin.firestore.FieldValue.delete()
         });
         // Clean up
         yield Promise.all([

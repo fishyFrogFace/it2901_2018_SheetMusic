@@ -84,20 +84,16 @@ class Home extends React.Component {
     }
 
     _onAddFullScore = async (score, parts) => {
-        const bandId = this.props.band.id;
+        const {band} = this.props;
 
         let scoreRef;
         if (score.id) {
-            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
+            scoreRef = firebase.firestore().collection(`bands/${band.id}/scores/${score.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection('scores').add({
+            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
                 title: score.title || 'Untitled Score',
                 composer: score.composer || '',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: scoreRef
             })
         }
 
@@ -120,25 +116,21 @@ class Home extends React.Component {
     };
 
     _onAddParts = async (score, parts) => {
-        const bandId = this.props.band.id;
+        const {band} = this.props;
 
         let scoreRef;
         if (score.id) {
-            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
+            scoreRef = firebase.firestore().collection(`bands/${band.id}/scores/${score.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection('scores').add({
+            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
                 title: score.title || 'Untitled Score',
                 composer: score.composer || '',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: scoreRef
             })
         }
 
         for (let part of parts) {
-            const pdfDocRef = firebase.firestore().doc(`bands/${bandId}/pdfs/${part.pdfId}`);
+            const pdfDocRef = firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdfId}`);
 
             const doc = await pdfDocRef.get();
 
@@ -146,7 +138,7 @@ class Home extends React.Component {
                 pagesCropped: doc.data().pagesCropped,
                 pagesOriginal: doc.data().pagesOriginal,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
                 instrumentNumber: part.instrumentNumber
             });
         }
@@ -157,20 +149,16 @@ class Home extends React.Component {
     };
 
     _onAddPart = async (score, part) => {
-        const bandId = this.props.band.id;
+        const {band} = this.props.band.id;
 
         let scoreRef;
         if (score.id) {
             scoreRef = firebase.firestore().doc(`scores/${score.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection('scores').add({
+            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
                 title: score.title || 'Untitled Score',
                 composer: score.composer || '',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: scoreRef
             })
         }
 
@@ -178,7 +166,7 @@ class Home extends React.Component {
             pagesCropped: part.pagesCropped,
             pagesOriginal: part.pagesOriginal,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+            instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
             instrumentNumber: part.instrumentNumber
         });
 
@@ -220,19 +208,19 @@ class Home extends React.Component {
         const {user} = this.props;
 
         try {
-            const band = {
-                name: name,
-                creator: firebase.firestore().doc(`users/${user.id}`),
-                code: Math.random().toString(36).substring(2, 7)
-            };
-
-            let bandRef = await firebase.firestore().collection('bands').add(band);
-
             const instrumentRefs = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.ref);
-            await Promise.all(instrumentRefs.map(ref => bandRef.collection('instruments').add({ref: ref})));
 
-            await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: bandRef});
-            await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: bandRef});
+            let bandRef = await firebase.firestore().collection('bands').add({
+                name: name,
+                creatorRef: firebase.firestore().doc(`users/${user.id}`),
+                code: Math.random().toString(36).substring(2, 7),
+                instrumentRefs: instrumentRefs,
+            });
+
+            await firebase.firestore().doc(`users/${user.id}`).update({
+                defaultBandRef: bandRef,
+                bandRefs: [...user.bandRefs, bandRef],
+            });
         } catch (err) {
             console.log(err);
         }
@@ -243,21 +231,24 @@ class Home extends React.Component {
 
         const {code} = await this.joinDialog.open();
 
-        const {user} = this.props;
+        const {user, band} = this.props;
 
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
             let bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
-            let userBandSnapshot = await firebase.firestore().collection(`users/${user.id}/bands`).where('ref', '==', bandRef).get();
+            let userBandSnapshot = user.bandRefs.find(ref => ref.id === bandRef.id).get();
 
             if (userBandSnapshot.docs.length > 0) {
                 this.setState({message: 'Band already joined!'});
             } else {
-                await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: bandRef});
-                await bandRef.collection('members').add({ref: firebase.firestore().doc(`users/${user.id}`)});
-                await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: bandRef})
+                await bandRef.update({members: [...band.members, firebase.firestore().doc(`users/${user.id}`)]});
+
+                await firebase.firestore().doc(`users/${user.id}`).update({
+                    defaultBandRef: bandRef,
+                    bandRefs: [...user.bandRefs, bandRef]
+                })
             }
         } else {
             this.setState({message: 'Band does not exist!'});
@@ -271,31 +262,24 @@ class Home extends React.Component {
     _onBandSelect = async bandId => {
         this.setState({anchorEl: null});
         await firebase.firestore().doc(`users/${this.props.user.id}`).update({
-            defaultBand: firebase.firestore().doc(`bands/${bandId}`)
+            defaultBandRef: firebase.firestore().doc(`bands/${bandId}`)
         });
     };
 
     _onCreateSetlist = async () => {
-        let userId = this.props.user.id;
-        let bandId = this.props.band.id;
+        const {user, band} = this.props;
 
         const {title, place, date} = await this.setlistDialog.open();
 
         try {
-            const setlist = {
+            let setlistRef = await firebase.firestore().collection(`bands/${band.id}/setlists`).add({
                 title: title,
                 place: place,
                 date: date._d,
-                creator: firebase.firestore().doc(`users/${userId}`),
-                band: firebase.firestore().doc(`bands/${bandId}`)
-            };
-
-            let ref = await firebase.firestore().collection('setlists').add(setlist);
-
-            await firebase.firestore().collection(`bands/${bandId}/setlists`).add({
-                ref: firebase.firestore().doc(`setlists/${ref.id}`)
+                creatorRef: firebase.firestore().doc(`users/${user.id}`)
             });
-            window.location.hash = `#/setlist/${ref.id}`;
+
+            window.location.hash = `#/setlist/${band.id}/${setlistRef.id}`;
         } catch (err) {
             console.log(err);
         }
