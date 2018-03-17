@@ -27,8 +27,6 @@ const styles = {
         flex: 1
     },
 
-    appBar: {},
-
     dialogContent: {
         display: 'flex',
         flexDirection: 'column'
@@ -88,7 +86,7 @@ class Home extends React.Component {
 
         let scoreRef;
         if (score.id) {
-            scoreRef = firebase.firestore().collection(`bands/${band.id}/scores/${score.id}`);
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`);
         } else {
             scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
                 title: score.title || 'Untitled Score',
@@ -100,15 +98,14 @@ class Home extends React.Component {
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
 
-        for (let part of parts) {
-            await scoreRef.collection('parts').add({
-                pagesCropped: part.pagesCropped,
-                pagesOriginal: part.pagesOriginal,
+        await Promise.all(
+            parts.map(part => scoreRef.collection('parts').add({
+                pages: part.pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
                 instrumentNumber: part.instrumentNumber
-            });
-        }
+            })
+        ));
 
         this.setState({message: 'Score added'});
         await new Promise(resolve => setTimeout(resolve, 3000));
@@ -120,7 +117,7 @@ class Home extends React.Component {
 
         let scoreRef;
         if (score.id) {
-            scoreRef = firebase.firestore().collection(`bands/${band.id}/scores/${score.id}`);
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`);
         } else {
             scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
                 title: score.title || 'Untitled Score',
@@ -130,13 +127,10 @@ class Home extends React.Component {
         }
 
         for (let part of parts) {
-            const pdfDocRef = firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdfId}`);
-
-            const doc = await pdfDocRef.get();
+            const pagesSnapshot = await firebase.firestore().collection(`bands/${band.id}/pdfs/${part.pdfId}/pages`).get();
 
             await scoreRef.collection('parts').add({
-                pagesCropped: doc.data().pagesCropped,
-                pagesOriginal: doc.data().pagesOriginal,
+                pages: pagesSnapshot.docs.map(doc => doc.data()),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
                 instrumentNumber: part.instrumentNumber
@@ -144,33 +138,6 @@ class Home extends React.Component {
         }
 
         this.setState({message: 'Parts added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        this.setState({message: null});
-    };
-
-    _onAddPart = async (score, part) => {
-        const {band} = this.props.band.id;
-
-        let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
-        } else {
-            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-        }
-
-        await scoreRef.collection('parts').add({
-            pagesCropped: part.pagesCropped,
-            pagesOriginal: part.pagesOriginal,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-            instrumentNumber: part.instrumentNumber
-        });
-
-        this.setState({message: 'Part added'});
         await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
     };
@@ -295,7 +262,7 @@ class Home extends React.Component {
         const {classes, user, band, page} = this.props;
 
         return <div className={classes.root}>
-            <AppBar position="fixed" className={classes.appBar}>
+            <AppBar style={{zIndex: 10}}>
                 <Toolbar>
                     {
                         windowSize === 'desktop' &&

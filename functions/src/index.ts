@@ -160,14 +160,22 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             );
         };
 
-        let croppedUrlResponses = await upload('cropped');
-        let originalUrlResponses = await upload('original');
+        let croppedPageUrls = (await upload('cropped')).map(([url]) => url);
+        let originalPageUrls = (await upload('original')).map(([url]) => url);
 
-        // Add pages to document
+        // Add page documents
+        const pages = [];
+        for (let i = 0; i < croppedPageUrls.length; i++) {
+            pages.push({
+                croppedURL: croppedPageUrls[i],
+                originalURL: originalPageUrls[i]
+            })
+        }
+
         await pdfRef.update({
-            pagesCropped: croppedUrlResponses.map(([url]) => url),
-            pagesOriginal: originalUrlResponses.map(([url]) => url),
-            processing: admin.firestore.FieldValue.delete()
+            processing: admin.firestore.FieldValue.delete(),
+            thumbnailURL: croppedPageUrls[0],
+            pages: pages
         });
 
         // Clean up
@@ -176,6 +184,8 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             fs.remove(`/tmp/output-original`),
             fs.remove(`/tmp/output-cropped`)
         ]);
+
+        // Delete PDF file
         await bucket.file(filePath).delete();
     } catch (err) {
         console.log(err);

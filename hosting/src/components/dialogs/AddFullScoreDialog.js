@@ -107,22 +107,20 @@ class AddFullScoreDialog extends React.Component {
         if (activeStep === 3) {
             const parts = [];
 
-            const lastPage = pdf.pagesCropped.length - 1;
+            let _pdfData = [...pdfData, {page: pdf.pages.length}];
 
-            for (let i = 0; i < pdfData.length; i++) {
-                let data = pdfData[i];
+            for (let i = 0; i < pdf.pages.length; i++) {
+                let data = _pdfData[i];
 
                 const pages = [];
-                const nextPageIndex = i === pdfData.length - 1 ? lastPage : pdfData[i + 1].page;
-                for (let j = data.page; j < nextPageIndex; j++) {
+                for (let j = data.page; j < _pdfData[i + 1].page; j++) {
                     pages.push(j);
                 }
 
                 parts.push({
                     instrumentId: band.instruments[data.instrument].id,
                     instrumentNumber: data.instrumentNumber,
-                    pagesCropped: pages.map(page => pdf.pagesCropped[page]),
-                    pagesOriginal: pages.map(page => pdf.pagesOriginal[page])
+                    pages: pages.map(page => pdf.pages[page])
                 });
             }
 
@@ -218,12 +216,12 @@ class AddFullScoreDialog extends React.Component {
                     }
 
                     {
-                        activeStep === 2 && entered && pdf.pagesCropped.map((page, index) =>
+                        activeStep === 2 && entered && pdf.pages.map((page, index) =>
                             <Selectable
                                 selected={selectedPages.has(index)}
                                 classes={{root: classes.selectable}}
                                 key={index}
-                                imageURL={page}
+                                imageURL={page.croppedURL}
                                 selectMode
                                 onSelect={() => this._onItemSelect(index)}
                             />
@@ -232,10 +230,10 @@ class AddFullScoreDialog extends React.Component {
 
 
                     {
-                        activeStep === 3 && pdf.pagesCropped.filter((_, index) => selectedPages.has(index)).map((page, index) =>
+                        activeStep === 3 && pdf.pages.filter((_, index) => selectedPages.has(index)).map((page, index) =>
                             <div key={index} style={{display: 'flex', alignItems: 'center', marginBottom: 20}}>
                                 <div style={{width: 200, height: 150, overflow: 'hidden', marginRight: 20, border: '1px solid #E8E8E8'}}>
-                                    <img width="300%" src={page}/>
+                                    <img width="300%" src={page.croppedURL}/>
                                 </div>
                                 <FormControl style={{marginRight: 20, width: 150}}>
                                     <InputLabel htmlFor="instrument">Instrument</InputLabel>

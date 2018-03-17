@@ -19,6 +19,7 @@ class App extends React.Component {
 
     scoreUnsubscribeCallbacks = [];
     bandUnsubscribeCallbacks = [];
+    pdfUnsubscribeCallbacks = [];
 
     constructor() {
         super();
@@ -87,7 +88,7 @@ class App extends React.Component {
                 );
 
                 const createListener = name => {
-                    userData.defaultBandRef.collection(name).onSnapshot(async snapshot => {
+                    return userData.defaultBandRef.collection(name).onSnapshot(async snapshot => {
                         const items = await Promise.all(
                             snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
                         );
@@ -132,8 +133,9 @@ class App extends React.Component {
 
         let [page, detail] = hash.split('/').slice(1);
 
+
         if (page === 'setlist') {
-            //
+        //
         }
 
         if (page === 'score') {
@@ -168,13 +170,17 @@ class App extends React.Component {
         }
 
         if (page === 'pdf') {
-            // this.pdfUnsubscribeCallbacks.forEach(cb => cb());
-            //
-            // this.scoreUnsubscribeCallbacks.push(
-            //     firebase.firestore().doc(`pdfs/${detail}`).onSnapshot(async snapshot => {
-            //         this.setState({pdf: {...this.state.pdf, ...snapshot.data()}});
-            //     })
-            // );
+            const [bandId, pdfId] = [detail.slice(0, 20), detail.slice(20)];
+
+            this.pdfUnsubscribeCallbacks.forEach(cb => cb());
+
+            const pdfDoc = firebase.firestore().doc(`bands/${bandId}/pdfs/${pdfId}`);
+
+            this.pdfUnsubscribeCallbacks.push(
+                pdfDoc.onSnapshot(async snapshot => {
+                    this.setState({pdf: {...this.state.pdf, ...snapshot.data()}});
+                })
+            );
         }
 
         const page2component = {

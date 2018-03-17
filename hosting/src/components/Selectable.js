@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {withStyles} from "material-ui/styles";
-import {Typography} from "material-ui";
+import {CircularProgress, Typography} from "material-ui";
 import {RadioButtonUnchecked, CheckCircle} from "material-ui-icons";
 
 const styles = {
@@ -42,7 +42,6 @@ class Selectable extends React.Component {
     state = {
         hover: false,
         iconHover: false,
-        imageLoaded: false,
         canFireClick: false
     };
 
@@ -78,15 +77,6 @@ class Selectable extends React.Component {
         this.setState({iconHover: false});
     };
 
-    _onImageLoad = () => {
-        this.setState({imageLoaded: true})
-    };
-
-
-    shouldComponentUpdate(nextProps, nextState) {
-        return nextState.imageLoaded;
-    }
-
     _onMouseDown = e => {
         if (this.props.selectMode) {
             this.props.onSelect(e);
@@ -116,7 +106,17 @@ class Selectable extends React.Component {
             onMouseLeave={this._onMouseLeave}
         >
             <div ref={ref => this.imageContainer = ref} className={classes.imageContainer}>
-                <img src={imageURL} onLoad={this._onImageLoad} {...imageProps}/>
+                {
+                    !imageURL &&
+                    <div style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white'}}>
+                        <CircularProgress style={{marginTop: -20}} color="secondary" size={60}/>
+                    </div>
+                }
+                {
+                    imageURL &&
+                    <img src={imageURL} {...imageProps}/>
+                }
+
                 {title && <Typography variant='subheading' className={classes.title}>{title}</Typography>}
             </div>
             <div

@@ -48,7 +48,7 @@ class Score extends React.Component {
     }
 
     _onArrowBackButtonClick = () => {
-        window.location.hash = ``;
+        window.location.hash = '';
     };
 
     _onMenuClose() {
@@ -160,8 +160,8 @@ class Score extends React.Component {
                 <div className={classes.sheetContainer}>
                     {
                         hasParts &&
-                        (score.parts[selectedPart].pagesOriginal || []).map((page, index) =>
-                            <img key={index} className={classes.sheet} src={page}/>
+                        (score.parts[selectedPart].pages || []).map((page, index) =>
+                            <img key={index} className={classes.sheet} src={page.originalURL}/>
                         )
                     }
                 </div>
