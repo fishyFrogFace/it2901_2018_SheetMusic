@@ -2,7 +2,7 @@ import React from 'react';
 
 import {withStyles} from "material-ui/styles";
 import {
-    Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper,
+    Button, Card, CardContent, CardMedia, Checkbox, IconButton, List, ListItem, ListItemText, Paper,
     Typography
 } from "material-ui";
 import {PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
@@ -52,6 +52,8 @@ class Setlists extends React.Component {
         const {classes, band} = this.props;
         const {listView} = this.state;
 
+        const hasSetlists = band.setlists && band.setlists.length > 0;
+
         return <div>
             <div style={{display: 'flex', alignItems: 'center', padding: '0 24px', height: 56}}>
                 <div className={classes.flex}/>
@@ -75,12 +77,12 @@ class Setlists extends React.Component {
             </div>
             <div style={{padding: '0 24px'}}>
                 {
-                    listView &&
+                    listView && hasSetlists &&
                     <Paper>
                         <List>
                             {
-                                band.setlists && band.setlists.map((setlist, index) =>
-                                    <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${setlist.id}`}>
+                                 band.setlists.map((setlist, index) =>
+                                    <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}>
                                         <QueueMusic color='secondary'/>
                                         <ListItemText primary={setlist.title}/>
                                     </ListItem>)
@@ -89,11 +91,11 @@ class Setlists extends React.Component {
                     </Paper>
                 }
                 {
-                    !listView &&
+                    !listView && hasSetlists &&
                     <div style={{display: 'flex', flexWrap: 'wrap'}}>
-                        {band.setlists && band.setlists.map((setlist, index) =>
+                        {band.setlists.map((setlist, index) =>
                             <Card key={index} className={classes.card}
-                                  onClick={() => window.location.hash = `#/setlist/${setlist.id}`}
+                                  onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
                                   elevation={1}>
                                 <CardMedia
                                     className={classes.media}

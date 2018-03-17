@@ -240,17 +240,16 @@ class Home extends React.Component {
     _onCreateSetlist = async () => {
         const {user, band} = this.props;
 
-        const {title, place, date} = await this.setlistDialog.open();
+        const {title, date} = await this.setlistDialog.open();
 
         try {
             let setlistRef = await firebase.firestore().collection(`bands/${band.id}/setlists`).add({
                 title: title,
-                place: place,
-                date: date._d,
+                date: date,
                 creatorRef: firebase.firestore().doc(`users/${user.id}`)
             });
 
-            window.location.hash = `#/setlist/${band.id}/${setlistRef.id}`;
+            window.location.hash = `#/setlist/${band.id}${setlistRef.id}`;
         } catch (err) {
             console.log(err);
         }

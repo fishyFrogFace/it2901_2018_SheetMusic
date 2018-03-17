@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
-import {MuiPickersUtilsProvider} from 'material-ui-pickers';
-import MomentUtils from 'material-ui-pickers/utils/moment-utils';
+import MuiPickersUtilsProvider from 'material-ui-pickers/utils/MuiPickersUtilsProvider';
+import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
 
 import 'firebase/firestore';
 import 'firebase/auth';
@@ -14,12 +14,14 @@ class App extends React.Component {
         user: {},
         band: {},
         score: {},
-        pdf: {}
+        pdf: {},
+        setlist: {}
     };
 
     scoreUnsubscribeCallbacks = [];
     bandUnsubscribeCallbacks = [];
     pdfUnsubscribeCallbacks = [];
+    setlistUnsubscribeCallbacks = [];
 
     constructor() {
         super();
@@ -141,7 +143,27 @@ class App extends React.Component {
 
 
         if (page === 'setlist') {
-        //
+            const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
+
+            this.setlistUnsubscribeCallbacks.forEach(cb => cb());
+
+            this.setlistUnsubscribeCallbacks.push(
+                firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`).onSnapshot(async snapshot => {
+                    const data = snapshot.data();
+
+                    data.items = await Promise.all(
+                        (data.items || []).map(async item => {
+                            if (item.type === 'score') {
+                                return {...item, score: (await item.scoreRef.get()).data()};
+                            }
+
+                            return {...item};
+                        })
+                    );
+
+                    this.setState({setlist: {...this.state.setlist, ...data, id: snapshot.id}});
+                })
+            );
         }
 
         if (page === 'score') {
@@ -211,7 +233,7 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, user, band, score, pdf, Component} = this.state;
+        const {page, user, band, score, pdf, setlist, Component} = this.state;
 
         if (!Component) {
             return <div>Loading...</div>
@@ -225,6 +247,7 @@ class App extends React.Component {
                     band={band}
                     score={score}
                     pdf={pdf}
+                    setlist={setlist}
                     page={page}/>
             </div>
         )
@@ -250,8 +273,6 @@ const theme = createMuiTheme({
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
-        <MuiPickersUtilsProvider utils={MomentUtils}>
-            <App/>
-        </MuiPickersUtilsProvider>
+        <App/>
     </MuiThemeProvider>,
     document.getElementById('root'));

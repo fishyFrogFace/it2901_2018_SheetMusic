@@ -1,23 +1,20 @@
 import React from 'react';
 
-import {TextField} from "material-ui";
+import {TextField, withStyles} from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
-import {DateTimePicker} from "material-ui-pickers";
-import Moment from 'moment';
+const styles = {
+    input: {
+        border: 0,
+        outline: 0
+    }
+};
 
 class EditSetlistDialog extends React.Component {
-    data = {
-        title: '',
-        place: '',
-        date: new Moment()
-    };
-
-
     state = {
-        date: new Moment(),
-        setlist:{title:'', place: '', date: new Moment()}
-    }
+        title: '',
+        date: new Date(),
+    };
 
     componentDidMount() {
         this.props.onRef(this);
@@ -28,35 +25,28 @@ class EditSetlistDialog extends React.Component {
     }
 
     async open(setlist) {
-        this.setState({title: setlist.title, place: setlist.place, date:new Moment(setlist.date)});
-        this.data.date = new Moment(setlist.date);
-        this.data.title = setlist.title;
-        this.data.place = setlist.place;
-
+        this.setState({title: setlist.title, date: setlist.date});
         await this.dialog.open();
-        return this.data;
+        return {title: this.state.title, date: this.state.date};
     }
 
-    _onTextFieldChange(e, name) {
-        this.data[name] = e.target.value;
-        this.setState({key: Math.random()})
-    }
+    _onTitleInputChange = e => {
+        this.setState({title: e.target.value});
+    };
 
-    _onDateChange(e){
-        this.data['date'] = e;
-        this.setState({date:e});
-    }
+    _onDateChange = e => {
+        this.setState({date: new Date(e.target.value)});
+    };
 
     render() {
+        const {classes} = this.props;
+        const {title, date} = this.state;
+
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
-            <TextField label='Title' value={this.data.title} onChange={e => this._onTextFieldChange(e, 'title')}/>
-            <TextField label='Place' value={this.data.place} onChange={e => this._onTextFieldChange(e, 'place')}/>            
-            <DateTimePicker
-                            value={this.state.date.toString()}
-                            onChange={date => this._onDateChange(date)}
-            />
+            <TextField label='Title' value={title} onChange={this._onTitleInputChange}/>
+            <input type="date" value={date.toISOString().substr(0, 10)} className={classes.input} style={{marginTop: 20}} onChange={this._onDateChange} />
         </AsyncDialog>
     }
 }
 
-export default EditSetlistDialog;
+export default withStyles(styles)(EditSetlistDialog);
