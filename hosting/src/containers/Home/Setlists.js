@@ -80,7 +80,7 @@ class Setlists extends React.Component {
                         <List>
                             {
                                 band.setlists && band.setlists.map((setlist, index) =>
-                                    <ListItem key={index} dense button>
+                                    <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${setlist.id}`}>
                                         <QueueMusic color='secondary'/>
                                         <ListItemText primary={setlist.title}/>
                                     </ListItem>)
