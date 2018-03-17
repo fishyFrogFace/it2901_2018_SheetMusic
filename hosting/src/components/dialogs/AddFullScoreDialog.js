@@ -126,7 +126,8 @@ class AddFullScoreDialog extends React.Component {
 
             this.__resolve({
                 score: scoreData,
-                parts: parts
+                parts: parts,
+                pdf: pdf
             });
 
             this.setState({

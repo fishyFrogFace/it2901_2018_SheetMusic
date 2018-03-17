@@ -81,7 +81,7 @@ class Home extends React.Component {
         };
     }
 
-    _onAddFullScore = async (score, parts) => {
+    _onAddFullScore = async (score, parts, pdf) => {
         const {band} = this.props;
 
         let scoreRef;
@@ -107,6 +107,8 @@ class Home extends React.Component {
             })
         ));
 
+        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
+
         this.setState({message: 'Score added'});
         await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
@@ -127,14 +129,16 @@ class Home extends React.Component {
         }
 
         for (let part of parts) {
-            const pagesSnapshot = await firebase.firestore().collection(`bands/${band.id}/pdfs/${part.pdfId}/pages`).get();
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdfId}`).get();
 
             await scoreRef.collection('parts').add({
-                pages: pagesSnapshot.docs.map(doc => doc.data()),
+                pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
                 instrumentNumber: part.instrumentNumber
             });
+
+            await pdfDoc.ref.delete();
         }
 
         this.setState({message: 'Parts added'});

@@ -118,7 +118,13 @@ class PDF extends React.Component {
             }))
         });
 
-        this.setState({message: 'Part added'});
+        const notSelectedPages = pdf.pages.filter((_, index) => !selectedPages.includes(index));
+
+        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).update({
+           pages: notSelectedPages
+        });
+
+        this.setState({message: 'Part added', selectedPages: new Set()});
         await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
     };

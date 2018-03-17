@@ -151,13 +151,15 @@ class UnsortedPDFs extends Component {
     _onAddAsParts = async () => {
         const pdfs = Array.from(this.state.selectedPDFs).map(i => this.props.band.pdfs[i]);
         const {score, parts} = await this.addPartsDialog.open(pdfs);
+        this.setState({selectedPDFs: new Set()});
         this.props.onAddParts(score, parts);
     };
 
     _onAddAsFullScore = async () => {
         const pdf = this.props.band.pdfs[Array.from(this.state.selectedPDFs)[0]];
         const {score, parts} = await this.addFullScoreDialog.open(pdf);
-        this.props.onAddFullScore(score, parts);
+        this.setState({selectedPDFs: new Set()});
+        this.props.onAddFullScore(score, parts, pdf);
     };
 
     render() {

@@ -178,7 +178,7 @@ class App extends React.Component {
 
             this.pdfUnsubscribeCallbacks.push(
                 pdfDoc.onSnapshot(async snapshot => {
-                    this.setState({pdf: {...this.state.pdf, ...snapshot.data()}});
+                    this.setState({pdf: {...this.state.pdf, ...snapshot.data(), id: snapshot.id}});
                 })
             );
         }
