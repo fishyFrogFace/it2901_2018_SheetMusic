@@ -114,11 +114,6 @@ class Score extends React.Component {
         }
     }
 
-
-    componentWillReceiveProps(props) {
-        console.log(props);
-    }
-
     render() {
         const {classes, score} = this.props;
         const {anchorEl, message, selectedPart} = this.state;

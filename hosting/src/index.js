@@ -93,7 +93,13 @@ class App extends React.Component {
                             snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
                         );
 
-                        this.setState({band: {...this.state.band, [name]: items}});
+                        let itemsSorted = items;
+                        if (name === 'pdfs') {
+                            itemsSorted = items
+                                .sort((a, b) => b.uploadedAt - a.uploadedAt);
+                        }
+
+                        this.setState({band: {...this.state.band, [name]: itemsSorted}});
                     })
                 };
 

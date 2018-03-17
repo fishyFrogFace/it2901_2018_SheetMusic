@@ -71,11 +71,11 @@ class Home extends React.Component {
         this.setState({windowSize: window.innerWidth < 800 ? 'mobile' : 'desktop'});
 
         window.onresize = event => {
-            if (event.target.innerWidth < 800 && this.state.windowSize === 'desktop') {
+            if (event.target.innerWidth < 780 && this.state.windowSize === 'desktop') {
                 this.setState({windowSize: 'mobile'});
             }
 
-            if (event.target.innerWidth > 800 && this.state.windowSize === 'mobile') {
+            if (event.target.innerWidth > 780 && this.state.windowSize === 'mobile') {
                 this.setState({windowSize: 'desktop'});
             }
         };
@@ -313,36 +313,39 @@ class Home extends React.Component {
                 </Toolbar>
             </AppBar>
             <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
-                <div style={{
-                    width: 220,
-                    paddingTop: 16,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    boxSizing: 'border-box'
-                }}>
-                    <List>
-                        {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
-                            const selected = nameShort === page;
-                            const color = selected ? '#448AFF' : '#757575';
-                            return <ListItem style={{paddingLeft: 24}} key={name} button onClick={() => this._onNavClick(nameShort)}>
-                                {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
-                                {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
-                                {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
-                                {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
-                                <ListItemText
-                                    disableTypography
-                                    inset
-                                    primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
-                                />
-                            </ListItem>
-                        })}
-                    </List>
-                    <div style={{flex: 1}}/>
-                    <div style={{paddingLeft: 24, paddingBottom: 24}}>
-                        <Typography variant='caption'>Band code: {band.code}</Typography>
+                {
+                    windowSize === 'desktop' &&
+                    <div style={{
+                        width: 220,
+                        paddingTop: 16,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                        boxSizing: 'border-box'
+                    }}>
+                        <List>
+                            {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
+                                const selected = nameShort === page;
+                                const color = selected ? '#448AFF' : '#757575';
+                                return <ListItem style={{paddingLeft: 24}} key={name} button onClick={() => this._onNavClick(nameShort)}>
+                                    {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
+                                    {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
+                                    {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
+                                    {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
+                                    <ListItemText
+                                        disableTypography
+                                        inset
+                                        primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
+                                    />
+                                </ListItem>
+                            })}
+                        </List>
+                        <div style={{flex: 1}}/>
+                        <div style={{paddingLeft: 24, paddingBottom: 24}}>
+                            <Typography variant='caption'>Band code: {band.code}</Typography>
+                        </div>
                     </div>
-                </div>
+                }
                 <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
                     {
                         page === 'scores' &&
