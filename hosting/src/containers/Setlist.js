@@ -22,6 +22,13 @@ const styles = {
 
     flex: {
         flex: 1
+    },
+
+    card: {
+        width: 600,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        marginBottom: 20
     }
 };
 
@@ -155,7 +162,7 @@ class Setlist extends Component {
                             </Menu>
                         </Toolbar>
                     </AppBar>
-                    <div style={{paddingTop: 64}}>
+                    <div style={{paddingTop: 64 + 20}}>
                         <Droppable droppableId="droppable">
                             {(provided, snapshot) =>
                                 <div ref={provided.innerRef}>
