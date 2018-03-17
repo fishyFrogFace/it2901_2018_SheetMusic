@@ -305,7 +305,7 @@ class Home extends React.Component {
                             )
                         }
                     </Menu>
-                    <SearchBar/>
+                    <SearchBar band={band}/>
                     <div style={{flex: 1}}/>
                     <IconButton style={{marginLeft: 10}} color="inherit" onClick={() => this._onFileUploadButtonClick()}>
                         <FileUpload/>

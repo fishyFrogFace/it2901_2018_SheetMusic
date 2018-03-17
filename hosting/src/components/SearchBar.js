@@ -1,6 +1,8 @@
 import React from 'react';
 import {withStyles} from 'material-ui/styles';
-import {Paper} from "material-ui";
+import {List, ListItem, ListItemText, Paper} from "material-ui";
+import Fuse from 'fuse.js';
+import {LibraryMusic} from "material-ui-icons";
 
 const styles = theme => ({
     input: {
@@ -18,15 +20,36 @@ const styles = theme => ({
 
 class SearchBar extends React.Component {
     state = {
-        value: ''
+        value: '',
+        hasFocus: false
     };
 
     _onInputChange = e => {
         this.setState({value: e.target.value});
     };
 
+    componentWillUpdate(nextProps, nextState) {
+        const {band} = this.props;
+
+        if (this.state.value !== nextState.value) {
+            if (!this.fuse) {
+                this.fuse = new Fuse([...band.scores], {keys: ['title']})
+            }
+
+            this.setState({results: this.fuse.search(nextState.value)});
+        }
+    }
+
+    _onInputFocus = () => {
+        this.setState({hasFocus: true});
+    };
+
+    _onInputBlur = () => {
+        this.setState({hasFocus: false});
+    };
+
     render() {
-        const {value} = this.state;
+        const {value, results, hasFocus} = this.state;
         const {classes} = this.props;
 
         return (
@@ -35,10 +58,21 @@ class SearchBar extends React.Component {
                     className={classes.input}
                     placeholder="Search for scores and setlists"
                     onChange={this._onInputChange}
+                    onFocus={this._onInputFocus}
+                    onBlur={this._onInputBlur}
                 />
                 {
-                    value &&
-                    <Paper style={{position: 'absolute', top: 56, background: 'white', width: '100%', height: 315}}>
+                    hasFocus && results && results.length > 0 &&
+                    <Paper style={{position: 'absolute', top: 56, background: 'white', width: '100%'}}>
+                        <List>
+                            {
+                                results.slice(0, 5).map((result, index) =>
+                                <ListItem button key={index}>
+                                    <LibraryMusic/>
+                                    <ListItemText primary={result.title}/>
+                                </ListItem>)
+                            }
+                        </List>
                     </Paper>
                 }
 

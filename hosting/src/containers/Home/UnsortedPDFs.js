@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {AppBar, Button, IconButton, Slide, Toolbar, Typography} from "material-ui";
 
 import {withStyles} from "material-ui/styles";
@@ -92,7 +92,7 @@ function Transition(props) {
     return <Slide direction="up" {...props} />;
 }
 
-class UnsortedPDFs extends Component {
+class UnsortedPDFs extends React.Component {
     state = {
         selectedPDFs: new Set(),
         lastClicked: null
