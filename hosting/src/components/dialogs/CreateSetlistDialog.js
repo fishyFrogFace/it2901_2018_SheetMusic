@@ -1,19 +1,19 @@
 import React from 'react';
 
-import {TextField} from "material-ui";
+import {TextField, withStyles} from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
-import {DateTimePicker} from "material-ui-pickers";
-import Moment from 'moment';
+const styles = {
+    input: {
+        border: 0,
+        outline: 0
+    }
+};
 
 class CreateSetlistDialog extends React.Component {
-    data = {
-        name: '',
-        date: new Moment()
-    };
-
     state = {
-        date: new Moment()
+        title: '',
+        date: new Date(),
     };
 
     componentDidMount() {
@@ -26,29 +26,26 @@ class CreateSetlistDialog extends React.Component {
 
     async open() {
         await this.dialog.open();
-        return this.data;
+        return {title: this.state.title, date: this.state.date};
     }
 
-    _onTextFieldChange(e, name) {
-        this.data[name] = e.target.value;
-    }
+    _onTitleInputChange = e => {
+        this.setState({title: e.target.value});
+    };
 
-    _onDateChange(e){
-        this.data['date'] = e;
-        this.setState({date: e});
-    }
+    _onDateChange = e => {
+        this.setState({date: new Date(e.target.value)});
+    };
 
     render() {
+        const {classes} = this.props;
+        const {title, date} = this.state;
+
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField label='Name' onChange={e => this._onTextFieldChange(e, 'title')}/>
-            <TextField label='Place' onChange={e => this._onTextFieldChange(e, 'place')}/>            
-            <DateTimePicker
-                color='black'
-                value={this.state.date}
-                onChange={date => this._onDateChange(date)}
-            />
+            <TextField label='Title' onChange={this._onTitleInputChange}/>
+            <input className={classes.input} style={{marginTop: 20}} type="date" onChange={this._onDateChange} />
         </AsyncDialog>
     }
 }
 
-export default CreateSetlistDialog;
+export default withStyles(styles)(CreateSetlistDialog);

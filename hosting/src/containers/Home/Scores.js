@@ -50,6 +50,8 @@ class Scores extends React.Component {
         const {classes, band} = this.props;
         const {listView} = this.state;
 
+        const hasScores = band.scores && band.scores.length > 0;
+
         return <div>
             <div style={{display: 'flex', alignItems: 'center', padding: '0 24px', height: 56}}>
                 <div className={classes.flex}/>
@@ -73,11 +75,11 @@ class Scores extends React.Component {
             </div>
             <div style={{padding: '0 24px'}}>
                 {
-                    listView &&
+                    listView && hasScores &&
                     <Paper>
                         <List>
                             {
-                                band.scores && band.scores.map((score, index) =>
+                                band.scores.map((score, index) =>
                                     <ListItem key={index} dense button onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         <LibraryMusic color='secondary'/>
                                         <ListItemText primary={score.title}/>
@@ -87,9 +89,9 @@ class Scores extends React.Component {
                     </Paper>
                 }
                 {
-                    !listView &&
+                    !listView && hasScores &&
                     <div style={{display: 'flex', flexWrap: 'wrap'}}>
-                        {band.scores && band.scores.map((score, index) =>
+                        {band.scores.map((score, index) =>
                             <Card key={index} className={classes.card}
                                   onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                                   elevation={1}>

@@ -1,21 +1,18 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {withStyles} from 'material-ui/styles';
 
-import Typography from 'material-ui/Typography';
 import AsyncDialog from "./AsyncDialog";
-import {List, ListItem, Checkbox} from 'material-ui';
+import {List, ListItem, Checkbox, ListItemText} from 'material-ui';
 
-const styles = {
-    no_margin:{
-        margin:0,
-        padding:0
+const styles = theme => ({
+    checkbox__checked: {
+        color: theme.palette.secondary.main
     }
-}
+});
 
-class AddSetlistScoresDialog extends Component {
+class AddSetlistScoresDialog extends React.Component {
     state = {
-        scores: [],
-        selectedScores: []
+        selectedScores: new Set()
     };
 
     componentDidMount() {
@@ -27,36 +24,34 @@ class AddSetlistScoresDialog extends Component {
     }
 
     _onSelectableClick(index) {
-        let scores = [...this.state.scores];
-        scores[index].selected = !scores[index].selected;
-        this.setState({scores: scores});
+        let selectedScores = new Set(this.state.selectedScores);
+
+        if (selectedScores.has(index)) {
+            selectedScores.delete(index);
+        } else {
+            selectedScores.add(index);
+
+        }
+
+        this.setState({selectedScores: selectedScores});
     }
 
-    async open(scores) {
-        this.setState({scores: scores.map(score => {
-            return {...score, selected: false};
-        })});
+    async open() {
         await this.dialog.open();
 
-        return this.state.scores.filter(arr => arr.selected).map((arr) => arr.id);
+        return Array.from(this.state.selectedScores).map(i => this.props.band.scores[i].id);
     }
 
     render() {
-        const {scores} = this.state;
-        const {classes} = this.props
+        const {selectedScores} = this.state;
+        const {classes, band} = this.props;
         
-        return <AsyncDialog fullscreen title={`Add scores to setlist`} confirmText='Add Scores' onRef={ref => this.dialog = ref}>
-            <List className={classes.no_margin}>
-            {scores.map((arr, index) =>
-                <ListItem onClick={e => this._onSelectableClick(index)} className={classes.no_margin}>
-                   
-                   <Typography variant='subheading'>
-                    <Checkbox 
-                        color='inherit'
-                        checked = {arr.selected}
-                    />
-                        {arr.title} by {arr.composer}
-                    </Typography>
+        return <AsyncDialog fullscreen title='Add scores to setlist' confirmText='Add Scores' onRef={ref => this.dialog = ref}>
+            <List dense>
+            {band && band.scores && band.scores.map((score, index) =>
+                <ListItem style={{padding: 0}} key={index} onClick={e => this._onSelectableClick(index)}>
+                    <Checkbox classes={{checked: classes.checkbox__checked}} checked={selectedScores.has(index)}/>
+                    <ListItemText primary={`${score.title} - ${score.composer}`}/>
                 </ListItem>
             )}
             </List>
