@@ -332,8 +332,8 @@ class Home extends React.Component {
                         open={Boolean(uploadAnchorEl)}
                         onClose={this._onMenuClose}
                     >
-                        <MenuItem onClick={() => this._onMenuClick('computer')}>Choose from computer</MenuItem>
-                        <MenuItem onClick={() => this._onMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
+                        <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from computer</MenuItem>
+                        <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
                     </Menu>
                 </Toolbar>
             </AppBar>
