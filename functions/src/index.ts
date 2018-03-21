@@ -5,6 +5,10 @@ import {spawn} from 'child-process-promise';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
+import * as PDFDocument from 'pdfkit';
+import * as vision from '@google-cloud/vision';
+import 'isomorphic-fetch';
+import {Dropbox} from 'dropbox';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -75,7 +79,7 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
 
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
-exports.addPDF = functions.storage.object().onChange(async event => {
+exports.convertPDF = functions.storage.object().onChange(async event => {
     const object = event.data;
 
     if (object.resourceState === 'not_exists') return null;
@@ -95,7 +99,9 @@ exports.addPDF = functions.storage.object().onChange(async event => {
     const fileName = path.basename(filePath, '.pdf');
 
     // Create storage bucket
-    const bucket = storage.bucket(object.bucket);
+    const inputBucket = storage.bucket(object.bucket);
+
+    const outputBucket = storage.bucket('scores-butler-bands');
 
     // Create document
     const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
@@ -106,11 +112,15 @@ exports.addPDF = functions.storage.object().onChange(async event => {
 
     try {
         // Download to local directory
-        await bucket.file(filePath).download({destination: `/tmp/${fileName}.pdf`});
+        await inputBucket.file(filePath).download({destination: `/tmp/${fileName}.pdf`});
+
+        // Delete PDF file
+        await inputBucket.file(filePath).delete();
 
         // Create output directories
         await fs.ensureDir(`/tmp/output-original`);
         await fs.ensureDir(`/tmp/output-cropped`);
+        await fs.ensureDir(`/tmp/output-cropped-compressed`);
 
         // Generate images
         const gsProcess = await spawn('ghostscript/bin/./gs', [
@@ -124,15 +134,18 @@ exports.addPDF = functions.storage.object().onChange(async event => {
 
         gsProcess.childProcess.kill();
 
-        const mogrifyProcess = await spawn('mogrify', [
-            '-crop', '5000x666+0+0',
-            '-resize', '50%',
+        console.log('PDF conversion complete!');
+
+        const convertProcess = await spawn('mogrify', [
+            '-crop', '4000x666+0+0',
+            '-resize', '40%',
             '-path', '../output-cropped',
             '*.png'
-        ], {cwd: '/tmp/output-original'});
+        ], {cwd: '/tmp/output-original/'});
 
-        mogrifyProcess.childProcess.kill();
+        console.log('Image crop complete!');
 
+        convertProcess.childProcess.kill();
 
         const upload = async outputType => {
             // Read files
@@ -141,7 +154,7 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             // Upload files
             const uploadResponses = await Promise.all(
                 fileNames.map((name, index) =>
-                    bucket.upload(`/tmp/output-${outputType}/${name}`, {
+                    outputBucket.upload(`/tmp/output-${outputType}/${name}`, {
                         destination: `bands/${bandId}/pdfs/${pdfRef.id}/${outputType}/${index}.png`,
                         metadata: {
                             contentType: 'image/png'
@@ -160,8 +173,8 @@ exports.addPDF = functions.storage.object().onChange(async event => {
             );
         };
 
-        let croppedPageUrls = (await upload('cropped')).map(([url]) => url);
-        let originalPageUrls = (await upload('original')).map(([url]) => url);
+        const croppedPageUrls = (await upload('cropped')).map(([url]) => url);
+        const originalPageUrls = (await upload('original')).map(([url]) => url);
 
         // Add page documents
         const pages = [];
@@ -182,12 +195,54 @@ exports.addPDF = functions.storage.object().onChange(async event => {
         await Promise.all([
             fs.remove(`/tmp/${fileName}.pdf`),
             fs.remove(`/tmp/output-original`),
-            fs.remove(`/tmp/output-cropped`)
+            fs.remove(`/tmp/output-cropped`),
         ]);
-
-        // Delete PDF file
-        await bucket.file(filePath).delete();
     } catch (err) {
         console.log(err);
     }
+});
+
+exports.analyzePDF = functions.https.onRequest(async (req, res) => {
+    const {bandId, pdfId} = req.query;
+
+    const bucket = storage.bucket('scores-butler.appspot.com');
+
+    await bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({destination: '/tmp/image.png'});
+
+    const client = new vision.ImageAnnotatorClient();
+
+    const response = await client.textDetection('/tmp/image.png');
+    const detections = response[0];
+
+    await res.json(detections);
+});
+
+exports.generatePDF = functions.https.onRequest(async (req, res) => {
+    const bucket = storage.bucket('scores-butler.appspot.com');
+
+    const doc = new PDFDocument();
+
+    const image = '';
+
+    const file = bucket.file('test/test.pdf');
+    await file.setMetadata({contentType: 'application/pdf'});
+
+    const writeStream = file.createWriteStream();
+
+    doc.pipe(writeStream);
+    doc.image(image, 0, 0);
+    doc.end();
+
+    writeStream.on('finish', async () => {
+        res.status(200).send();
+    });
+});
+
+exports.downloadFromDropbox = functions.https.onRequest(async (req, res) => {
+    const {bandId, folderPath, accessToken} = req.query;
+    const dropbox = new Dropbox({accessToken: accessToken});
+    const response = await dropbox.filesDownloadZip({path: folderPath}) as any;
+    const bucket = storage.bucket('scores-butler-bands');
+    await bucket.file(`bands/${bandId}/input/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
+    res.status(200).send();
 });

@@ -81,7 +81,7 @@ class Scores extends React.Component {
                             {
                                 band.scores.map((score, index) =>
                                     <ListItem key={index} dense button onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                                        <LibraryMusic color='secondary'/>
+                                        <LibraryMusic color='action'/>
                                         <ListItemText primary={score.title}/>
                                     </ListItem>)
                             }

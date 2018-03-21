@@ -18,6 +18,7 @@ import SearchBar from '../components/SearchBar';
 import Members from "./Home/Members";
 import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
+import UploadDialog from "../components/dialogs/UploadDialog";
 
 const styles = {
     root: {
@@ -146,27 +147,6 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
-    _onFileChange = async e => {
-        // https://reactjs.org/docs/events.html#event-pooling
-        e.persist();
-
-        if (!e.target.files.length) return;
-
-        this.setState({message: 'Uploading...'});
-
-        await Promise.all(
-            Array.from(e.target.files).map(file =>
-                firebase.storage().ref(`bands/${this.props.band.id}/input/${file.name}`).put(file)
-            )
-        );
-
-        this.setState({message: null});
-    };
-
-    _onFileUploadButtonClick = () => {
-        this.fileBrowser.click();
-    };
-
     _onBandClick = e => {
         this.setState({anchorEl: e.currentTarget})
     };
@@ -259,6 +239,38 @@ class Home extends React.Component {
         window.location.hash = `/${nameShort}`;
     };
 
+    _onFileUploadButtonClick = e => {
+        this.setState({anchorEl: e.currentTarget});
+    };
+
+    _onMenuClick = async type => {
+        const {files, path, accessToken} = await this.uploadDialog.open(type);
+
+        this.setState({anchorEl: null});
+
+        switch (type) {
+            case 'computer':
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    this.setState({message: `Uploading file ${i + 1}/${files.length}`});
+                    await firebase.storage().ref(`bands/${this.props.band.id}/input/${file.name}`).put(file);
+                }
+                this.setState({message: null});
+                break;
+            case 'dropbox':
+                await fetch()
+                break;
+            case 'drive':
+                break;
+        }
+
+
+    };
+
+    _onMenuClose = () => {
+        this.setState({anchorEl: null});
+    };
+
     render() {
         const {anchorEl, message, windowSize} = this.state;
 
@@ -306,9 +318,18 @@ class Home extends React.Component {
                     </Menu>
                     <SearchBar band={band}/>
                     <div style={{flex: 1}}/>
-                    <IconButton style={{marginLeft: 10}} color="inherit" onClick={() => this._onFileUploadButtonClick()}>
+                    <IconButton style={{marginLeft: 10}} color="inherit" onClick={this._onFileUploadButtonClick}>
                         <FileUpload/>
                     </IconButton>
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={this._onMenuClose}
+                    >
+                        <MenuItem onClick={() => this._onMenuClick('computer')}>Choose from computer</MenuItem>
+                        <MenuItem onClick={() => this._onMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
+                        <MenuItem onClick={() => this._onMenuClick('drive')}>Choose from Google Drive</MenuItem>
+                    </Menu>
                 </Toolbar>
             </AppBar>
             <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
@@ -367,7 +388,6 @@ class Home extends React.Component {
                             band={band}
                             onAddFullScore={this._onAddFullScore}
                             onAddParts={this._onAddParts}
-                            onAddPart={this._onAddPart}
                         />
                     }
                 </div>
@@ -375,13 +395,7 @@ class Home extends React.Component {
             <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
             <CreateBandDialog onRef={ref => this.createDialog = ref}/>
             <JoinBandDialog onRef={ref => this.joinDialog = ref}/>
-            <input
-                ref={ref => this.fileBrowser = ref}
-                type='file'
-                style={{display: 'none'}}
-                onChange={this._onFileChange}
-                multiple
-            />
+            <UploadDialog onRef={ref => this.uploadDialog = ref}/>
             <Snackbar
                 anchorOrigin={{
                     vertical: 'bottom',
