@@ -62,7 +62,7 @@ class UploadDialog extends React.Component {
                     document.body.onfocus = () => {
                         setTimeout(() => {
                             resolve({files: this.fileBrowser.files});
-                        }, 100);
+                        }, 200);
                     };
                     break;
                 case 'dropbox':
