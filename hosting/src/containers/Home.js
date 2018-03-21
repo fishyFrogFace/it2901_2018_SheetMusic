@@ -62,7 +62,8 @@ const styles = {
 
 class Home extends React.Component {
     state = {
-        anchorEl: null,
+        bandAnchorEl: null,
+        uploadAnchorEl: null,
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null
@@ -148,11 +149,11 @@ class Home extends React.Component {
     };
 
     _onBandClick = e => {
-        this.setState({anchorEl: e.currentTarget})
+        this.setState({bandAnchorEl: e.currentTarget})
     };
 
     _onCreateBand = async () => {
-        this.setState({anchorEl: null});
+        this.setState({bandAnchorEl: null});
 
         const {name} = await this.createDialog.open();
 
@@ -178,7 +179,7 @@ class Home extends React.Component {
     };
 
     _onJoinBand = async () => {
-        this.setState({anchorEl: null});
+        this.setState({bandAnchorEl: null});
 
         const {code} = await this.joinDialog.open();
 
@@ -211,7 +212,7 @@ class Home extends React.Component {
     };
 
     _onBandSelect = async bandId => {
-        this.setState({anchorEl: null});
+        this.setState({bandAnchorEl: null});
         await firebase.firestore().doc(`users/${this.props.user.id}`).update({
             defaultBandRef: firebase.firestore().doc(`bands/${bandId}`)
         });
@@ -240,15 +241,17 @@ class Home extends React.Component {
     };
 
     _onFileUploadButtonClick = e => {
-        this.setState({anchorEl: e.currentTarget});
+        this.setState({uploadAnchorEl: e.currentTarget});
     };
 
-    _onMenuClick = async type => {
+    _onUploadMenuClick = async type => {
         const {files, path, accessToken} = await this.uploadDialog.open(type);
 
         const {band} = this.props;
 
-        this.setState({anchorEl: null});
+        console.log(files);
+
+        this.setState({uploadAnchorEl: null});
 
         switch (type) {
             case 'computer':
@@ -271,11 +274,11 @@ class Home extends React.Component {
     };
 
     _onMenuClose = () => {
-        this.setState({anchorEl: null});
+        this.setState({bandAnchorEl: null, uploadAnchorEl: null});
     };
 
     render() {
-        const {anchorEl, message, windowSize} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, message, windowSize} = this.state;
 
         const {classes, user, band, page} = this.props;
 
@@ -299,9 +302,9 @@ class Home extends React.Component {
                         {band.name || ''}
                     </Button>
                     <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
-                        onClose={e => this.setState({anchorEl: null})}
+                        anchorEl={bandAnchorEl}
+                        open={Boolean(bandAnchorEl)}
+                        onClose={this._onMenuClose}
                     >
                         <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
                             Create band
@@ -325,8 +328,8 @@ class Home extends React.Component {
                         <FileUpload/>
                     </IconButton>
                     <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
+                        anchorEl={uploadAnchorEl}
+                        open={Boolean(uploadAnchorEl)}
                         onClose={this._onMenuClose}
                     >
                         <MenuItem onClick={() => this._onMenuClick('computer')}>Choose from computer</MenuItem>

@@ -61,7 +61,7 @@ class UploadDialog extends React.Component {
                     // TODO find better solution to this...
                     document.body.onfocus = () => {
                         setTimeout(() => {
-                            resolve(this.fileBrowser.files);
+                            resolve({files: this.fileBrowser.files});
                         }, 100);
                     };
                     break;
@@ -177,7 +177,6 @@ class UploadDialog extends React.Component {
                 type='file'
                 style={{display: 'none'}}
                 multiple
-                onChange={this._onInputChange}
             />
         </div>
     }
