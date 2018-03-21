@@ -9,6 +9,7 @@ import * as PDFDocument from 'pdfkit';
 import * as vision from '@google-cloud/vision';
 import 'isomorphic-fetch';
 import {Dropbox} from 'dropbox';
+import * as cors from 'cors';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -41,6 +42,8 @@ exports.extractZip = functions.storage.object().onChange(async event => {
         // Download to local directory
         await bucket.file(filePath).download({destination: `/tmp/${fileName}.zip`});
 
+        await bucket.file(filePath).delete();
+
         // Unzip
         const dir = await unzipper.Open.file(`/tmp/${fileName}.zip`);
 
@@ -57,8 +60,6 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
                     const name = pdfPathParts.join(' - ');
 
-                    await admin.firestore().collection(`bands/${bandId}/pdfs`).add({name: name});
-
                     await new Promise((resolve, reject) => {
                         file.stream()
                             .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
@@ -70,7 +71,6 @@ exports.extractZip = functions.storage.object().onChange(async event => {
         );
 
         // Clean up
-        await bucket.file(filePath).delete();
         await fs.remove(`/tmp/${fileName}.zip`);
     } catch (err) {
         console.log(err);
@@ -238,11 +238,13 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
     });
 });
 
-exports.downloadFromDropbox = functions.https.onRequest(async (req, res) => {
-    const {bandId, folderPath, accessToken} = req.query;
-    const dropbox = new Dropbox({accessToken: accessToken});
-    const response = await dropbox.filesDownloadZip({path: folderPath}) as any;
-    const bucket = storage.bucket('scores-butler-bands');
-    await bucket.file(`bands/${bandId}/input/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
-    res.status(200).send();
+exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
+    return cors({origin: true})(req, res, async () => {
+        const {bandId, folderPath, accessToken} = req.query;
+        const dropbox = new Dropbox({accessToken: accessToken});
+        const response = await dropbox.filesDownloadZip({path: folderPath}) as any;
+        const bucket = storage.bucket('scores-butler.appspot.com');
+        await bucket.file(`bands/${bandId}/input/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
+        res.status(200).send();
+    });
 });

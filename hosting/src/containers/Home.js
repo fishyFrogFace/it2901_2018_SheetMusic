@@ -246,6 +246,8 @@ class Home extends React.Component {
     _onMenuClick = async type => {
         const {files, path, accessToken} = await this.uploadDialog.open(type);
 
+        const {band} = this.props;
+
         this.setState({anchorEl: null});
 
         switch (type) {
@@ -258,7 +260,8 @@ class Home extends React.Component {
                 this.setState({message: null});
                 break;
             case 'dropbox':
-                await fetch()
+                const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
+                console.log(response.status);
                 break;
             case 'drive':
                 break;
@@ -328,7 +331,6 @@ class Home extends React.Component {
                     >
                         <MenuItem onClick={() => this._onMenuClick('computer')}>Choose from computer</MenuItem>
                         <MenuItem onClick={() => this._onMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
-                        <MenuItem onClick={() => this._onMenuClick('drive')}>Choose from Google Drive</MenuItem>
                     </Menu>
                 </Toolbar>
             </AppBar>

@@ -169,7 +169,7 @@ class UploadDialog extends React.Component {
                 </DialogContent>
                 <DialogActions>
                     <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
-                    <Button color="secondary" onClick={this._onUploadClick}>Upload</Button>
+                    <Button color="secondary" onClick={this._onUploadClick} disabled={!selectedPath}>Upload</Button>
                 </DialogActions>
             </Dialog>
             <input

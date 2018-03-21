@@ -19,6 +19,7 @@ const PDFDocument = require("pdfkit");
 const vision = require("@google-cloud/vision");
 require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
+const cors = require("cors");
 admin.initializeApp(functions.config().firebase);
 const storage = Storage({ keyFilename: 'service-account-key.json' });
 // Extracts ZIP with pdfs
@@ -41,6 +42,7 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
     try {
         // Download to local directory
         yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.zip` });
+        yield bucket.file(filePath).delete();
         // Unzip
         const dir = yield unzipper.Open.file(`/tmp/${fileName}.zip`);
         yield Promise.all(dir.files
@@ -53,7 +55,6 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
                 pdfPathParts = pdfPathParts.slice(1);
             }
             const name = pdfPathParts.join(' - ');
-            yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({ name: name });
             yield new Promise((resolve, reject) => {
                 file.stream()
                     .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
@@ -62,7 +63,6 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
             });
         })));
         // Clean up
-        yield bucket.file(filePath).delete();
         yield fs.remove(`/tmp/${fileName}.zip`);
     }
     catch (err) {
@@ -186,12 +186,14 @@ exports.generatePDF = functions.https.onRequest((req, res) => __awaiter(this, vo
         res.status(200).send();
     }));
 }));
-exports.downloadFromDropbox = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
-    const { bandId, folderPath, accessToken } = req.query;
-    const dropbox = new dropbox_1.Dropbox({ accessToken: accessToken });
-    const response = yield dropbox.filesDownloadZip({ path: folderPath });
-    const bucket = storage.bucket('scores-butler-bands');
-    yield bucket.file(`bands/${bandId}/input/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
-    res.status(200).send();
-}));
+exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
+    return cors({ origin: true })(req, res, () => __awaiter(this, void 0, void 0, function* () {
+        const { bandId, folderPath, accessToken } = req.query;
+        const dropbox = new dropbox_1.Dropbox({ accessToken: accessToken });
+        const response = yield dropbox.filesDownloadZip({ path: folderPath });
+        const bucket = storage.bucket('scores-butler.appspot.com');
+        yield bucket.file(`bands/${bandId}/input/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
+        res.status(200).send();
+    }));
+});
 //# sourceMappingURL=index.js.map
