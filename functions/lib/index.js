@@ -41,10 +41,10 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
     const bucket = storage.bucket(object.bucket);
     try {
         // Download to local directory
-        yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.zip` });
+        yield bucket.file(filePath).download({ destination: '/tmp/file.zip' });
         yield bucket.file(filePath).delete();
         // Unzip
-        const dir = yield unzipper.Open.file(`/tmp/${fileName}.zip`);
+        const dir = yield unzipper.Open.file('/tmp/file.zip');
         yield Promise.all(dir.files
             .filter(file => !file.path.endsWith('/'))
             .filter(file => file.path.endsWith('.pdf'))
@@ -63,7 +63,7 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
             });
         })));
         // Clean up
-        yield fs.remove(`/tmp/${fileName}.zip`);
+        yield fs.remove('/tmp/file.zip');
     }
     catch (err) {
         console.log(err);
@@ -95,21 +95,21 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
     });
     try {
         // Download to local directory
-        yield inputBucket.file(filePath).download({ destination: `/tmp/${fileName}.pdf` });
+        yield inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
         // Delete PDF file
         yield inputBucket.file(filePath).delete();
         // Create output directories
-        yield fs.ensureDir(`/tmp/output-original`);
-        yield fs.ensureDir(`/tmp/output-cropped`);
-        yield fs.ensureDir(`/tmp/output-cropped-compressed`);
+        yield fs.ensureDir('/tmp/output-original');
+        yield fs.ensureDir('/tmp/output-cropped');
+        yield fs.ensureDir('/tmp/output-cropped-compressed');
         // Generate images
         const gsProcess = yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
             '-sDEVICE=pngmonod',
-            `-sOutputFile=/tmp/output-original/${fileName}-%03d.png`,
+            `-sOutputFile=/tmp/output-original/score-%03d.png`,
             '-r300',
-            `/tmp/${fileName}.pdf`
+            `/tmp/score.pdf`
         ]);
         gsProcess.childProcess.kill();
         console.log('PDF conversion complete!');
@@ -154,9 +154,9 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
         });
         // Clean up
         yield Promise.all([
-            fs.remove(`/tmp/${fileName}.pdf`),
-            fs.remove(`/tmp/output-original`),
-            fs.remove(`/tmp/output-cropped`),
+            fs.remove('/tmp/score.pdf'),
+            fs.remove('/tmp/output-original'),
+            fs.remove('/tmp/output-cropped'),
         ]);
     }
     catch (err) {
@@ -196,4 +196,28 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         res.status(200).send();
     }));
 });
+exports.extractPDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
+    const bucket = storage.bucket('scores-butler.appspot.com');
+    yield bucket.file('Aint That A Kick - Complete.pdf').download({ destination: '/tmp/score.pdf' });
+    yield fs.writeFile('/tmp/.xpdfrc', '');
+    // const promise = spawn('xpdf/pdfinfo', [
+    //     '-cfg', '/tmp/.xpdfrc',
+    //     '/tmp/score.pdf',
+    // ]);
+    //
+    // promise.childProcess.stdout.on('data', data => {
+    //     res.status(200).send(data.toString());
+    // });
+    //
+    // await promise;
+    // process1.childProcess.kill();
+    const process2 = yield child_process_promise_1.spawn('xpdf/pdftotext', [
+        '-raw',
+        '-cfg', '/tmp/.xpdfrc',
+        '/tmp/score.pdf',
+    ]);
+    process2.childProcess.kill();
+    const data = yield fs.readFile('/tmp/score.txt', 'latin1');
+    res.status(200).json([data]);
+}));
 //# sourceMappingURL=index.js.map

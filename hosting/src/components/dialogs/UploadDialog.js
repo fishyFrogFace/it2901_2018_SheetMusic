@@ -57,13 +57,6 @@ class UploadDialog extends React.Component {
             switch (provider) {
                 case 'computer':
                     this.fileBrowser.click();
-
-                    // TODO find better solution to this...
-                    document.body.onfocus = () => {
-                        setTimeout(() => {
-                            resolve({files: this.fileBrowser.files});
-                        }, 200);
-                    };
                     break;
                 case 'dropbox':
                     const authUrl = new Dropbox.Dropbox({clientId: 'tbg7d2wqxr0ngke'}).getAuthenticationUrl('http://localhost:3000/auth');
@@ -135,6 +128,11 @@ class UploadDialog extends React.Component {
         this.setState({entries: response.entries, selectedPath: newPath});
     };
 
+    _onFilesChange = e => {
+        e.persist();
+        this.__resolve({files: e.target.files});
+    };
+
     render() {
         const {activeStep, open, entries, selectedPath} = this.state;
         const {classes} = this.props;
@@ -177,6 +175,7 @@ class UploadDialog extends React.Component {
                 type='file'
                 style={{display: 'none'}}
                 multiple
+                onChange={this._onFilesChange}
             />
         </div>
     }
