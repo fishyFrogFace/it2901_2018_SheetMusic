@@ -7,8 +7,6 @@ import MuiPickersUtilsProvider from 'material-ui-pickers/utils/MuiPickersUtilsPr
 import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
 import grey from 'material-ui/colors/grey';
 
-import grey from 'material-ui/colors/grey';
-
 import 'firebase/firestore';
 import 'firebase/auth';
 
