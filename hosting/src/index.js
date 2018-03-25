@@ -5,7 +5,6 @@ import firebase from 'firebase';
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
 import MuiPickersUtilsProvider from 'material-ui-pickers/utils/MuiPickersUtilsProvider';
 import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
-import grey from 'material-ui/colors/grey';
 
 import 'firebase/firestore';
 import 'firebase/auth';
@@ -267,7 +266,24 @@ const theme = createMuiTheme({
             main: '#448AFF',
             contrastText: '#fff',
         },
-        // secondary: cyan.A700
+    },
+    overrides: {
+        MuiPickersToolbar: {
+            toolbar: {
+                backgroundColor: "#448AFF",
+            },
+        },
+        MuiPickersDay: {
+            day: {
+                color: "black",
+            },
+            selected: {
+                backgroundColor: "#448AFF",
+            },
+            current: {
+                color: "#448AFF",
+            },
+        },
     }
 });
 
@@ -278,4 +294,5 @@ ReactDOM.render(
             <App/>
         </MuiPickersUtilsProvider>
     </MuiThemeProvider>,
-    document.getElementById('root'));
+    document.getElementById('root')
+);

@@ -12,7 +12,7 @@
     "material-ui": "^1.0.0-beta.32",
     "material-ui-chip-input": "^1.0.0-beta.4",
     "material-ui-icons": "^1.0.0-beta.17",
-    "material-ui-pickers": "^1.0.0-rc.2",
+    "material-ui-pickers": "^1.0.0-rc.3",
     "panzoom": "^4.3.1",
     "react": "^16.2.0",
     "react-beautiful-dnd": "^5.0.0",
