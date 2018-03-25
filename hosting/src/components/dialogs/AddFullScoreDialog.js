@@ -1,15 +1,14 @@
 import React from 'react';
-
 import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle,
-    FormControl, Input, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper, SvgIcon,
-    TextField,
-    Typography,
-    withStyles
+    FormControl, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper,
+    SvgIcon, withStyles
 } from "material-ui";
-import AsyncDialog from "./AsyncDialog";
-import {Add, CheckCircle} from "material-ui-icons";
+import {Add} from "material-ui-icons";
 import Selectable from "../Selectable";
+import CreateScoreStep from "./CreateScoreStep";
+
+// const customSearch = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=lectures&searchType=image';
 
 const styles = {
     selectable: {
@@ -18,12 +17,12 @@ const styles = {
         marginBottom: 15
     },
 
-    stepLabel__iconContainer: {
-        color: 'black'
-    },
-
     dialog__paper: {
         maxWidth: 800
+    },
+
+    stepLabel__iconContainer: {
+        color: 'black'
     }
 };
 
@@ -42,7 +41,8 @@ function StepIcon(props) {
         </SvgIcon> :
         <SvgIcon {...props} {...extraProps}>
             <circle cx="12" cy="12" r="12"/>
-            <text x="12" y="16" textAnchor="middle" style={{fill: '#fff', fontSize: '0.75rem', fontFamily: 'Roboto'}}>{props.number}</text>
+            <text x="12" y="16" textAnchor="middle"
+                  style={{fill: '#fff', fontSize: '0.75rem', fontFamily: 'Roboto'}}>{props.number}</text>
         </SvgIcon>;
 }
 
@@ -55,7 +55,8 @@ class AddFullScoreDialog extends React.Component {
         entered: false,
         selectedPages: new Set(),
         scoreCreated: false,
-        scoreData: {}
+        scoreData: {},
+        pageIndex: 0
     };
 
     componentDidMount() {
@@ -101,7 +102,13 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            this.setState({pdfData: Array.from(selectedPages).map(page => ({page: page, instrument: 0, instrumentNumber: 0}))});
+            this.setState({
+                pdfData: Array.from(selectedPages).map(page => ({
+                    page: page,
+                    instrument: 0,
+                    instrumentNumber: 0
+                }))
+            });
         }
 
         if (activeStep === 3) {
@@ -109,7 +116,7 @@ class AddFullScoreDialog extends React.Component {
 
             let _pdfData = [...pdfData, {page: pdf.pages.length}];
 
-            for (let i = 0; i < pdf.pages.length; i++) {
+            for (let i = 0; i < _pdfData.length - 1; i++) {
                 let data = _pdfData[i];
 
                 const pages = [];
@@ -164,17 +171,17 @@ class AddFullScoreDialog extends React.Component {
         this.setState({selectedPages: selectedPages});
     };
 
-    _onScoreDataChange = (type, e) => {
-        this.setState({scoreData: {...this.state.scoreData, [type]: e.target.value}});
+    _onScoreDataChange = data => {
+        this.setState({scoreData: data})
     };
 
     render() {
-        const {activeStep, open, pdf, entered, selectedPages, pdfData, scoreData, scoreCreated} = this.state;
+        const {activeStep, open, pdf, entered, selectedPages, pdfData, scoreCreated, scoreData} = this.state;
         const {classes, band} = this.props;
 
         if (!open) return null;
 
-        return <Dialog open={open} onEntered={this._onDialogEntered} classes={{paper: classes.dialog__paper}}>
+        return <Dialog open={open} onEntered={this._onDialogEntered} classes={{paper: classes.dialog__paper}} fullScreen>
             <DialogTitle>Add full score</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column'}}>
                 <Stepper activeStep={activeStep}>
@@ -187,11 +194,11 @@ class AddFullScoreDialog extends React.Component {
                     <Step>
                         <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} completed={activeStep > 2 ? 1 : 0} number={3}/>}>Select split points</StepLabel>
                     </Step>
-                    <Step >
+                    <Step>
                         <StepLabel icon={<StepIcon active={activeStep === 3 ? 1 : 0} number={4}/>}>Select instruments</StepLabel>
                     </Step>
                 </Stepper>
-                <div style={{overflowY: 'auto', width: '100%', height: 500}}>
+                <div style={{overflowY: 'auto', flex: 1}}>
                     {
                         activeStep === 0 &&
                         <List>
@@ -208,14 +215,9 @@ class AddFullScoreDialog extends React.Component {
                             }
                         </List>
                     }
-
                     {
-                        activeStep === 1 && <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <TextField label='Title' style={{marginBottom: 20}} value={scoreData.title} onChange={e => this._onScoreDataChange('title', e)}/>
-                            <TextField label='Composer' style={{marginBottom: 20}} onChange={e => this._onScoreDataChange('composer', e)}/>
-                        </div>
+                        activeStep === 1 && <CreateScoreStep defaultData={scoreData} pdf={pdf} onChange={this._onScoreDataChange}/>
                     }
-
                     {
                         activeStep === 2 && entered && pdf.pages.map((page, index) =>
                             <Selectable
@@ -228,12 +230,16 @@ class AddFullScoreDialog extends React.Component {
                             />
                         )
                     }
-
-
                     {
                         activeStep === 3 && pdf.pages.filter((_, index) => selectedPages.has(index)).map((page, index) =>
                             <div key={index} style={{display: 'flex', alignItems: 'center', marginBottom: 20}}>
-                                <div style={{width: 200, height: 150, overflow: 'hidden', marginRight: 20, border: '1px solid #E8E8E8'}}>
+                                <div style={{
+                                    width: 200,
+                                    height: 150,
+                                    overflow: 'hidden',
+                                    marginRight: 20,
+                                    border: '1px solid #E8E8E8'
+                                }}>
                                     <img width="300%" src={page.croppedURL}/>
                                 </div>
                                 <FormControl style={{marginRight: 20, width: 150}}>
@@ -261,7 +267,6 @@ class AddFullScoreDialog extends React.Component {
                                     </Select>
                                 </FormControl>
                             </div>
-
                         )
                     }
                 </div>
@@ -269,7 +274,8 @@ class AddFullScoreDialog extends React.Component {
             <DialogActions>
                 <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
                 <Button color="secondary" onClick={this._onBackClick} disabled={activeStep === 0}>Back</Button>
-                <Button color="secondary" onClick={this._onNextClick} disabled={activeStep === 0 || (activeStep === 2 && selectedPages.size === 0)}>{activeStep === 3 ? 'Done' : 'Next'}</Button>
+                <Button color="secondary" onClick={this._onNextClick}
+                        disabled={activeStep === 0 || (activeStep === 2 && selectedPages.size === 0)}>{activeStep === 3 ? 'Done' : 'Next'}</Button>
             </DialogActions>
         </Dialog>
     }

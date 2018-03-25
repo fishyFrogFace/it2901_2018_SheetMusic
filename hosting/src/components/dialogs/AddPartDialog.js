@@ -9,8 +9,13 @@ import {
 } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 import {Add} from "material-ui-icons";
+import CreateScoreStep from "./CreateScoreStep";
 
-const styles = {};
+const styles = {
+    dialog__paper: {
+        maxWidth: 800
+    }
+};
 
 function StepIcon(props) {
     const extraProps = {};
@@ -111,18 +116,18 @@ class AddPartDialog extends React.Component {
         this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
     };
 
-    _onScoreDataChange = (type, e) => {
-        this.setState({scoreData: {...this.state.scoreData, [type]: e.target.value}});
+    _onScoreDataChange = data => {
+        this.setState({scoreData: data})
     };
 
     render() {
         const {partData, scoreData, activeStep, scoreCreated, open} = this.state;
 
-        const {band} = this.props;
+        const {band, classes} = this.props;
 
         if (!open) return null;
 
-        return <Dialog open={open}>
+        return <Dialog open={open} classes={{paper: classes.dialog__paper}} fullScreen>
             <DialogTitle>Add part</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
                 <Stepper activeStep={activeStep}>
@@ -154,12 +159,8 @@ class AddPartDialog extends React.Component {
                         </List>
                     }
                     {
-                        activeStep === 1 && <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <TextField label='Title' style={{marginBottom: 20}} value={scoreData.title} onChange={e => this._onScoreDataChange('title', e)}/>
-                            <TextField label='Composer' style={{marginBottom: 20}} onChange={e => this._onScoreDataChange('composer', e)}/>
-                        </div>
+                        activeStep === 1 && <CreateScoreStep onChange={this._onScoreDataChange}/>
                     }
-
                     {
                         activeStep === 2 &&
                         <div>
