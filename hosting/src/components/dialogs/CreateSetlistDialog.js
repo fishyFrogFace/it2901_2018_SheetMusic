@@ -1,14 +1,50 @@
 import React from 'react';
 
 import {TextField, withStyles} from "material-ui";
+import {DatePicker} from "material-ui-pickers"
+
 import AsyncDialog from "./AsyncDialog";
+import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
+
+import grey from 'material-ui/colors/grey';
 
 const styles = {
     input: {
         border: 0,
         outline: 0
+    },
+    date:{
+        color:"black"
     }
 };
+
+const dateMaterialTheme = createMuiTheme({
+    overrides: {
+      MuiPickersToolbar: {
+        toolbar: {
+          backgroundColor: grey[400],
+        },
+      },
+      MuiPickersCalendarHeader: {
+        switchHeader: {
+          // backgroundColor: lightBlue.A200,
+          // color: 'white',
+        },
+      },
+      MuiPickersDay: {
+        day: {
+          color: "black",
+        },
+        selected: {
+          backgroundColor: grey['400'],
+        },
+        current: {
+          color: grey['900'],
+        },
+      },
+    },
+  });
+  
 
 class CreateSetlistDialog extends React.Component {
     state = {
@@ -43,7 +79,12 @@ class CreateSetlistDialog extends React.Component {
 
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
             <TextField label='Title' onChange={this._onTitleInputChange}/>
-            <input className={classes.input} style={{marginTop: 20}} type="date" onChange={this._onDateChange} />
+            <MuiThemeProvider theme={dateMaterialTheme}>
+                <DatePicker
+                    value={date}
+                    onChange={date => {this.setState({date: date})} }
+                />
+            </MuiThemeProvider>
         </AsyncDialog>
     }
 }

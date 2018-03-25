@@ -6,6 +6,8 @@ import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
 import MuiPickersUtilsProvider from 'material-ui-pickers/utils/MuiPickersUtilsProvider';
 import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
 
+import grey from 'material-ui/colors/grey';
+
 import 'firebase/firestore';
 import 'firebase/auth';
 
@@ -265,7 +267,7 @@ const theme = createMuiTheme({
             light: '#448AFF',
             main: '#448AFF',
             contrastText: '#fff',
-        },
+        }
         // secondary: cyan.A700
     }
 });
@@ -273,6 +275,8 @@ const theme = createMuiTheme({
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
-        <App/>
+        <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <App/>
+        </MuiPickersUtilsProvider>
     </MuiThemeProvider>,
     document.getElementById('root'));
