@@ -5,7 +5,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {Button, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Snackbar,} from "material-ui";
+import {Button, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Snackbar} from "material-ui";
 
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
@@ -83,18 +83,44 @@ class Home extends React.Component {
         };
     }
 
-    _onAddFullScore = async (score, parts, pdf) => {
+    async createScoreDoc(band, scoreData) {
+        const data = {};
+        data.title = scoreData.title || 'Untitled Score';
+
+        if (scoreData.composer) {
+            data.composer = scoreData.composer;
+        }
+
+        if (scoreData.arranger) {
+            data.arranger = scoreData.arranger;
+        }
+
+        if (scoreData.tempo) {
+            data.tempo = scoreData.tempo;
+        }
+
+        if (scoreData.genres && scoreData.genres.length > 0) {
+            data.genres = scoreData.genres;
+        }
+
+        if (scoreData.tags && scoreData.tags.length > 0) {
+            data.tags = scoreData.tags;
+        }
+
+        return await firebase.firestore().collection(`bands/${band.id}/scores`).add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+    }
+
+    _onAddFullScore = async (scoreData, parts, pdf) => {
         const {band} = this.props;
 
         let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`);
+        if (scoreData.id) {
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            })
+            scoreRef = await this.createScoreDoc(band, scoreData);
         }
 
         const partsSnapshot = await scoreRef.collection('parts').get();
@@ -102,12 +128,12 @@ class Home extends React.Component {
 
         await Promise.all(
             parts.map(part => scoreRef.collection('parts').add({
-                pages: part.pages,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                instrumentNumber: part.instrumentNumber
-            })
-        ));
+                    pages: part.pages,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                    instrumentNumber: part.instrumentNumber
+                })
+            ));
 
         await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
 
@@ -116,18 +142,14 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
-    _onAddParts = async (score, parts) => {
+    _onAddParts = async (scoreData, parts) => {
         const {band} = this.props;
 
         let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`);
+        if (scoreData.id) {
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
+            scoreRef = await this.createScoreDoc(band, scoreData);
         }
 
         for (let part of parts) {
@@ -352,7 +374,8 @@ class Home extends React.Component {
                             {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
                                 const selected = nameShort === page;
                                 const color = selected ? '#448AFF' : '#757575';
-                                return <ListItem style={{paddingLeft: 24}} key={name} button onClick={() => this._onNavClick(nameShort)}>
+                                return <ListItem style={{paddingLeft: 24}} key={name} button
+                                                 onClick={() => this._onNavClick(nameShort)}>
                                     {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
                                     {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
                                     {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}

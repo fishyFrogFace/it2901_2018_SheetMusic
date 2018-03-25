@@ -5,6 +5,7 @@ import firebase from 'firebase';
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
 import MuiPickersUtilsProvider from 'material-ui-pickers/utils/MuiPickersUtilsProvider';
 import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
+import grey from 'material-ui/colors/grey';
 
 import grey from 'material-ui/colors/grey';
 
@@ -267,7 +268,7 @@ const theme = createMuiTheme({
             light: '#448AFF',
             main: '#448AFF',
             contrastText: '#fff',
-        }
+        },
         // secondary: cyan.A700
     }
 });

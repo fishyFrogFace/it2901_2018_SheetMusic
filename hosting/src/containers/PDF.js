@@ -91,21 +91,47 @@ class PDF extends React.Component {
         this.setState({selectedPages: selectedPages, lastClicked: index});
     };
 
+    async createScoreDoc(band, scoreData) {
+        const data = {};
+        data.title = scoreData.title || 'Untitled Score';
+
+        if (scoreData.composer) {
+            data.composer = scoreData.composer;
+        }
+
+        if (scoreData.arranger) {
+            data.arranger = scoreData.arranger;
+        }
+
+        if (scoreData.tempo) {
+            data.tempo = scoreData.tempo;
+        }
+
+        if (scoreData.genres && scoreData.genres.length > 0) {
+            data.genres = scoreData.genres;
+        }
+
+        if (scoreData.tags && scoreData.tags.length > 0) {
+            data.tags = scoreData.tags;
+        }
+
+        return await firebase.firestore().collection(`bands/${band.id}/scores`).add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+    }
+
     _onAddAsPart = async () => {
         const selectedPages = Array.from(this.state.selectedPages);
-        const {score, part} = await this.addPartDialog.open();
+        const {scoreData, part} = await this.addPartDialog.open();
 
         const {band, pdf} = this.props;
 
         let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`);
+        if (scoreData.id) {
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection(`bands/${band.id}/scores`).add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
+            scoreRef = await this.createScoreDoc(band, scoreData);
         }
 
         await scoreRef.collection('parts').add({
