@@ -58,7 +58,7 @@ class AddPartDialog extends React.Component {
         return new Promise((resolve, reject) => {
             this.setState({
                 open: true,
-                partData: {instrument: 0, instrumentNumber: 0},
+                partData: {instrument: 0},
                 scoreData: {title: ''},
             });
 
@@ -91,8 +91,7 @@ class AddPartDialog extends React.Component {
             this.__resolve({
                 score: scoreData,
                 part: {
-                    instrumentId: band.instruments[partData.instrument].id,
-                    instrumentNumber: partData.instrumentNumber
+                    instrumentId: band.instruments[partData.instrument].id
                 }
             });
 
@@ -121,7 +120,7 @@ class AddPartDialog extends React.Component {
     };
 
     render() {
-        const {partData, scoreData, activeStep, scoreCreated, open} = this.state;
+        const {partData, activeStep, scoreCreated, open} = this.state;
 
         const {band, classes} = this.props;
 
@@ -176,16 +175,6 @@ class AddPartDialog extends React.Component {
                                             <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
                                         )
                                     }
-                                </Select>
-                            </FormControl>
-                            <FormControl style={{width: 70}}>
-                                <InputLabel htmlFor="number">Number</InputLabel>
-                                <Select
-                                    value={partData.instrumentNumber}
-                                    onChange={e => this._onSelectChange('instrumentNumber', e)}
-                                >
-                                    <MenuItem value={0}>None</MenuItem>
-                                    {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
                                 </Select>
                             </FormControl>
                         </div>

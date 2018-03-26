@@ -43,42 +43,27 @@ class App extends React.Component {
         if (user) {
             firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async userSnapshot => {
                 if (!userSnapshot.exists) {
-                    const instrumentRefs = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.ref);
-
-                    let bandRef = await firebase.firestore().collection('bands').add({
-                        name: `${user.displayName.split(' ')[0]}'s band`,
-                        creator: userSnapshot.ref,
-                        code: Math.random().toString(36).substring(2, 7),
-                        instrumentRefs: instrumentRefs,
-                        memberRefs: [userSnapshot.ref]
-                    });
-
                     await userSnapshot.ref.set({
                         email: user.email,
                         displayName: user.displayName,
-                        photoURL: user.photoURL,
-                        defaultBandRef: bandRef,
-                        bandRefs: [bandRef]
+                        photoURL: user.photoURL
                     });
 
                     return;
                 }
 
-                const userData = userSnapshot.data();
-                const userId = userSnapshot.id;
+                this.setState({user: {...this.state.user, ...userSnapshot.data(), id: userSnapshot.id}});
+
+                if (!userSnapshot.data().bandRefs) {
+                    this.setState({user: {...this.state.user, bands: []}});
+                    return;
+                }
 
                 this.bandUnsubscribeCallbacks.forEach(cb => cb());
 
                 this.bandUnsubscribeCallbacks.push(
-                    userData.defaultBandRef.onSnapshot(async snapshot => {
+                    userSnapshot.data().defaultBandRef.onSnapshot(async snapshot => {
                         this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
-
-                        const instruments = await Promise.all((snapshot.data().instrumentRefs || []).map(async instrumentRef => {
-                            const instrumentDoc = await instrumentRef.get();
-                            return {...instrumentDoc.data(), id: instrumentDoc.id}
-                        }));
-
-                        this.setState({band: {...this.state.band, instruments}});
 
                         const members = await Promise.all((snapshot.data().memberRefs || []).map(async memberRef => {
                             const memberDoc = await memberRef.get();
@@ -90,7 +75,7 @@ class App extends React.Component {
                 );
 
                 const createListener = name => {
-                    return userData.defaultBandRef.collection(name).onSnapshot(async snapshot => {
+                    return userSnapshot.data().defaultBandRef.collection(name).onSnapshot(async snapshot => {
                         const items = await Promise.all(
                             snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
                         );
@@ -101,6 +86,11 @@ class App extends React.Component {
                                 .sort((a, b) => b.uploadedAt - a.uploadedAt);
                         }
 
+                        if (name === 'instruments') {
+                            itemsSorted = items
+                                .sort((a, b) => a.name.localeCompare(b.name));
+                        }
+
                         this.setState({band: {...this.state.band, [name]: itemsSorted}});
                     })
                 };
@@ -108,13 +98,14 @@ class App extends React.Component {
                 this.bandUnsubscribeCallbacks.push(createListener('scores'));
                 this.bandUnsubscribeCallbacks.push(createListener('setlists'));
                 this.bandUnsubscribeCallbacks.push(createListener('pdfs'));
+                this.bandUnsubscribeCallbacks.push(createListener('instruments'));
 
                 const bands = await Promise.all(userSnapshot.data().bandRefs.map(async bandRef => {
                     const bandDoc = await bandRef.get();
                     return {...bandDoc.data(), id: bandDoc.id}
                 }));
 
-                this.setState({user: {...this.state.user, ...userData, bands: bands, id: userId}});
+                this.setState({user: {...this.state.user, bands: bands}});
             });
         }
 

@@ -130,8 +130,7 @@ class Home extends React.Component {
             parts.map(part => scoreRef.collection('parts').add({
                     pages: part.pages,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                    instrumentNumber: part.instrumentNumber
+                    instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
                 })
             ));
 
@@ -158,8 +157,7 @@ class Home extends React.Component {
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                instrumentNumber: part.instrumentNumber
+                instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
             });
 
             await pdfDoc.ref.delete();
@@ -177,24 +175,23 @@ class Home extends React.Component {
     _onCreateBand = async () => {
         this.setState({bandAnchorEl: null});
 
-        const {name} = await this.createDialog.open();
+        const {name, instruments} = await this.createDialog.open();
 
         const {user} = this.props;
 
         try {
-            const instrumentRefs = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.ref);
-
             let bandRef = await firebase.firestore().collection('bands').add({
                 name: name,
                 creatorRef: firebase.firestore().doc(`users/${user.id}`),
                 code: Math.random().toString(36).substring(2, 7),
-                instrumentRefs: instrumentRefs,
             });
 
             await firebase.firestore().doc(`users/${user.id}`).update({
                 defaultBandRef: bandRef,
-                bandRefs: [...user.bandRefs, bandRef],
+                bandRefs: [...(user.bandRefs || []), bandRef],
             });
+
+            await Promise.all(instruments.map(instrument => bandRef.collection('instruments').add({name: instrument})));
         } catch (err) {
             console.log(err);
         }
@@ -291,8 +288,6 @@ class Home extends React.Component {
             case 'drive':
                 break;
         }
-
-
     };
 
     _onMenuClose = () => {
@@ -321,7 +316,7 @@ class Home extends React.Component {
                         classes={{label: classes.button__label}}
                         style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
                     >
-                        {band.name || ''}
+                        {user.bands ? (user.bands.length > 0 ? (band.name || '') : 'Create/Join') : ''}
                     </Button>
                     <Menu
                         anchorEl={bandAnchorEl}

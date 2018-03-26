@@ -56,7 +56,7 @@ class AddPartsDialog extends React.Component {
             this.setState({
                 open: true,
                 pdfs: pdfs,
-                pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0})),
+                pdfData: pdfs.map(_ => ({instrument: 0})),
                 scoreData: {title: pdfs[0].name}
             });
 
@@ -80,7 +80,7 @@ class AddPartsDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, pdfData, scoreData, pdfs} = this.state;
+        const {pdfData, scoreData, pdfs} = this.state;
         const {band} = this.props;
 
         if (this.state.activeStep === 1) {
@@ -91,7 +91,6 @@ class AddPartsDialog extends React.Component {
                 parts: Object.keys(pdfData).map(i => ({
                     pdfId: pdfs[i].id,
                     instrumentId: band.instruments[pdfData[i].instrument].id,
-                    instrumentNumber: pdfData[i].instrumentNumber
                 }))
             });
 
@@ -99,7 +98,7 @@ class AddPartsDialog extends React.Component {
                 open: false,
                 activeStep: 0,
                 scoreCreated: false,
-                selectionData: {pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0}))},
+                selectionData: {pdfData: pdfs.map(_ => ({instrument: 0}))},
                 scoreData: {}
             });
         }
@@ -182,16 +181,6 @@ class AddPartsDialog extends React.Component {
                                                         <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
                                                     )
                                                 }
-                                            </Select>
-                                        </FormControl>
-                                        <FormControl style={{width: 70}}>
-                                            <InputLabel htmlFor="number">Number</InputLabel>
-                                            <Select
-                                                value={pdfData[index].instrumentNumber}
-                                                onChange={e => this._onSelectChange('instrumentNumber', index, e)}
-                                            >
-                                                <MenuItem value={0}>None</MenuItem>
-                                                {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
                                             </Select>
                                         </FormControl>
                                     </div>

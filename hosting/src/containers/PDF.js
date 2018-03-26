@@ -136,8 +136,7 @@ class PDF extends React.Component {
 
         await scoreRef.collection('parts').add({
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-            instrumentNumber: part.instrumentNumber,
+            instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
             pages: selectedPages.map(page => ({
                 croppedURL: pdf.pages[page].croppedURL,
                 originalURL: pdf.pages[page].originalURL
