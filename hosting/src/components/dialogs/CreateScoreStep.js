@@ -103,6 +103,14 @@ class CreateScoreStep extends React.Component {
                 }}
             />
             <ChipInput
+                label='Extra instruments'
+                classes={{
+                    chipContainer: classes.chipInput__chipContainer
+                }}
+                onChange={e => this._onDataChange('extraInstruments', {target: {value: e}})}
+            />
+            <div style={{height: 20}}/>
+            <ChipInput
                 label='Genres'
                 classes={{
                     chipContainer: classes.chipInput__chipContainer

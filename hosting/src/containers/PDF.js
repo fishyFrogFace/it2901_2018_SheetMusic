@@ -143,6 +143,8 @@ class PDF extends React.Component {
             }))
         });
 
+        // scoreRef.parent.parent.collection('parts').get()
+
         const notSelectedPages = pdf.pages.filter((_, index) => !selectedPages.includes(index));
 
         this.setState({selectedPages: new Set()});

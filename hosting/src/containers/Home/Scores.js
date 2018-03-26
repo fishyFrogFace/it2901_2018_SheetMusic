@@ -29,7 +29,7 @@ const styles = {
     root: {},
     card: {
         width: 250,
-        height: 250,
+        height: 290,
         marginRight: 20,
         marginBottom: 20,
         cursor: 'pointer'
@@ -125,7 +125,9 @@ class Scores extends React.Component {
                                     </Typography>
                                     <Typography>
                                         {score.composer}
-                                        5/18 parts
+                                    </Typography>
+                                    <Typography>
+                                        {score.partCount && band.instruments ? `${score.partCount}/${band.instruments.length} parts` : ''}
                                     </Typography>
                                     {/*<Badge style={{position: 'absolute', top: 20, right: 20}} badgeContent={4} color="secondary">*/}
                                         {/*<InstrumentIcon/>*/}

@@ -281,3 +281,10 @@ exports.extractPDF = functions.https.onRequest(async (req, res) => {
 
     res.status(200).json([data]);
 });
+
+exports.updatePartCount = functions.firestore
+    .document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite(async event => {
+        const partRef = event.data.ref.parent.parent;
+        const partCount = (await partRef.collection('parts').get()).size;
+        await partRef.update({partCount: partCount});
+    });

@@ -95,6 +95,10 @@ class Home extends React.Component {
             data.arranger = scoreData.arranger;
         }
 
+        if (scoreData.extraInstruments) {
+            data.arranger = scoreData.extraInstruments;
+        }
+
         if (scoreData.tempo) {
             data.tempo = scoreData.tempo;
         }
@@ -120,7 +124,7 @@ class Home extends React.Component {
         if (scoreData.id) {
             scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await this.createScoreDoc(band, scoreData);
+            scoreRef = await this.createScoreDoc(band, scoreData, parts);
         }
 
         const partsSnapshot = await scoreRef.collection('parts').get();

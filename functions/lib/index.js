@@ -220,4 +220,10 @@ exports.extractPDF = functions.https.onRequest((req, res) => __awaiter(this, voi
     const data = yield fs.readFile('/tmp/score.txt', 'latin1');
     res.status(200).json([data]);
 }));
+exports.updatePartCount = functions.firestore
+    .document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite((event) => __awaiter(this, void 0, void 0, function* () {
+    const partRef = event.data.ref.parent.parent;
+    const partCount = (yield partRef.collection('parts').get()).size;
+    yield partRef.update({ partCount: partCount });
+}));
 //# sourceMappingURL=index.js.map
