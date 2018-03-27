@@ -8,8 +8,6 @@ import {Add, Close} from "material-ui-icons";
 import Selectable from "../Selectable";
 import CreateScoreStep from "./CreateScoreStep";
 
-// const customSearch = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=lectures&searchType=image';
-
 const styles = {
     selectable: {
         width: '100%',

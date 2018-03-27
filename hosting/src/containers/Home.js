@@ -124,7 +124,7 @@ class Home extends React.Component {
         if (scoreData.id) {
             scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await this.createScoreDoc(band, scoreData, parts);
+            scoreRef = await this.createScoreDoc(band, scoreData);
         }
 
         const partsSnapshot = await scoreRef.collection('parts').get();
@@ -281,7 +281,7 @@ class Home extends React.Component {
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     this.setState({message: `Uploading file ${i + 1}/${files.length}`});
-                    await firebase.storage().ref(`bands/${this.props.band.id}/input/${file.name}`).put(file);
+                    await firebase.storage().ref(`${this.props.band.id}/${file.name}`).put(file);
                 }
                 this.setState({message: null});
                 break;

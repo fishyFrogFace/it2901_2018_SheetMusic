@@ -10,6 +10,7 @@ import * as vision from '@google-cloud/vision';
 import 'isomorphic-fetch';
 import {Dropbox} from 'dropbox';
 import * as cors from 'cors';
+import * as request from 'request-promise-native';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -21,19 +22,15 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
     if (object.resourceState === 'not_exists') return null;
 
-    // Full file path (bands/<bandId>/input/<fileName>.zip)
+    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
 
     if (!filePath.endsWith('.zip')) return null;
 
-    const zipPathParts = filePath.split('/');
-
-    if (zipPathParts[0] !== 'bands' || zipPathParts[2] !== 'input') return null;
-
-    const bandId = zipPathParts[1];
+    let [bandId, fileNameExt] = filePath.split('/');
 
     // File name without extension
-    const fileName = path.basename(filePath, '.zip');
+    const fileName = path.basename(fileNameExt, '.zip');
 
     // Create storage bucket
     const bucket = storage.bucket(object.bucket);
@@ -49,7 +46,6 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
         await Promise.all(
             dir.files
-                .filter(file => !file.path.endsWith('/'))
                 .filter(file => file.path.endsWith('.pdf'))
                 .filter(file => !file.path.startsWith('__MACOSX'))
                 .map(async file => {
@@ -62,7 +58,7 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
                     await new Promise((resolve, reject) => {
                         file.stream()
-                            .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
+                            .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
                             .on('error', reject)
                             .on('finish', resolve)
 
@@ -84,24 +80,20 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
 
     if (object.resourceState === 'not_exists') return null;
 
-    // Full file path (bands/<bandId>/input/<fileName>.pdf)
+    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
 
     if (!filePath.endsWith('.pdf')) return null;
 
-    const pdfPathParts = filePath.split('/');
-
-    if (pdfPathParts[0] !== 'bands' || pdfPathParts[2] !== 'input') return null;
-
-    const bandId = pdfPathParts[1];
+    let [bandId, fileNameExt] = filePath.split('/');
 
     // File name without extension
-    const fileName = path.basename(filePath, '.pdf');
+    const fileName = path.basename(fileNameExt, '.pdf');
 
     // Create storage bucket
     const inputBucket = storage.bucket(object.bucket);
 
-    const outputBucket = storage.bucket('scores-butler-bands');
+    const pdfBucket = storage.bucket('scores-butler-pdfs');
 
     // Create document
     const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
@@ -154,8 +146,8 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             // Upload files
             const uploadResponses = await Promise.all(
                 fileNames.map((name, index) =>
-                    outputBucket.upload(`/tmp/output-${outputType}/${name}`, {
-                        destination: `bands/${bandId}/pdfs/${pdfRef.id}/${outputType}/${index}.png`,
+                    pdfBucket.upload(`/tmp/output-${outputType}/${name}`, {
+                        destination: `${bandId}/${pdfRef.id}/${outputType}/${index}.png`,
                         metadata: {
                             contentType: 'image/png'
                         }
@@ -288,3 +280,18 @@ exports.updatePartCount = functions.firestore
         const partCount = (await partRef.collection('parts').get()).size;
         await partRef.update({partCount: partCount});
     });
+
+exports.updatePartCount = functions.firestore
+    .document('bands/{bandId}/scores/{scoreId}').onCreate(async event => {
+        const data = event.data.data();
+        if (data.composer) {
+            const response = await request({
+                uri: `https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=${data.composer}&searchType=image`,
+                json: true
+            });
+            event.data.ref.update({thumbnailURL: response.items[0].link});
+        }
+    });
+
+
+

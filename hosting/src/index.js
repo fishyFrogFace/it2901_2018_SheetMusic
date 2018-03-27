@@ -46,11 +46,13 @@ class App extends React.Component {
                     await userSnapshot.ref.set({
                         email: user.email,
                         displayName: user.displayName,
-                        photoURL: user.photoURL
+                        photoURL: user.photoURL,
                     });
 
                     return;
                 }
+
+                if (!userSnapshot.exists) return;
 
                 this.setState({user: {...this.state.user, ...userSnapshot.data(), id: userSnapshot.id}});
 
@@ -216,7 +218,7 @@ class App extends React.Component {
         try {
             const component = (await import(`./containers/${page2component[page]}.js`)).default;
 
-            this.setState({page: page, Component: component});
+            this.setState({page: page, detail: detail, Component: component});
         } catch (err) {
             console.log(err);
             // Already imported or doesn't exists
@@ -224,7 +226,7 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, user, band, score, pdf, setlist, Component} = this.state;
+        const {page, detail, user, band, score, pdf, setlist, Component} = this.state;
 
         if (!Component) {
             return <div>Loading...</div>
@@ -239,7 +241,8 @@ class App extends React.Component {
                     score={score}
                     pdf={pdf}
                     setlist={setlist}
-                    page={page}/>
+                    page={page}
+                    detail={detail}/>
             </div>
         )
     }

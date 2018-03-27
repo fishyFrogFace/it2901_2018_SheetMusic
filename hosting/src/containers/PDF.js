@@ -91,7 +91,7 @@ class PDF extends React.Component {
         this.setState({selectedPages: selectedPages, lastClicked: index});
     };
 
-    async createScoreDoc(band, scoreData) {
+    async createScoreDoc(bandId, scoreData) {
         const data = {};
         data.title = scoreData.title || 'Untitled Score';
 
@@ -115,7 +115,7 @@ class PDF extends React.Component {
             data.tags = scoreData.tags;
         }
 
-        return await firebase.firestore().collection(`bands/${band.id}/scores`).add({
+        return await firebase.firestore().collection(`bands/${bandId}/scores`).add({
             ...data,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         })
@@ -125,13 +125,16 @@ class PDF extends React.Component {
         const selectedPages = Array.from(this.state.selectedPages);
         const {scoreData, part} = await this.addPartDialog.open();
 
-        const {band, pdf} = this.props;
+        const {pdf, detail} = this.props;
+
+        // PDF can be from a different band than defaultBandRef
+        const [bandId, pdfId] = [detail.slice(0, 20), detail.slice(20)];
 
         let scoreRef;
         if (scoreData.id) {
-            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
+            scoreRef = firebase.firestore().doc(`bands/${bandId}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await this.createScoreDoc(band, scoreData);
+            scoreRef = await this.createScoreDoc(bandId, scoreData);
         }
 
         await scoreRef.collection('parts').add({
@@ -143,13 +146,11 @@ class PDF extends React.Component {
             }))
         });
 
-        // scoreRef.parent.parent.collection('parts').get()
-
         const notSelectedPages = pdf.pages.filter((_, index) => !selectedPages.includes(index));
 
         this.setState({selectedPages: new Set()});
 
-        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).update({
+        await firebase.firestore().doc(`bands/${bandId}/pdfs/${pdf.id}`).update({
            pages: notSelectedPages
         });
 

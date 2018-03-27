@@ -116,7 +116,7 @@ class Scores extends React.Component {
                                   elevation={1}>
                                 <CardMedia
                                     className={classes.media}
-                                    image="https://i.ytimg.com/vi/9OGuKLAvbt8/hqdefault.jpg"
+                                    image={score.thumbnailURL || ''}
                                     title=""
                                 />
                                 <CardContent style={{position: 'relative'}}>

@@ -20,6 +20,7 @@ const vision = require("@google-cloud/vision");
 require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
 const cors = require("cors");
+const request = require("request-promise-native");
 admin.initializeApp(functions.config().firebase);
 const storage = Storage({ keyFilename: 'service-account-key.json' });
 // Extracts ZIP with pdfs
@@ -27,16 +28,13 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
     const object = event.data;
     if (object.resourceState === 'not_exists')
         return null;
-    // Full file path (bands/<bandId>/input/<fileName>.zip)
+    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
     if (!filePath.endsWith('.zip'))
         return null;
-    const zipPathParts = filePath.split('/');
-    if (zipPathParts[0] !== 'bands' || zipPathParts[2] !== 'input')
-        return null;
-    const bandId = zipPathParts[1];
+    let [bandId, fileNameExt] = filePath.split('/');
     // File name without extension
-    const fileName = path.basename(filePath, '.zip');
+    const fileName = path.basename(fileNameExt, '.zip');
     // Create storage bucket
     const bucket = storage.bucket(object.bucket);
     try {
@@ -46,7 +44,6 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
         // Unzip
         const dir = yield unzipper.Open.file('/tmp/file.zip');
         yield Promise.all(dir.files
-            .filter(file => !file.path.endsWith('/'))
             .filter(file => file.path.endsWith('.pdf'))
             .filter(file => !file.path.startsWith('__MACOSX'))
             .map((file) => __awaiter(this, void 0, void 0, function* () {
@@ -57,7 +54,7 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
             const name = pdfPathParts.join(' - ');
             yield new Promise((resolve, reject) => {
                 file.stream()
-                    .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
+                    .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
                     .on('error', reject)
                     .on('finish', resolve);
             });
@@ -74,19 +71,16 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
     const object = event.data;
     if (object.resourceState === 'not_exists')
         return null;
-    // Full file path (bands/<bandId>/input/<fileName>.pdf)
+    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
     if (!filePath.endsWith('.pdf'))
         return null;
-    const pdfPathParts = filePath.split('/');
-    if (pdfPathParts[0] !== 'bands' || pdfPathParts[2] !== 'input')
-        return null;
-    const bandId = pdfPathParts[1];
+    let [bandId, fileNameExt] = filePath.split('/');
     // File name without extension
-    const fileName = path.basename(filePath, '.pdf');
+    const fileName = path.basename(fileNameExt, '.pdf');
     // Create storage bucket
     const inputBucket = storage.bucket(object.bucket);
-    const outputBucket = storage.bucket('scores-butler-bands');
+    const pdfBucket = storage.bucket('scores-butler-pdfs');
     // Create document
     const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
         name: fileName,
@@ -125,8 +119,8 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
             // Read files
             const fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
             // Upload files
-            const uploadResponses = yield Promise.all(fileNames.map((name, index) => outputBucket.upload(`/tmp/output-${outputType}/${name}`, {
-                destination: `bands/${bandId}/pdfs/${pdfRef.id}/${outputType}/${index}.png`,
+            const uploadResponses = yield Promise.all(fileNames.map((name, index) => pdfBucket.upload(`/tmp/output-${outputType}/${name}`, {
+                destination: `${bandId}/${pdfRef.id}/${outputType}/${index}.png`,
                 metadata: {
                     contentType: 'image/png'
                 }
@@ -225,5 +219,16 @@ exports.updatePartCount = functions.firestore
     const partRef = event.data.ref.parent.parent;
     const partCount = (yield partRef.collection('parts').get()).size;
     yield partRef.update({ partCount: partCount });
+}));
+exports.updatePartCount = functions.firestore
+    .document('bands/{bandId}/scores/{scoreId}').onCreate((event) => __awaiter(this, void 0, void 0, function* () {
+    const data = event.data.data();
+    if (data.composer) {
+        const response = yield request({
+            uri: `https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=${data.composer}&searchType=image`,
+            json: true
+        });
+        event.data.ref.update({ thumbnailURL: response.items[0].link });
+    }
 }));
 //# sourceMappingURL=index.js.map
