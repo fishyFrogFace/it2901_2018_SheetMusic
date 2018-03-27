@@ -5,7 +5,10 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {Button, IconButton, List, ListItem, ListItemText, Menu, MenuItem, Snackbar} from "material-ui";
+import {
+    Button, CircularProgress, IconButton, List, ListItem, ListItemText, Menu, MenuItem,
+    Snackbar
+} from "material-ui";
 
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
@@ -24,32 +27,12 @@ const styles = {
     root: {
         height: '100%'
     },
+
     flex: {
         flex: 1
     },
 
-    dialogContent: {
-        display: 'flex',
-        flexDirection: 'column'
-    },
-    banner: {
-        background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
-        backgroundSize: 'cover',
-        height: 144
-    },
-
     content: {},
-
-    instrumentSelector: {
-        marginLeft: 25
-    },
-
-    instrumentSelector__select: {
-        color: 'white'
-    },
-    instrumentSelector__icon: {
-        fill: 'white'
-    },
 
     button__label: {
         width: 130,
@@ -57,6 +40,40 @@ const styles = {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         display: 'block'
+    },
+
+    appBarContainer: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        transform: 'translateY(-70px)'
+    },
+
+    appBar: {
+        zIndex: 10
+    },
+
+    sideMenu: {
+        width: 220,
+        paddingTop: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        boxSizing: 'border-box',
+        transform: 'translateX(-220px)'
+    },
+
+    absoluteCenter: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column'
     }
 };
 
@@ -66,8 +83,13 @@ class Home extends React.Component {
         uploadAnchorEl: null,
         uploadSheetsDialogOpen: false,
         message: null,
-        windowSize: null
+        windowSize: null,
+
+        band: {},
+        bands: null
     };
+
+    unsubs = [];
 
     componentWillMount() {
         this.setState({windowSize: window.innerWidth < 800 ? 'mobile' : 'desktop'});
@@ -118,7 +140,9 @@ class Home extends React.Component {
     }
 
     _onAddFullScore = async (scoreData, parts, pdf) => {
-        const {band} = this.props;
+        const {band} = this.state;
+
+        this.setState({message: 'Adding score...'});
 
         let scoreRef;
         if (scoreData.id) {
@@ -139,14 +163,13 @@ class Home extends React.Component {
             ));
 
         await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
-
-        this.setState({message: 'Score added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
     };
 
     _onAddParts = async (scoreData, parts) => {
-        const {band} = this.props;
+        const {band} = this.state;
+
+        this.setState({message: 'Adding parts...'});
 
         let scoreRef;
         if (scoreData.id) {
@@ -167,8 +190,6 @@ class Home extends React.Component {
             await pdfDoc.ref.delete();
         }
 
-        this.setState({message: 'Parts added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
     };
 
@@ -181,24 +202,32 @@ class Home extends React.Component {
 
         const {name, instruments} = await this.createDialog.open();
 
-        const {user} = this.props;
+        this.setState({message: 'Creating band...'});
+
+        const user = firebase.auth().currentUser;
+
+        const userRef = firebase.firestore().doc(`users/${user.uid}`);
+
+        const userDoc = await userRef.get();
 
         try {
             let bandRef = await firebase.firestore().collection('bands').add({
                 name: name,
-                creatorRef: firebase.firestore().doc(`users/${user.id}`),
+                creatorRef: firebase.firestore().doc(`users/${user.uid}`),
                 code: Math.random().toString(36).substring(2, 7),
             });
 
-            await firebase.firestore().doc(`users/${user.id}`).update({
+            await firebase.firestore().doc(`users/${user.uid}`).update({
                 defaultBandRef: bandRef,
-                bandRefs: [...(user.bandRefs || []), bandRef],
+                bandRefs: [...(userDoc.data().bandRefs || []), bandRef],
             });
 
             await Promise.all(instruments.map(instrument => bandRef.collection('instruments').add({name: instrument})));
         } catch (err) {
             console.log(err);
         }
+
+        this.setState({message: null})
     };
 
     _onJoinBand = async () => {
@@ -206,57 +235,68 @@ class Home extends React.Component {
 
         const {code} = await this.joinDialog.open();
 
-        const {user, band} = this.props;
+        const user = firebase.auth().currentUser;
+
+        const userRef = firebase.firestore().doc(`users/${user.uid}`);
 
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
-            let bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+            const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
-            let userBandSnapshot = user.bandRefs.find(ref => ref.id === bandRef.id).get();
+            let userBandRefs = (await userRef.get()).data() || [];
 
-            if (userBandSnapshot.docs.length > 0) {
+            if (userBandRefs.some(ref => ref.id === bandRef.id)) {
                 this.setState({message: 'Band already joined!'});
             } else {
-                await bandRef.update({members: [...band.members, firebase.firestore().doc(`users/${user.id}`)]});
+                this.setState({message: 'Joining band...'});
 
-                await firebase.firestore().doc(`users/${user.id}`).update({
+                await bandRef.collection('members').add({ref: userRef});
+
+                await userRef.update({
                     defaultBandRef: bandRef,
-                    bandRefs: [...user.bandRefs, bandRef]
+                    bandRefs: [...userBandRefs, bandRef]
                 })
             }
         } else {
             this.setState({message: 'Band does not exist!'});
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            this.setState({message: null});
         }
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        this.setState({message: null})
+        this.setState({message: null});
     };
 
     _onBandSelect = async bandId => {
         this.setState({bandAnchorEl: null});
-        await firebase.firestore().doc(`users/${this.props.user.id}`).update({
+        const user = firebase.auth().currentUser;
+        await firebase.firestore().doc(`users/${user.uid}`).update({
             defaultBandRef: firebase.firestore().doc(`bands/${bandId}`)
         });
     };
 
     _onCreateSetlist = async () => {
-        const {user, band} = this.props;
+        const user = firebase.auth().currentUser;
+
+        const {band} = this.state;
 
         const {title, date} = await this.setlistDialog.open();
+
+        this.setState({message: 'Creating setlist...'});
 
         try {
             let setlistRef = await firebase.firestore().collection(`bands/${band.id}/setlists`).add({
                 title: title,
                 date: date,
-                creatorRef: firebase.firestore().doc(`users/${user.id}`)
+                creatorRef: firebase.firestore().doc(`users/${user.uid}`)
             });
 
             window.location.hash = `#/setlist/${band.id}${setlistRef.id}`;
         } catch (err) {
             console.log(err);
         }
+
+        this.setState({message: null});
     };
 
     _onNavClick = nameShort => {
@@ -270,9 +310,7 @@ class Home extends React.Component {
     _onUploadMenuClick = async type => {
         const {files, path, accessToken} = await this.uploadDialog.open(type);
 
-        const {band} = this.props;
-
-        console.log(files);
+        const {band} = this.state;
 
         this.setState({uploadAnchorEl: null});
 
@@ -280,8 +318,8 @@ class Home extends React.Component {
             case 'computer':
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    this.setState({message: `Uploading file ${i + 1}/${files.length}`});
-                    await firebase.storage().ref(`${this.props.band.id}/${file.name}`).put(file);
+                    this.setState({message: `Uploading file ${i + 1}/${files.length}...`});
+                    await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
                 }
                 this.setState({message: null});
                 break;
@@ -298,77 +336,183 @@ class Home extends React.Component {
         this.setState({bandAnchorEl: null, uploadAnchorEl: null});
     };
 
-    render() {
-        const {bandAnchorEl, uploadAnchorEl, message, windowSize} = this.state;
+    async componentDidUpdate(prevProps, prevState) {
+        const user = firebase.auth().currentUser;
 
-        const {classes, user, band, page} = this.props;
+        const {page} = this.props;
+        const {bands} = this.state;
+
+        if (page !== prevProps.page) {
+            this.unsubs.forEach(unsub => unsub());
+
+            this.unsubs.push(
+                firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async snapshot => {
+                    if (!snapshot.exists) {
+                        await snapshot.ref.set({
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                        });
+
+                        return;
+                    }
+
+                    const data = snapshot.data();
+
+                    if (!data.bandRefs) {
+                        this.setState({bands: []});
+                        return;
+                    }
+
+                    this.unsubs.push(
+                        data.defaultBandRef.onSnapshot(async snapshot => {
+                            this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                        })
+                    );
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection(page).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                            );
+
+                            this.setState({band: {...this.state.band, [page]: items}});
+                        })
+                    );
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('instruments').onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                            );
+
+                            this.setState({band: {...this.state.band, instruments: items}});
+                        })
+                    );
+
+                    const bands = await Promise.all(
+                        data.bandRefs.map(async bandRef =>
+                            ({...(await bandRef.get()).data(), id: bandRef.id})
+                        )
+                    );
+
+                    this.setState({bands: bands});
+                })
+            );
+        }
+
+        if ((bands || []).length !== (prevState.bands || []).length) {
+            const options = {
+                duration: 200,
+                fill: 'both',
+                easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
+            };
+
+            if (!prevState.bands || prevState.bands.length === 0) {
+                const anim = this.sideMenuEl.animate([
+                    {transform: 'translateX(-220px)'},
+                    {transform: 'translateX(0)'}
+                ], options);
+
+                anim.onfinish = () => {
+                    this.appBarContainerEl.animate([
+                        {transform: 'translateY(-70px)'},
+                        {transform: 'translateY(0)'}
+                    ], options);
+                };
+            }
+        }
+    }
+
+    render() {
+        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands} = this.state;
+
+        const user = firebase.auth().currentUser;
+
+        const {classes, page} = this.props;
 
         return <div className={classes.root}>
-            <AppBar style={{zIndex: 10}}>
-                <Toolbar>
-                    {
-                        windowSize === 'desktop' &&
-                        <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
-                    }
-                    {
-                        windowSize === 'desktop' &&
-                        <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
-                    }
-                    <Button
-                        onClick={this._onBandClick}
-                        size='small'
-                        classes={{label: classes.button__label}}
-                        style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
-                    >
-                        {user.bands ? (user.bands.length > 0 ? (band.name || '') : 'Create/Join') : ''}
-                    </Button>
-                    <Menu
-                        anchorEl={bandAnchorEl}
-                        open={Boolean(bandAnchorEl)}
-                        onClose={this._onMenuClose}
-                    >
-                        <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
-                            Create band
-                        </MenuItem>
-                        <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
-                            Join Band
-                        </MenuItem>
-                        <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
+            {
+                !bands &&
+                <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref}>
+                    <CircularProgress color='secondary' size={50}/>
+                </div>
+            }
+
+            {
+                bands && bands.length === 0 &&
+                <div className={classes.absoluteCenter} ref={ref => this.wizardEl = ref}>
+                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {user.displayName.split(' ')[0]}! Do
+                        you want to join or create a band?</Typography>
+                    <div style={{display: 'flex', justifyContent: 'center'}}>
+                        <Button onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
+                            Band</Button>
+                        <Button onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
+                    </div>
+                </div>
+            }
+            <div className={classes.appBarContainer} ref={ref => this.appBarContainerEl = ref}>
+                <AppBar position='static' className={classes.appBar}>
+                    <Toolbar>
                         {
-                            user.bands && user.bands.map((band, index) =>
-                                <MenuItem style={{height: 15}} key={index}
-                                          onClick={() => this._onBandSelect(band.id)}>
-                                    {band.name}
-                                </MenuItem>
-                            )
+                            windowSize === 'desktop' &&
+                            <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
                         }
-                    </Menu>
-                    <SearchBar band={band}/>
-                    <div style={{flex: 1}}/>
-                    <IconButton style={{marginLeft: 10}} color="inherit" onClick={this._onFileUploadButtonClick}>
-                        <FileUpload/>
-                    </IconButton>
-                    <Menu
-                        anchorEl={uploadAnchorEl}
-                        open={Boolean(uploadAnchorEl)}
-                        onClose={this._onMenuClose}
-                    >
-                        <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from computer</MenuItem>
-                        <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
-                    </Menu>
-                </Toolbar>
-            </AppBar>
+                        {
+                            windowSize === 'desktop' &&
+                            <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
+                        }
+
+                        <Button
+                            onClick={this._onBandClick}
+                            size='small'
+                            classes={{label: classes.button__label}}
+                            style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
+                        >
+                            {band.name || ''}
+                        </Button>
+                        <Menu
+                            anchorEl={bandAnchorEl}
+                            open={Boolean(bandAnchorEl)}
+                            onClose={this._onMenuClose}
+                        >
+                            <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
+                                Create band
+                            </MenuItem>
+                            <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
+                                Join Band
+                            </MenuItem>
+                            <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
+                            {
+                                bands && bands.map((band, index) =>
+                                    <MenuItem style={{height: 15}} key={index}
+                                              onClick={() => this._onBandSelect(band.id)}>
+                                        {band.name}
+                                    </MenuItem>
+                                )
+                            }
+                        </Menu>
+                        <SearchBar band={band}/>
+                        <div style={{flex: 1}}/>
+                        <IconButton style={{marginLeft: 10}} color="inherit" onClick={this._onFileUploadButtonClick}>
+                            <FileUpload/>
+                        </IconButton>
+                        <Menu
+                            anchorEl={uploadAnchorEl}
+                            open={Boolean(uploadAnchorEl)}
+                            onClose={this._onMenuClose}
+                        >
+                            <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
+                                computer</MenuItem>
+                            <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
+                        </Menu>
+                    </Toolbar>
+                </AppBar>
+            </div>
             <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
                 {
                     windowSize === 'desktop' &&
-                    <div style={{
-                        width: 220,
-                        paddingTop: 16,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                        boxSizing: 'border-box'
-                    }}>
+                    <div className={classes.sideMenu} ref={ref => this.sideMenuEl = ref}>
                         <List>
                             {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
                                 const selected = nameShort === page;
@@ -393,31 +537,34 @@ class Home extends React.Component {
                         </div>
                     </div>
                 }
-                <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
-                    {
-                        page === 'scores' &&
-                        <Scores band={band}/>
-                    }
-                    {
-                        page === 'setlists' &&
-                        <Setlists
-                            band={band}
-                            onCreateSetlist={this._onCreateSetlist}
-                        />
-                    }
-                    {
-                        page === 'members' &&
-                        <Members band={band}/>
-                    }
-                    {
-                        page === 'pdfs' &&
-                        <UnsortedPDFs
-                            band={band}
-                            onAddFullScore={this._onAddFullScore}
-                            onAddParts={this._onAddParts}
-                        />
-                    }
-                </div>
+                {
+                    bands && bands.length > 0 &&
+                    <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
+                        {
+                            page === 'scores' &&
+                            <Scores band={band}/>
+                        }
+                        {
+                            page === 'setlists' &&
+                            <Setlists
+                                band={band}
+                                onCreateSetlist={this._onCreateSetlist}
+                            />
+                        }
+                        {
+                            page === 'members' &&
+                            <Members band={band}/>
+                        }
+                        {
+                            page === 'pdfs' &&
+                            <UnsortedPDFs
+                                band={band}
+                                onAddFullScore={this._onAddFullScore}
+                                onAddParts={this._onAddParts}
+                            />
+                        }
+                    </div>
+                }
             </div>
             <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
             <CreateBandDialog onRef={ref => this.createDialog = ref}/>
@@ -430,6 +577,7 @@ class Home extends React.Component {
                 }}
                 open={Boolean(message)}
                 message={message}
+                action={message && message.includes('...') ? <CircularProgress size={30} color='secondary'/> : null}
             />
         </div>
     }

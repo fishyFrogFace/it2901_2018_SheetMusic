@@ -186,7 +186,7 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         const dropbox = new dropbox_1.Dropbox({ accessToken: accessToken });
         const response = yield dropbox.filesDownloadZip({ path: folderPath });
         const bucket = storage.bucket('scores-butler.appspot.com');
-        yield bucket.file(`bands/${bandId}/input/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
+        yield bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
     }));
 });
@@ -220,7 +220,7 @@ exports.updatePartCount = functions.firestore
     const partCount = (yield partRef.collection('parts').get()).size;
     yield partRef.update({ partCount: partCount });
 }));
-exports.updatePartCount = functions.firestore
+exports.createThumbnail = functions.firestore
     .document('bands/{bandId}/scores/{scoreId}').onCreate((event) => __awaiter(this, void 0, void 0, function* () {
     const data = event.data.data();
     if (data.composer) {

@@ -40,8 +40,11 @@ class Score extends React.Component {
         fileUploaderOpen: false,
         selectedPartId: null,
         anchorEl: null,
-        selectedPart: 0
+        selectedPart: 0,
+        score: {}
     };
+
+    unsubs = [];
 
     _onInstrumentSelectChange(e) {
         this.setState({selectedPart: e.target.value});
@@ -114,9 +117,46 @@ class Score extends React.Component {
         }
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        const {page, detail} = this.props;
+
+        if (page !== prevProps.page) {
+            const [bandId, scoreId] = [detail.slice(0, 20), detail.slice(20)];
+
+            const bandRef = firebase.firestore().doc(`bands/${bandId}`);
+
+            const scoreDoc = bandRef.collection('scores').doc(scoreId);
+
+            this.unsubs.forEach(unsub => unsub());
+
+            this.unsubs.push(
+                scoreDoc.onSnapshot(async snapshot => {
+                    this.setState({score: {...this.state.score, ...snapshot.data(), id: snapshot.id}});
+                })
+            );
+
+            this.unsubs.push(
+                scoreDoc.collection('parts').onSnapshot(async snapshot => {
+                    const parts = await Promise.all(
+                        snapshot.docs.map(async doc => ({
+                            ...doc.data(),
+                            id: doc.id,
+                            instrument: (await doc.data().instrumentRef.get()).data()
+                        }))
+                    );
+
+                    const partsSorted = parts
+                        .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
+
+                    this.setState({score: {...this.state.score, parts: partsSorted}});
+                })
+            );
+        }
+    }
+
     render() {
-        const {classes, score} = this.props;
-        const {anchorEl, message, selectedPart} = this.state;
+        const {classes} = this.props;
+        const {anchorEl, message, selectedPart, score} = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
 

@@ -35,12 +35,16 @@ const styles = {
 class Setlist extends Component {
     state = {
         anchorEl: null,
-        updatedItems: null
+        updatedItems: null,
+        setlist: {},
+        band: {}
     };
 
     addScoreDialog;
     addEventDialog;
     editSetlistDialog;
+
+    unsubs = [];
 
     _onAddButtonClick(e) {
         this.setState({anchorEl: e.currentTarget});
@@ -63,7 +67,7 @@ class Setlist extends Component {
             return result;
         };
 
-        const {band, setlist} = this.props;
+        const {band, setlist} = this.state;
 
         const newItems = reorder(
             setlist.items,
@@ -79,7 +83,7 @@ class Setlist extends Component {
     };
 
     async _onMenuClick(type) {
-        const {band, setlist} = this.props;
+        const {band, setlist} = this.state;
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
 
         try {
@@ -123,9 +127,57 @@ class Setlist extends Component {
         window.location.hash = '/setlists';
     };
 
+    componentDidUpdate(prevProps, prevState) {
+        const {page, detail} = this.props;
+
+        if (page !== prevProps.page) {
+            const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
+
+            const bandRef = firebase.firestore().doc(`bands/${bandId}`);
+
+            const setlistDoc = bandRef.collection('setlists').doc(setlistId);
+
+            this.unsubs.forEach(unsub => unsub());
+
+            this.unsubs.push(
+                setlistDoc.onSnapshot(async snapshot => {
+                    const data = snapshot.data();
+
+                    data.items = await Promise.all(
+                        (data.items || []).map(async item => {
+                            if (item.type === 'score') {
+                                return {...item, score: (await item.scoreRef.get()).data()};
+                            }
+
+                            return {...item};
+                        })
+                    );
+
+                    this.setState({setlist: {...this.state.setlist, ...data, id: snapshot.id}});
+                })
+            );
+
+            this.unsubs.push(
+                bandRef.onSnapshot(async snapshot => {
+                    this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                })
+            );
+
+            this.unsubs.push(
+                bandRef.collection('scores').onSnapshot(async snapshot => {
+                    let scores = await Promise.all(
+                        snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                    );
+
+                    this.setState({band: {...this.state.band, scores: scores}});
+                })
+            );
+        }
+    }
+
     render() {
-        const {anchorEl, updatedItems} = this.state;
-        const {classes, setlist, band} = this.props;
+        const {anchorEl, updatedItems, setlist, band} = this.state;
+        const {classes} = this.props;
 
         const items = updatedItems || (setlist.items || []);
 

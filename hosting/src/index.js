@@ -40,77 +40,6 @@ class App extends React.Component {
     }
 
     async _onUserStateChanged(user) {
-        if (user) {
-            firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async userSnapshot => {
-                if (!userSnapshot.exists) {
-                    await userSnapshot.ref.set({
-                        email: user.email,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL,
-                    });
-
-                    return;
-                }
-
-                if (!userSnapshot.exists) return;
-
-                this.setState({user: {...this.state.user, ...userSnapshot.data(), id: userSnapshot.id}});
-
-                if (!userSnapshot.data().bandRefs) {
-                    this.setState({user: {...this.state.user, bands: []}});
-                    return;
-                }
-
-                this.bandUnsubscribeCallbacks.forEach(cb => cb());
-
-                this.bandUnsubscribeCallbacks.push(
-                    userSnapshot.data().defaultBandRef.onSnapshot(async snapshot => {
-                        this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
-
-                        const members = await Promise.all((snapshot.data().memberRefs || []).map(async memberRef => {
-                            const memberDoc = await memberRef.get();
-                            return {...memberDoc.data(), id: memberDoc.id}
-                        }));
-
-                        this.setState({band: {...this.state.band, members}});
-                    })
-                );
-
-                const createListener = name => {
-                    return userSnapshot.data().defaultBandRef.collection(name).onSnapshot(async snapshot => {
-                        const items = await Promise.all(
-                            snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
-                        );
-
-                        let itemsSorted = items;
-                        if (name === 'pdfs') {
-                            itemsSorted = items
-                                .sort((a, b) => b.uploadedAt - a.uploadedAt);
-                        }
-
-                        if (name === 'instruments') {
-                            itemsSorted = items
-                                .sort((a, b) => a.name.localeCompare(b.name));
-                        }
-
-                        this.setState({band: {...this.state.band, [name]: itemsSorted}});
-                    })
-                };
-
-                this.bandUnsubscribeCallbacks.push(createListener('scores'));
-                this.bandUnsubscribeCallbacks.push(createListener('setlists'));
-                this.bandUnsubscribeCallbacks.push(createListener('pdfs'));
-                this.bandUnsubscribeCallbacks.push(createListener('instruments'));
-
-                const bands = await Promise.all(userSnapshot.data().bandRefs.map(async bandRef => {
-                    const bandDoc = await bandRef.get();
-                    return {...bandDoc.data(), id: bandDoc.id}
-                }));
-
-                this.setState({user: {...this.state.user, bands: bands}});
-            });
-        }
-
         let hash = (() => {
             if (user && window.location.hash === '#/signin') {
                 return '#/scores';
@@ -134,76 +63,6 @@ class App extends React.Component {
 
         let [page, detail] = hash.split('/').slice(1);
 
-
-        if (page === 'setlist') {
-            const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
-
-            this.setlistUnsubscribeCallbacks.forEach(cb => cb());
-
-            this.setlistUnsubscribeCallbacks.push(
-                firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`).onSnapshot(async snapshot => {
-                    const data = snapshot.data();
-
-                    data.items = await Promise.all(
-                        (data.items || []).map(async item => {
-                            if (item.type === 'score') {
-                                return {...item, score: (await item.scoreRef.get()).data()};
-                            }
-
-                            return {...item};
-                        })
-                    );
-
-                    this.setState({setlist: {...this.state.setlist, ...data, id: snapshot.id}});
-                })
-            );
-        }
-
-        if (page === 'score') {
-            const [bandId, scoreId] = [detail.slice(0, 20), detail.slice(20)];
-
-            this.scoreUnsubscribeCallbacks.forEach(cb => cb());
-
-            const scoreDoc = firebase.firestore().doc(`bands/${bandId}/scores/${scoreId}`);
-
-            this.scoreUnsubscribeCallbacks.push(
-                scoreDoc.onSnapshot(async snapshot => {
-                    this.setState({score: {...this.state.score, ...snapshot.data()}});
-                })
-            );
-
-            this.scoreUnsubscribeCallbacks.push(
-                scoreDoc.collection('parts').onSnapshot(async snapshot => {
-                    const parts = await Promise.all(
-                        snapshot.docs.map(async doc => ({
-                            ...doc.data(),
-                            id: doc.id,
-                            instrument: (await doc.data().instrumentRef.get()).data()
-                        }))
-                    );
-
-                    const partsSorted = parts
-                        .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
-
-                    this.setState({score: {...this.state.score, parts: partsSorted}});
-                })
-            );
-        }
-
-        if (page === 'pdf') {
-            const [bandId, pdfId] = [detail.slice(0, 20), detail.slice(20)];
-
-            this.pdfUnsubscribeCallbacks.forEach(cb => cb());
-
-            const pdfDoc = firebase.firestore().doc(`bands/${bandId}/pdfs/${pdfId}`);
-
-            this.pdfUnsubscribeCallbacks.push(
-                pdfDoc.onSnapshot(async snapshot => {
-                    this.setState({pdf: {...this.state.pdf, ...snapshot.data(), id: snapshot.id}});
-                })
-            );
-        }
-
         const page2component = {
             members: 'Home',
             scores: 'Home',
@@ -218,7 +77,9 @@ class App extends React.Component {
         try {
             const component = (await import(`./containers/${page2component[page]}.js`)).default;
 
-            this.setState({page: page, detail: detail, Component: component});
+            this.setState({Component: component}, () => {
+                this.setState({page: page, detail: detail});
+            });
         } catch (err) {
             console.log(err);
             // Already imported or doesn't exists
@@ -226,25 +87,11 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, detail, user, band, score, pdf, setlist, Component} = this.state;
+        const {page, detail, Component} = this.state;
 
-        if (!Component) {
-            return <div>Loading...</div>
-        }
+        if (!Component) return null;
 
-        return (
-            <div style={{height: '100%'}}>
-                <Component
-                    {...this.props}
-                    user={user}
-                    band={band}
-                    score={score}
-                    pdf={pdf}
-                    setlist={setlist}
-                    page={page}
-                    detail={detail}/>
-            </div>
-        )
+        return <Component{...this.props} page={page} detail={detail}/>
     }
 }
 

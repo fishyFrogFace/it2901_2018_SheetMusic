@@ -5,7 +5,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {Button, IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
+import {Button, CircularProgress, IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 
@@ -47,10 +47,14 @@ const styles = {
 class PDF extends React.Component {
     state = {
         selectedPages: new Set(),
-        message: null
+        message: null,
+        pdf: {},
+        band: {}
     };
 
     keys = {};
+
+    unsubs = [];
 
     constructor(props) {
         super(props);
@@ -125,16 +129,15 @@ class PDF extends React.Component {
         const selectedPages = Array.from(this.state.selectedPages);
         const {scoreData, part} = await this.addPartDialog.open();
 
-        const {pdf, detail} = this.props;
+        const {band, pdf} = this.state;
 
-        // PDF can be from a different band than defaultBandRef
-        const [bandId, pdfId] = [detail.slice(0, 20), detail.slice(20)];
+        this.setState({message: 'Adding part...'});
 
         let scoreRef;
         if (scoreData.id) {
-            scoreRef = firebase.firestore().doc(`bands/${bandId}/scores/${scoreData.id}`);
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await this.createScoreDoc(bandId, scoreData);
+            scoreRef = await this.createScoreDoc(band.id, scoreData);
         }
 
         await scoreRef.collection('parts').add({
@@ -150,12 +153,10 @@ class PDF extends React.Component {
 
         this.setState({selectedPages: new Set()});
 
-        await firebase.firestore().doc(`bands/${bandId}/pdfs/${pdf.id}`).update({
-           pages: notSelectedPages
+        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).update({
+            pages: notSelectedPages
         });
 
-        this.setState({message: 'Part added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
         this.setState({message: null});
     };
 
@@ -163,9 +164,42 @@ class PDF extends React.Component {
         this.setState({selectedPages: new Set()});
     };
 
+    componentDidUpdate(prevProps, prevState) {
+        const {page, detail} = this.props;
+
+        if (page !== prevProps.page) {
+            const [bandId, pdfId] = [detail.slice(0, 20), detail.slice(20)];
+
+            const bandRef = firebase.firestore().doc(`bands/${bandId}`);
+
+            const pdfDoc = bandRef.collection('pdfs').doc(pdfId);
+
+            this.unsubs.forEach(unsub => unsub());
+
+            this.unsubs.push(
+                pdfDoc.onSnapshot(async snapshot => {
+                    this.setState({pdf: {...this.state.pdf, ...snapshot.data(), id: snapshot.id}});
+                })
+            );
+
+            this.unsubs.push(
+                bandRef.onSnapshot(async snapshot => {
+                    this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                })
+            );
+
+            this.unsubs.push(
+                bandRef.collection('instruments').onSnapshot(async snapshot => {
+                    const instruments = snapshot.docs.map(doc => doc.data());
+                    this.setState({band: {...this.state.band, instruments: instruments}});
+                })
+            );
+        }
+    }
+
     render() {
-        const {classes, pdf, band} = this.props;
-        const {selectedPages, message} = this.state;
+        const {classes} = this.props;
+        const {selectedPages, message, pdf, band} = this.state;
 
         const hasPages = Boolean(pdf.pages && pdf.pages.length);
 
@@ -205,7 +239,8 @@ class PDF extends React.Component {
                                 classes={{root: classes.selectable}}
                                 selected={selectedPages.has(index)}
                                 imageURL={page.originalURL}
-                                onClick={e => {}}
+                                onClick={e => {
+                                }}
                                 onSelect={e => this._onPageSelect(index)}
                                 selectMode={true}
                             />
@@ -219,6 +254,7 @@ class PDF extends React.Component {
                     }}
                     open={Boolean(message)}
                     message={message}
+                    action={message && message.includes('...') ? <CircularProgress size={30} color='secondary'/> : null}
                 />
             </div>
         );
