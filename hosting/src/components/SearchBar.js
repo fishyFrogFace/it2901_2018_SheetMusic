@@ -3,8 +3,15 @@ import {withStyles} from 'material-ui/styles';
 import {List, ListItem, ListItemText, Paper} from "material-ui";
 import Fuse from 'fuse.js';
 import {LibraryMusic, QueueMusic} from "material-ui-icons";
+import firebase from 'firebase';
 
 const styles = theme => ({
+    root: {
+        width: '100%',
+        maxWidth: '700px',
+        position: 'relative'
+    },
+
     input: {
         width: '100%',
         outline: 'none',
@@ -36,18 +43,25 @@ class SearchBar extends React.Component {
         this.setState({value: e.target.value});
     };
 
-    componentWillUpdate(nextProps, nextState) {
-        const {band} = this.props;
+    async componentDidUpdate(prevProps, prevState) {
+        const {bandId} = this.props;
+        const {value} = this.state;
 
-        if (this.state.value !== nextState.value) {
+        if (value !== prevState.value) {
             if (!this.fuse) {
+                const bandRef = firebase.firestore().doc(`bands/${bandId}`);
+                const scores = (await bandRef.collection('scores').get()).docs.map(doc => ({...doc.data(), id: doc.id}));
+                const setlists = (await bandRef.collection('setlists').get()).docs.map(doc => ({...doc.data(), id: doc.id}));
+
+                console.log(scores);
+
                 this.fuse = new Fuse([
-                    ...band.scores.map(s => ({id: s.id, title: s.title, type: 'score'})),
-                    ...band.setlists.map(s => ({id: s.id, title: s.title, type: 'setlist'}))
+                    ...scores.map(s => ({id: s.id, title: s.title, type: 'score'})),
+                    ...setlists.map(s => ({id: s.id, title: s.title, type: 'setlist'}))
                 ], {keys: ['title']})
             }
 
-            this.setState({results: this.fuse.search(nextState.value)});
+            this.setState({results: this.fuse.search(value)});
         }
     }
 
@@ -64,7 +78,7 @@ class SearchBar extends React.Component {
         const {classes} = this.props;
 
         return (
-            <div style={{width: '100%', maxWidth: '700px', position: 'relative'}} onClick={e => e.stopPropagation()}>
+            <div className={classes.root} onClick={e => e.stopPropagation()}>
                 <input
                     className={classes.input}
                     placeholder="Search for scores and setlists"

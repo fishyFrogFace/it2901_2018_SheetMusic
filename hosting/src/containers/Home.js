@@ -340,7 +340,7 @@ class Home extends React.Component {
         const user = firebase.auth().currentUser;
 
         const {page} = this.props;
-        const {bands} = this.state;
+        const {bands, windowSize} = this.state;
 
         if (page !== prevProps.page) {
             this.unsubs.forEach(unsub => unsub());
@@ -409,17 +409,15 @@ class Home extends React.Component {
             };
 
             if (!prevState.bands || prevState.bands.length === 0) {
-                const anim = this.sideMenuEl.animate([
+                await this.sideMenuEl.animate([
                     {transform: 'translateX(-220px)'},
                     {transform: 'translateX(0)'}
-                ], options);
+                ], options).finished;
 
-                anim.onfinish = () => {
-                    this.appBarContainerEl.animate([
-                        {transform: 'translateY(-70px)'},
-                        {transform: 'translateY(0)'}
-                    ], options);
-                };
+                this.appBarContainerEl.animate([
+                    {transform: 'translateY(-70px)'},
+                    {transform: 'translateY(0)'}
+                ], options);
             }
         }
     }
@@ -492,7 +490,7 @@ class Home extends React.Component {
                                 )
                             }
                         </Menu>
-                        <SearchBar band={band}/>
+                        <SearchBar bandId={band.id}/>
                         <div style={{flex: 1}}/>
                         <IconButton style={{marginLeft: 10}} color="inherit" onClick={this._onFileUploadButtonClick}>
                             <FileUpload/>
@@ -510,33 +508,30 @@ class Home extends React.Component {
                 </AppBar>
             </div>
             <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
-                {
-                    windowSize === 'desktop' &&
-                    <div className={classes.sideMenu} ref={ref => this.sideMenuEl = ref}>
-                        <List>
-                            {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
-                                const selected = nameShort === page;
-                                const color = selected ? '#448AFF' : '#757575';
-                                return <ListItem style={{paddingLeft: 24}} key={name} button
-                                                 onClick={() => this._onNavClick(nameShort)}>
-                                    {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
-                                    {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
-                                    {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
-                                    {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
-                                    <ListItemText
-                                        disableTypography
-                                        inset
-                                        primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
-                                    />
-                                </ListItem>
-                            })}
-                        </List>
-                        <div style={{flex: 1}}/>
-                        <div style={{paddingLeft: 24, paddingBottom: 24}}>
-                            <Typography variant='caption'>Band code: {band.code}</Typography>
-                        </div>
+                <div className={classes.sideMenu} ref={ref => this.sideMenuEl = ref}>
+                    <List>
+                        {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
+                            const selected = nameShort === page;
+                            const color = selected ? '#448AFF' : '#757575';
+                            return <ListItem style={{paddingLeft: 24}} key={name} button
+                                             onClick={() => this._onNavClick(nameShort)}>
+                                {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
+                                {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
+                                {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
+                                {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
+                                <ListItemText
+                                    disableTypography
+                                    inset
+                                    primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
+                                />
+                            </ListItem>
+                        })}
+                    </List>
+                    <div style={{flex: 1}}/>
+                    <div style={{paddingLeft: 24, paddingBottom: 24}}>
+                        <Typography variant='caption'>Band code: {band.code}</Typography>
                     </div>
-                }
+                </div>
                 {
                     bands && bands.length > 0 &&
                     <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
