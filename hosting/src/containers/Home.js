@@ -32,8 +32,6 @@ const styles = {
         flex: 1
     },
 
-    content: {},
-
     button__label: {
         width: 130,
         whiteSpace: 'nowrap',
@@ -47,10 +45,6 @@ const styles = {
         top: 0,
         left: 0,
         width: '100%',
-        transform: 'translateY(-70px)'
-    },
-
-    appBar: {
         zIndex: 10
     },
 
@@ -60,8 +54,13 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        boxSizing: 'border-box',
-        transform: 'translateX(-220px)'
+        boxSizing: 'border-box'
+    },
+
+    content: {
+        flex: 1,
+        height: '100%',
+        overflowY: 'auto'
     },
 
     absoluteCenter: {
@@ -339,8 +338,8 @@ class Home extends React.Component {
     async componentDidUpdate(prevProps, prevState) {
         const user = firebase.auth().currentUser;
 
-        const {page} = this.props;
-        const {bands, windowSize} = this.state;
+        const {page, loaded} = this.props;
+        const {bands, band, windowSize} = this.state;
 
         if (page !== prevProps.page) {
             this.unsubs.forEach(unsub => unsub());
@@ -401,23 +400,33 @@ class Home extends React.Component {
             );
         }
 
-        if ((bands || []).length !== (prevState.bands || []).length) {
-            const options = {
-                duration: 200,
-                fill: 'both',
-                easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
-            };
+        const options = {
+            duration: 200,
+            fill: 'both',
+            easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
+        };
 
-            if (!prevState.bands || prevState.bands.length === 0) {
+        if (!prevState.band.pdfs && band.pdfs ||
+            !prevState.band.scores && band.scores ||
+            !prevState.band.setlists && band.setlists) {
+
+            await this.contentEl.animate([
+                {transform: 'translateY(70px)', opacity: 0},
+                {transform: 'none', opacity: 1}
+            ], options).finished;
+        }
+
+        if (!loaded) {
+            if (!prevState.bands && bands) {
                 await this.sideMenuEl.animate([
                     {transform: 'translateX(-220px)'},
-                    {transform: 'translateX(0)'}
+                    {transform: 'none'}
                 ], options).finished;
 
-                this.appBarContainerEl.animate([
+                await this.appBarContainerEl.animate([
                     {transform: 'translateY(-70px)'},
-                    {transform: 'translateY(0)'}
-                ], options);
+                    {transform: 'none'}
+                ], options).finished;
             }
         }
     }
@@ -427,30 +436,17 @@ class Home extends React.Component {
 
         const user = firebase.auth().currentUser;
 
-        const {classes, page} = this.props;
+        const {classes, page, loaded} = this.props;
 
         return <div className={classes.root}>
             {
-                !bands &&
+                !bands && !loaded &&
                 <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref}>
                     <CircularProgress color='secondary' size={50}/>
                 </div>
             }
-
-            {
-                bands && bands.length === 0 &&
-                <div className={classes.absoluteCenter} ref={ref => this.wizardEl = ref}>
-                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {user.displayName.split(' ')[0]}! Do
-                        you want to join or create a band?</Typography>
-                    <div style={{display: 'flex', justifyContent: 'center'}}>
-                        <Button onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
-                            Band</Button>
-                        <Button onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
-                    </div>
-                </div>
-            }
-            <div className={classes.appBarContainer} ref={ref => this.appBarContainerEl = ref}>
-                <AppBar position='static' className={classes.appBar}>
+            <div className={classes.appBarContainer} style={{transform: loaded ? 'none' : 'translateY(-70px)'}} ref={ref => this.appBarContainerEl = ref}>
+                <AppBar position='static'>
                     <Toolbar>
                         {
                             windowSize === 'desktop' &&
@@ -492,7 +488,8 @@ class Home extends React.Component {
                         </Menu>
                         <SearchBar bandId={band.id}/>
                         <div style={{flex: 1}}/>
-                        <IconButton style={{marginLeft: 10}} color="inherit" onClick={this._onFileUploadButtonClick}>
+                        <IconButton style={{marginLeft: 10}} color="inherit"
+                                    onClick={this._onFileUploadButtonClick}>
                             <FileUpload/>
                         </IconButton>
                         <Menu
@@ -502,13 +499,20 @@ class Home extends React.Component {
                         >
                             <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
                                 computer</MenuItem>
-                            <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from Dropbox</MenuItem>
+                            <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
+                                Dropbox</MenuItem>
                         </Menu>
                     </Toolbar>
                 </AppBar>
             </div>
-            <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
-                <div className={classes.sideMenu} ref={ref => this.sideMenuEl = ref}>
+            <div style={{
+                display: 'flex',
+                paddingTop: 64,
+                height: '100%',
+                overflow: 'hidden',
+                boxSizing: 'border-box'
+            }}>
+                <div className={classes.sideMenu} style={{transform: loaded ? 'none' : 'translateX(-220px)'}} ref={ref => this.sideMenuEl = ref}>
                     <List>
                         {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
                             const selected = nameShort === page;
@@ -532,35 +536,44 @@ class Home extends React.Component {
                         <Typography variant='caption'>Band code: {band.code}</Typography>
                     </div>
                 </div>
-                {
-                    bands && bands.length > 0 &&
-                    <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
-                        {
-                            page === 'scores' &&
-                            <Scores band={band}/>
-                        }
-                        {
-                            page === 'setlists' &&
-                            <Setlists
-                                band={band}
-                                onCreateSetlist={this._onCreateSetlist}
-                            />
-                        }
-                        {
-                            page === 'members' &&
-                            <Members band={band}/>
-                        }
-                        {
-                            page === 'pdfs' &&
-                            <UnsortedPDFs
-                                band={band}
-                                onAddFullScore={this._onAddFullScore}
-                                onAddParts={this._onAddParts}
-                            />
-                        }
-                    </div>
-                }
+                <div className={classes.content} style={{opacity: loaded ? 1 : 0}} ref={ref => this.contentEl = ref}>
+                    {
+                        page === 'scores' &&
+                        <Scores band={band}/>
+                    }
+                    {
+                        page === 'setlists' &&
+                        <Setlists
+                            band={band}
+                            onCreateSetlist={this._onCreateSetlist}
+                        />
+                    }
+                    {
+                        page === 'members' &&
+                        <Members band={band}/>
+                    }
+                    {
+                        page === 'pdfs' &&
+                        <UnsortedPDFs
+                            band={band}
+                            onAddFullScore={this._onAddFullScore}
+                            onAddParts={this._onAddParts}
+                        />
+                    }
+                </div>
             </div>
+            {
+                bands && bands.length === 0 &&
+                <div className={classes.absoluteCenter} ref={ref => this.wizardEl = ref}>
+                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {user.displayName.split(' ')[0]}! Do
+                        you want to join or create a band?</Typography>
+                    <div style={{display: 'flex', justifyContent: 'center'}}>
+                        <Button onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
+                            Band</Button>
+                        <Button onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
+                    </div>
+                </div>
+            }
             <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
             <CreateBandDialog onRef={ref => this.createDialog = ref}/>
             <JoinBandDialog onRef={ref => this.joinDialog = ref}/>

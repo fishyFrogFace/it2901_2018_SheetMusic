@@ -183,6 +183,57 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             pages: pages
         });
 
+        // Analyze PDF
+
+        await fs.writeFile('/tmp/.xpdfrc', '');
+
+        const process2 = await spawn('xpdf/pdftotext', [
+            '-raw',
+            '-cfg', '/tmp/.xpdfrc',
+            '/tmp/score.pdf',
+        ]);
+
+        process2.childProcess.kill();
+
+        const data = await fs.readFile('/tmp/score.txt', 'latin1');
+
+        const patternShort = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/g;
+        const patternFull = /(vocal|(alto|tenor) sax|trumpet|trombone|guitar|piano|bass|drum set)/g;
+
+        if (data.includes('jazzbandcharts')) {
+            const pages = data.split('\f');
+            const instruments = <[any]>[{pageRange: [2], name: 'score'}];
+
+            for (let i = 3; i < pages.length; i++) {
+                const page = pages[i];
+
+                const mShort = page.match(patternShort);
+                const mFull = page.match(patternFull);
+
+                if (!mShort && mFull && mFull.length < 3) {
+                    instruments[instruments.length - 1].pageRange.push(i);
+
+                    const [instr1, instr2] = mFull;
+
+                    if (mFull.length === 2) {
+                        instruments.push({pageRange: [i], name: [instr1, instr2]});
+                    } else {
+                        const instrCount = instruments.filter(instr =>
+                            !Array.isArray(instr.name) && instr.name.includes(instr1)
+                        ).length;
+
+                        instruments.push({pageRange: [i], name: instr1});
+
+                        if (instrCount > 0) {
+                            instruments[instruments.length - 2].name = `${instr1} ${instrCount}`;
+                            instruments[instruments.length - 1].name = `${instr1} ${instrCount + 1}`;
+                        }
+                    }
+                }
+            }
+
+            instruments[instruments.length - 1].pageRange.push(pages.length);
+        }
 
         // Clean up
         await Promise.all([
@@ -240,38 +291,6 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         await bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
     });
-});
-
-exports.extractPDF = functions.https.onRequest(async (req, res) => {
-    const bucket = storage.bucket('scores-butler.appspot.com');
-    await bucket.file('Aint That A Kick - Complete.pdf').download({destination: '/tmp/score.pdf'});
-
-    await fs.writeFile('/tmp/.xpdfrc', '');
-
-    // const promise = spawn('xpdf/pdfinfo', [
-    //     '-cfg', '/tmp/.xpdfrc',
-    //     '/tmp/score.pdf',
-    // ]);
-    //
-    // promise.childProcess.stdout.on('data', data => {
-    //     res.status(200).send(data.toString());
-    // });
-    //
-    // await promise;
-
-    // process1.childProcess.kill();
-
-    const process2 = await spawn('xpdf/pdftotext', [
-        '-raw',
-        '-cfg', '/tmp/.xpdfrc',
-        '/tmp/score.pdf',
-    ]);
-
-    process2.childProcess.kill();
-
-    const data = await fs.readFile('/tmp/score.txt', 'latin1');
-
-    res.status(200).json([data]);
 });
 
 exports.updatePartCount = functions.firestore

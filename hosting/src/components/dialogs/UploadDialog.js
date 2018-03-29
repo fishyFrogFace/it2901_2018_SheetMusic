@@ -59,14 +59,14 @@ class UploadDialog extends React.Component {
                     this.fileBrowser.click();
                     break;
                 case 'dropbox':
-                    const authUrl = new Dropbox.Dropbox({clientId: 'tbg7d2wqxr0ngke'}).getAuthenticationUrl('http://localhost:3000/auth');
+                    const authUrl = new Dropbox.Dropbox({clientId: 'tbg7d2wqxr0ngke'}).getAuthenticationUrl('https://scores-butler.firebaseapp.com/auth');
 
                     const win = window.open(authUrl, "windowname1", 'width=800, height=600');
 
                     const url = await new Promise((resolve, reject) => {
                         const pollTimer = setInterval(() => {
                             try {
-                                if (win.document.URL.includes('http://localhost:3000/auth')) {
+                                if (win.document.URL.includes('https://scores-butler.firebaseapp.com/auth')) {
                                     clearInterval(pollTimer);
                                     resolve(win.document.URL);
                                     win.close();

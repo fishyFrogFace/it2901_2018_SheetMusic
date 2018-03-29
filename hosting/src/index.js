@@ -15,13 +15,22 @@ class App extends React.Component {
         band: {},
         score: {},
         pdf: {},
-        setlist: {}
+        setlist: {},
+        componentLoaded: {}
     };
 
-    scoreUnsubscribeCallbacks = [];
-    bandUnsubscribeCallbacks = [];
-    pdfUnsubscribeCallbacks = [];
-    setlistUnsubscribeCallbacks = [];
+    _componentLoaded = {};
+
+    page2Component = {
+        members: 'Home',
+        scores: 'Home',
+        setlists: 'Home',
+        pdfs: 'Home',
+        pdf: 'PDF',
+        score: 'Score',
+        setlist: 'Setlist',
+        signin: 'SignIn'
+    };
 
     constructor() {
         super();
@@ -57,28 +66,18 @@ class App extends React.Component {
         }
     }
 
-
     async _onHashChange() {
         const hash = window.location.hash || '#/scores';
 
         let [page, detail] = hash.split('/').slice(1);
 
-        const page2component = {
-            members: 'Home',
-            scores: 'Home',
-            setlists: 'Home',
-            pdfs: 'Home',
-            pdf: 'PDF',
-            score: 'Score',
-            setlist: 'Setlist',
-            signin: 'SignIn'
-        };
-
         try {
-            const component = (await import(`./containers/${page2component[page]}.js`)).default;
+            const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
             this.setState({Component: component}, () => {
-                this.setState({page: page, detail: detail});
+                this.setState({page: page, detail: detail, componentLoaded: this._componentLoaded}, () => {
+                    this._componentLoaded[this.page2Component[page]] = true;
+                });
             });
         } catch (err) {
             console.log(err);
@@ -87,11 +86,11 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, detail, Component} = this.state;
+        const {page, detail, Component, componentLoaded} = this.state;
 
         if (!Component) return null;
 
-        return <Component{...this.props} page={page} detail={detail}/>
+        return <Component {...this.props} page={page} detail={detail} loaded={componentLoaded[this.page2Component[page]]}/>
     }
 }
 
