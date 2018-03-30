@@ -1,26 +1,18 @@
 import React from 'react';
-import {AppBar, Button, IconButton, Slide, Toolbar, Typography} from "material-ui";
+import {AppBar, Button, IconButton, Toolbar, Typography} from "material-ui";
 
 import {withStyles} from "material-ui/styles";
 
-import {Close, ArrowBack} from "material-ui-icons";
+import {Close} from "material-ui-icons";
 import Selectable from "../../components/Selectable";
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
-import AddPartDialog from "../../components/dialogs/AddPartDialog";
-
-
-const drawerWidth = 240;
 
 const styles = {
     root: {},
 
     flex: {
         flex: 1
-    },
-
-    appBar__root: {
-        boxShadow: 'none',
     },
 
     selectable: {
@@ -30,37 +22,6 @@ const styles = {
         marginBottom: 20
     },
 
-    content: {
-        paddingTop: 64,
-        height: '100%',
-        boxSizing: 'border-box'
-    },
-
-    paper: {
-        display: 'flex',
-        height: '100%'
-    },
-
-    paneHeader: {
-        height: 44,
-        background: 'rgb(245, 245, 245)',
-        borderBottom: '1px solid rgba(0,0,0,0.12)',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 20px'
-    },
-
-    uploadPane: {
-        flex: 1,
-        height: '100%',
-        borderRight: '1px solid rgba(0,0,0,0.12)'
-    },
-
-    explorerPane: {
-        width: '400px',
-        height: '100%'
-    },
-
     flexWrapContainer: {
         display: 'flex',
         paddingTop: 20,
@@ -68,29 +29,8 @@ const styles = {
         flexWrap: 'wrap',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
-    },
-
-    anchor: {
-        textDecoration: 'underline',
-        cursor: 'pointer',
-        color: 'rgb(0,188,212)'
-    },
-
-    paneContent: {
-        height: 'calc(100% - 45px)',
-        overflowY: 'auto'
-    },
-
-    selectionToolbar: {
-        position: 'absolute',
-        top: 0,
-        left: 0
     }
 };
-
-function Transition(props) {
-    return <Slide direction="up" {...props} />;
-}
 
 class UnsortedPDFs extends React.Component {
     state = {
@@ -111,11 +51,6 @@ class UnsortedPDFs extends React.Component {
             this.keys[e.code] = false;
         }
     }
-
-    _onDialogClose = () => {
-        this.setState({selectedPDFs: new Set()});
-        this.props.onClose();
-    };
 
     _onPDFClick = pdfId => {
         window.location.hash = `/pdf/${this.props.band.id}${pdfId}`
@@ -141,10 +76,13 @@ class UnsortedPDFs extends React.Component {
             }
         }
 
+        this.props.onSelect(selectedPDFs);
+
         this.setState({selectedPDFs: selectedPDFs, lastClicked: index});
     };
 
     _onSelectionCloseClick = () => {
+        this.props.onSelect(new Set());
         this.setState({selectedPDFs: new Set()});
     };
 
@@ -167,24 +105,24 @@ class UnsortedPDFs extends React.Component {
         const {selectedPDFs} = this.state;
 
         return <div>
-            {selectedPDFs.size > 0 &&
-            <AppBar style={{zIndex: 100}} color='secondary' classes={{root: classes.appBar__root}}>
-                <Toolbar>
-                    <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
-                        <Close/>
-                    </IconButton>
-                    <Typography variant="title" color="inherit" className={classes.flex}>
-                        {selectedPDFs.size} selected
-                    </Typography>
-                    {
-                        selectedPDFs.size === 1 &&
-                        <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>
-                    }
-                    <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>
-                </Toolbar>
-            </AppBar>
+            {
+                selectedPDFs.size > 0 &&
+                <AppBar color='secondary' classes={{root: classes.appBar__root}}>
+                    <Toolbar>
+                        <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
+                            <Close/>
+                        </IconButton>
+                        <Typography variant="title" color="inherit" className={classes.flex}>
+                            {selectedPDFs.size} selected
+                        </Typography>
+                        {
+                            selectedPDFs.size === 1 &&
+                            <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>
+                        }
+                        <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>
+                    </Toolbar>
+                </AppBar>
             }
-
             <div className={classes.flexWrapContainer}>
                 {
                     band.pdfs && band.pdfs.map((doc, docIndex) =>

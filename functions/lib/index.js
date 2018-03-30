@@ -85,7 +85,7 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
     const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
         name: fileName,
         uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
-        processing: true
+        state: 'processing'
     });
     try {
         // Download to local directory
@@ -141,11 +141,6 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
                 originalURL: originalPageUrls[i]
             });
         }
-        yield pdfRef.update({
-            processing: admin.firestore.FieldValue.delete(),
-            thumbnailURL: croppedPageUrls[0],
-            pages: pages
-        });
         // Analyze PDF
         yield fs.writeFile('/tmp/.xpdfrc', '');
         const process2 = yield child_process_promise_1.spawn('xpdf/pdftotext', [
@@ -181,6 +176,13 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
                 }
             }
             instruments[instruments.length - 1].pageRange.push(pages.length);
+        }
+        else {
+            yield pdfRef.update({
+                state: 'no_match',
+                thumbnailURL: croppedPageUrls[0],
+                pages: pages
+            });
         }
         // Clean up
         yield Promise.all([

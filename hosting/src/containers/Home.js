@@ -85,7 +85,9 @@ class Home extends React.Component {
         windowSize: null,
 
         band: {},
-        bands: null
+        bands: null,
+
+        pdfSelected: false
     };
 
     unsubs = [];
@@ -431,8 +433,12 @@ class Home extends React.Component {
         }
     }
 
+    _onPDFSelect = selectedPDFs => {
+        this.setState({pdfSelected: selectedPDFs.size > 0});
+    };
+
     render() {
-        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
 
         const user = firebase.auth().currentUser;
 
@@ -445,65 +451,69 @@ class Home extends React.Component {
                     <CircularProgress color='secondary' size={50}/>
                 </div>
             }
-            <div className={classes.appBarContainer} style={{transform: loaded ? 'none' : 'translateY(-70px)'}} ref={ref => this.appBarContainerEl = ref}>
-                <AppBar position='static'>
-                    <Toolbar>
-                        {
-                            windowSize === 'desktop' &&
-                            <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
-                        }
-                        {
-                            windowSize === 'desktop' &&
-                            <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
-                        }
-
-                        <Button
-                            onClick={this._onBandClick}
-                            size='small'
-                            classes={{label: classes.button__label}}
-                            style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
-                        >
-                            {band.name || ''}
-                        </Button>
-                        <Menu
-                            anchorEl={bandAnchorEl}
-                            open={Boolean(bandAnchorEl)}
-                            onClose={this._onMenuClose}
-                        >
-                            <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
-                                Create band
-                            </MenuItem>
-                            <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
-                                Join Band
-                            </MenuItem>
-                            <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
+            <div className={classes.appBarContainer} style={{transform: loaded ? 'none' : 'translateY(-70px)'}}
+                 ref={ref => this.appBarContainerEl = ref}>
+                {
+                    !pdfSelected &&
+                    <AppBar position='static'>
+                        <Toolbar>
                             {
-                                bands && bands.map((band, index) =>
-                                    <MenuItem style={{height: 15}} key={index}
-                                              onClick={() => this._onBandSelect(band.id)}>
-                                        {band.name}
-                                    </MenuItem>
-                                )
+                                windowSize === 'desktop' &&
+                                <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
                             }
-                        </Menu>
-                        <SearchBar bandId={band.id}/>
-                        <div style={{flex: 1}}/>
-                        <IconButton style={{marginLeft: 10}} color="inherit"
-                                    onClick={this._onFileUploadButtonClick}>
-                            <FileUpload/>
-                        </IconButton>
-                        <Menu
-                            anchorEl={uploadAnchorEl}
-                            open={Boolean(uploadAnchorEl)}
-                            onClose={this._onMenuClose}
-                        >
-                            <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
-                                computer</MenuItem>
-                            <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
-                                Dropbox</MenuItem>
-                        </Menu>
-                    </Toolbar>
-                </AppBar>
+                            {
+                                windowSize === 'desktop' &&
+                                <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
+                            }
+
+                            <Button
+                                onClick={this._onBandClick}
+                                size='small'
+                                classes={{label: classes.button__label}}
+                                style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
+                            >
+                                {band.name || ''}
+                            </Button>
+                            <Menu
+                                anchorEl={bandAnchorEl}
+                                open={Boolean(bandAnchorEl)}
+                                onClose={this._onMenuClose}
+                            >
+                                <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
+                                    Create band
+                                </MenuItem>
+                                <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
+                                    Join Band
+                                </MenuItem>
+                                <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
+                                {
+                                    bands && bands.map((band, index) =>
+                                        <MenuItem style={{height: 15}} key={index}
+                                                  onClick={() => this._onBandSelect(band.id)}>
+                                            {band.name}
+                                        </MenuItem>
+                                    )
+                                }
+                            </Menu>
+                            <SearchBar bandId={band.id}/>
+                            <div style={{flex: 1}}/>
+                            <IconButton style={{marginLeft: 10}} color="inherit"
+                                        onClick={this._onFileUploadButtonClick}>
+                                <FileUpload/>
+                            </IconButton>
+                            <Menu
+                                anchorEl={uploadAnchorEl}
+                                open={Boolean(uploadAnchorEl)}
+                                onClose={this._onMenuClose}
+                            >
+                                <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
+                                    computer</MenuItem>
+                                <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
+                                    Dropbox</MenuItem>
+                            </Menu>
+                        </Toolbar>
+                    </AppBar>
+                }
             </div>
             <div style={{
                 display: 'flex',
@@ -512,7 +522,8 @@ class Home extends React.Component {
                 overflow: 'hidden',
                 boxSizing: 'border-box'
             }}>
-                <div className={classes.sideMenu} style={{transform: loaded ? 'none' : 'translateX(-220px)'}} ref={ref => this.sideMenuEl = ref}>
+                <div className={classes.sideMenu} style={{transform: loaded ? 'none' : 'translateX(-220px)'}}
+                     ref={ref => this.sideMenuEl = ref}>
                     <List>
                         {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
                             const selected = nameShort === page;
@@ -558,6 +569,7 @@ class Home extends React.Component {
                             band={band}
                             onAddFullScore={this._onAddFullScore}
                             onAddParts={this._onAddParts}
+                            onSelect={this._onPDFSelect}
                         />
                     }
                 </div>

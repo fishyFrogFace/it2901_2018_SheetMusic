@@ -99,7 +99,7 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
     const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
         name: fileName,
         uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
-        processing: true
+        state: 'processing'
     });
 
     try {
@@ -177,14 +177,7 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             })
         }
 
-        await pdfRef.update({
-            processing: admin.firestore.FieldValue.delete(),
-            thumbnailURL: croppedPageUrls[0],
-            pages: pages
-        });
-
         // Analyze PDF
-
         await fs.writeFile('/tmp/.xpdfrc', '');
 
         const process2 = await spawn('xpdf/pdftotext', [
@@ -233,6 +226,12 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             }
 
             instruments[instruments.length - 1].pageRange.push(pages.length);
+        } else {
+            await pdfRef.update({
+                state: 'no_match',
+                thumbnailURL: croppedPageUrls[0],
+                pages: pages
+            });
         }
 
         // Clean up
