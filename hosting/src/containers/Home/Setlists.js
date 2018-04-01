@@ -119,7 +119,7 @@ class Setlists extends React.Component {
                 onClick={this._onSetlistCreateClick}
                 variant="fab"
                 color="secondary"
-                style={{position: 'fixed', bottom: 32, right: 32}}
+                style={{position: 'absolute', bottom: 32, right: 32}}
             >
                 <PlaylistAdd/>
             </Button>

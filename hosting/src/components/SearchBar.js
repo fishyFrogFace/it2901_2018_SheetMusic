@@ -18,7 +18,7 @@ const styles = theme => ({
         border: 'none',
         padding: '11px 16px',
         background: 'rgba(0,0,0,0.07)',
-        height: '46px',
+        height: '36px',
         boxSizing: 'border-box',
         borderRadius: '4px',
         font: 'normal 16px Roboto'

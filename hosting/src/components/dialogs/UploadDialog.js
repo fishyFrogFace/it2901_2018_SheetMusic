@@ -9,8 +9,7 @@ import {
 import Dropbox from 'dropbox';
 import {ArrowBack} from "material-ui-icons";
 
-const styles = theme => ({
-});
+const styles = theme => ({});
 
 function StepIcon(props) {
     const extraProps = {};
@@ -137,47 +136,52 @@ class UploadDialog extends React.Component {
         const {activeStep, open, entries, selectedPath} = this.state;
         const {classes} = this.props;
 
-        return <div>
-            <Dialog open={open}>
-                <DialogTitle>Upload</DialogTitle>
-                <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
-                    <div style={{flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid #f0f0f0'}}>
-                        {
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                height: 40,
-                                borderBottom: '1px solid #f0f0f0'
-                            }}>
-                                <IconButton disabled={!selectedPath} onClick={this._onArrowBackClick}>
-                                    <ArrowBack/>
-                                </IconButton>
-                                <Typography variant='body1'>{selectedPath}</Typography>
-                            </div>
-                        }
-                        <List style={{flex: 1}}>
-                            {entries.map((entry, index) =>
-                                <ListItem key={entry.id} style={{height: 30, padding: '0 20px'}} button disableRipple
-                                          onClick={() => this._onEntryClick(entry)}>
-                                    <ListItemText primary={entry.path_display}/>
-                                </ListItem>
-                            )}
-                        </List>
-                    </div>
-                </DialogContent>
-                <DialogActions>
-                    <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
-                    <Button color="secondary" onClick={this._onUploadClick} disabled={!selectedPath}>Upload</Button>
-                </DialogActions>
-            </Dialog>
-            <input
-                ref={ref => this.fileBrowser = ref}
-                type='file'
-                style={{display: 'none'}}
-                multiple
-                onChange={this._onFilesChange}
-            />
-        </div>
+        return <Dialog open={open}>
+            <DialogTitle>Upload</DialogTitle>
+            <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
+                <div style={{flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid #f0f0f0'}}>
+                    {
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            height: 40,
+                            borderBottom: '1px solid #f0f0f0'
+                        }}>
+                            <IconButton disabled={!selectedPath} onClick={this._onArrowBackClick}>
+                                <ArrowBack/>
+                            </IconButton>
+                            <Typography variant='body1'>{selectedPath}</Typography>
+                        </div>
+                    }
+                    <List style={{flex: 1}}>
+                        {entries.map((entry, index) =>
+                            <ListItem key={entry.id} style={{height: 30, padding: '0 20px'}} button disableRipple
+                                      onClick={() => this._onEntryClick(entry)}>
+                                <ListItemText primary={entry.path_display}/>
+                            </ListItem>
+                        )}
+                    </List>
+                </div>
+            </DialogContent>
+            <DialogActions>
+                <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
+                <Button color="secondary" onClick={this._onUploadClick} disabled={!selectedPath}>Upload</Button>
+            </DialogActions>
+        </Dialog>;
+        {/*<input*/
+        }
+        {/*ref={ref => this.fileBrowser = ref}*/
+        }
+        {/*type='file'*/
+        }
+        {/*style={{display: 'none'}}*/
+        }
+        {/*multiple*/
+        }
+        {/*onChange={this._onFilesChange}*/
+        }
+        {/*/>*/
+        }
     }
 }
 

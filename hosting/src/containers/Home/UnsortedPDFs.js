@@ -15,7 +15,7 @@ const styles = {
         flex: 1
     },
 
-    selectable: {
+    selectable__root: {
         height: 250,
         width: 250,
         marginRight: 20,
@@ -108,7 +108,7 @@ class UnsortedPDFs extends React.Component {
             {
                 selectedPDFs.size > 0 &&
                 <AppBar color='secondary' classes={{root: classes.appBar__root}}>
-                    <Toolbar>
+                    <Toolbar style={{minHeight: 56}}>
                         <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
                             <Close/>
                         </IconButton>
@@ -129,7 +129,7 @@ class UnsortedPDFs extends React.Component {
                         <Selectable
                             zoomed
                             key={doc.id}
-                            classes={{root: classes.selectable}}
+                            classes={{root: classes.selectable__root}}
                             title={doc.name}
                             imageURL={doc.thumbnailURL}
                             selected={selectedPDFs.has(docIndex)}

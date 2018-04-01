@@ -23,9 +23,13 @@ import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
 import UploadDialog from "../components/dialogs/UploadDialog";
 
+
 const styles = {
     root: {
-        height: '100%'
+        height: '100%',
+        display: 'grid',
+        gridTemplateRows: '56px 1fr min-content',
+        gridTemplateColumns: '220px auto',
     },
 
     flex: {
@@ -41,26 +45,13 @@ const styles = {
     },
 
     appBarContainer: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        zIndex: 10
-    },
-
-    sideMenu: {
-        width: 220,
-        paddingTop: 16,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        boxSizing: 'border-box'
+        gridRow: 1,
+        gridColumn: '1 / -1'
     },
 
     content: {
-        flex: 1,
-        height: '100%',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        position: 'relative'
     },
 
     absoluteCenter: {
@@ -93,7 +84,7 @@ class Home extends React.Component {
     unsubs = [];
 
     componentWillMount() {
-        this.setState({windowSize: window.innerWidth < 800 ? 'mobile' : 'desktop'});
+        this.setState({windowSize: window.innerWidth < 780 ? 'mobile' : 'desktop'});
 
         window.onresize = event => {
             if (event.target.innerWidth < 780 && this.state.windowSize === 'desktop') {
@@ -419,16 +410,9 @@ class Home extends React.Component {
         }
 
         if (!loaded) {
-            if (!prevState.bands && bands) {
-                await this.sideMenuEl.animate([
-                    {transform: 'translateX(-220px)'},
-                    {transform: 'none'}
-                ], options).finished;
-
-                await this.appBarContainerEl.animate([
-                    {transform: 'translateY(-70px)'},
-                    {transform: 'none'}
-                ], options).finished;
+            if ((prevState.bands || []).length === 0 && (bands && bands.length > 0)) {
+                await this.navEl.animate([{transform: 'none'}], options).finished;
+                await this.appBarContainerEl.animate([{transform: 'none'}], options).finished;
             }
         }
     }
@@ -444,6 +428,8 @@ class Home extends React.Component {
 
         const {classes, page, loaded} = this.props;
 
+        const pages = [['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']];
+
         return <div className={classes.root}>
             {
                 !bands && !loaded &&
@@ -456,7 +442,7 @@ class Home extends React.Component {
                 {
                     !pdfSelected &&
                     <AppBar position='static'>
-                        <Toolbar>
+                        <Toolbar style={{minHeight: 56}}>
                             {
                                 windowSize === 'desktop' &&
                                 <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
@@ -515,20 +501,34 @@ class Home extends React.Component {
                     </AppBar>
                 }
             </div>
-            <div style={{
-                display: 'flex',
-                paddingTop: 64,
-                height: '100%',
-                overflow: 'hidden',
-                boxSizing: 'border-box'
-            }}>
-                <div className={classes.sideMenu} style={{transform: loaded ? 'none' : 'translateX(-220px)'}}
-                     ref={ref => this.sideMenuEl = ref}>
+            <div
+                style={{
+                    ...(windowSize === 'desktop' ? {
+                        gridRow: 2,
+                        gridColumn: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxSizing: 'border-box',
+                        transform: loaded ? 'none' : 'translateX(-220px)'
+                    } : {
+                        gridRow: 3,
+                        gridColumn: '1/-1',
+                        display: 'flex',
+                        justifyContent: 'space-around',
+                        background: 'white',
+                        height: '56px',
+                        transform: loaded ? 'none' : 'translateY(56px)'
+                    })
+                }}
+                ref={ref => this.navEl = ref}
+            >
+                {
+                    windowSize === 'desktop' &&
                     <List>
-                        {[['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']].map(([name, nameShort]) => {
+                        {pages.map(([nameLong, nameShort]) => {
                             const selected = nameShort === page;
                             const color = selected ? '#448AFF' : '#757575';
-                            return <ListItem style={{paddingLeft: 24}} key={name} button
+                            return <ListItem style={{paddingLeft: 24}} key={nameShort} button
                                              onClick={() => this._onNavClick(nameShort)}>
                                 {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
                                 {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
@@ -537,42 +537,73 @@ class Home extends React.Component {
                                 <ListItemText
                                     disableTypography
                                     inset
-                                    primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
+                                    primary={<Typography type="body2"
+                                                         style={{color: color}}>{nameLong}</Typography>}
                                 />
                             </ListItem>
                         })}
                     </List>
-                    <div style={{flex: 1}}/>
-                    <div style={{paddingLeft: 24, paddingBottom: 24}}>
-                        <Typography variant='caption'>Band code: {band.code}</Typography>
-                    </div>
-                </div>
-                <div className={classes.content} style={{opacity: loaded ? 1 : 0}} ref={ref => this.contentEl = ref}>
-                    {
-                        page === 'scores' &&
-                        <Scores band={band}/>
-                    }
-                    {
-                        page === 'setlists' &&
-                        <Setlists
-                            band={band}
-                            onCreateSetlist={this._onCreateSetlist}
-                        />
-                    }
-                    {
-                        page === 'members' &&
-                        <Members band={band}/>
-                    }
-                    {
-                        page === 'pdfs' &&
-                        <UnsortedPDFs
-                            band={band}
-                            onAddFullScore={this._onAddFullScore}
-                            onAddParts={this._onAddParts}
-                            onSelect={this._onPDFSelect}
-                        />
-                    }
-                </div>
+                }
+                {
+                    windowSize === 'mobile' &&
+                    pages.map(([nameLong, nameShort]) => {
+                        const selected = nameShort === page;
+                        const color = selected ? '#448AFF' : '#757575';
+
+                        return <div key={nameShort} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            marginTop: -5
+                        }}>
+                            <IconButton onClick={() => this._onNavClick(nameShort)}>
+                                {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
+                                {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
+                                {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
+                                {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
+                            </IconButton>
+                            <Typography type="body1" style={{
+                                color: color,
+                                marginTop: -10,
+                                fontSize: 11
+                            }}>{nameLong}</Typography>
+                        </div>
+                    })
+                }
+            </div>
+            <div
+                className={classes.content}
+                style={{
+                    opacity: loaded ? 1 : 0,
+                    ...(windowSize === 'desktop' ? {gridRow: '2/-1', gridColumn: 2} : {gridRow: 2, gridColumn: '1/-1'})
+                }} ref={ref => this.contentEl = ref}
+            >
+                {
+                    page === 'scores' &&
+                    <Scores band={band}/>
+                }
+                {
+                    page === 'setlists' &&
+                    <Setlists
+                        band={band}
+                        onCreateSetlist={this._onCreateSetlist}
+                    />
+                }
+                {
+                    page === 'members' &&
+                    <Members band={band}/>
+                }
+                {
+                    page === 'pdfs' &&
+                    <UnsortedPDFs
+                        band={band}
+                        onAddFullScore={this._onAddFullScore}
+                        onAddParts={this._onAddParts}
+                        onSelect={this._onPDFSelect}
+                    />
+                }
             </div>
             {
                 bands && bands.length === 0 &&
