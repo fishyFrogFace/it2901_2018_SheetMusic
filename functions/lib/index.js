@@ -149,14 +149,19 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
             '/tmp/score.pdf',
         ]);
         process2.childProcess.kill();
-        const data = yield fs.readFile('/tmp/score.txt', 'latin1');
+        const data = {
+            processing: admin.firestore.FieldValue.delete(),
+            thumbnailURL: croppedPageUrls[0],
+            pages: pages
+        };
+        const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
         const patternShort = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/g;
         const patternFull = /(vocal|(alto|tenor) sax|trumpet|trombone|guitar|piano|bass|drum set)/g;
-        if (data.includes('jazzbandcharts')) {
-            const pages = data.split('\f');
+        if (pdfText.includes('jazzbandcharts')) {
+            const _pages = pdfText.split('\f');
             const instruments = [{ pageRange: [2], name: 'score' }];
-            for (let i = 3; i < pages.length; i++) {
-                const page = pages[i];
+            for (let i = 3; i < _pages.length; i++) {
+                const page = _pages[i];
                 const mShort = page.match(patternShort);
                 const mFull = page.match(patternFull);
                 if (!mShort && mFull && mFull.length < 3) {
@@ -176,14 +181,9 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
                 }
             }
             instruments[instruments.length - 1].pageRange.push(pages.length);
+            data['instruments'] = instruments;
         }
-        else {
-            yield pdfRef.update({
-                state: 'no_match',
-                thumbnailURL: croppedPageUrls[0],
-                pages: pages
-            });
-        }
+        yield pdfRef.update(data);
         // Clean up
         yield Promise.all([
             fs.remove('/tmp/score.pdf'),

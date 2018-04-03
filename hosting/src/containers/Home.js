@@ -22,6 +22,7 @@ import Members from "./Home/Members";
 import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
 import UploadDialog from "../components/dialogs/UploadDialog";
+import levenshtein from 'fast-levenshtein';
 
 
 const styles = {
@@ -367,6 +368,44 @@ class Home extends React.Component {
                             let items = await Promise.all(
                                 snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
                             );
+
+                            if (page === 'pdfs') {
+                                const groups = [];
+                                const visited = [];
+
+                                for (let item of items) {
+                                    if (item.pages && item.pages.length > 10) {
+                                        groups.push({
+                                            name: item.name,
+                                            item: item,
+                                            type: 'full'
+                                        })
+                                    } else {
+                                        const similarItems = [];
+
+                                        if (visited.includes(item.id)) continue;
+
+                                        for (let _item of items) {
+                                            if (_item.id !== item.id &&
+                                                !visited.includes(_item.id) &&
+                                                levenshtein.get(item.name, _item.name) < 5) {
+                                                similarItems.push(_item);
+                                                visited.push(_item.id);
+                                            }
+                                        }
+
+                                        groups.push({
+                                            name: item.name.split('-')[0].trimRight(),
+                                            items: [item, ...similarItems],
+                                            type: 'part'
+                                        })
+                                    }
+                                }
+
+                                items = groups
+                                    .map(group => ({...group, name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`}))
+                                    .sort((a, b) => a.name.localeCompare(b.name));
+                            }
 
                             this.setState({band: {...this.state.band, [page]: items}});
                         })
