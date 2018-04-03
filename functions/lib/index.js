@@ -15,6 +15,12 @@ const child_process_promise_1 = require("child-process-promise");
 const fs = require("fs-extra");
 const admin = require("firebase-admin");
 const unzipper = require("unzipper");
+const PDFDocument = require("pdfkit");
+const vision = require("@google-cloud/vision");
+require("isomorphic-fetch");
+const dropbox_1 = require("dropbox");
+const cors = require("cors");
+const request = require("request-promise-native");
 admin.initializeApp(functions.config().firebase);
 const storage = Storage({ keyFilename: 'service-account-key.json' });
 // Extracts ZIP with pdfs
@@ -22,25 +28,22 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
     const object = event.data;
     if (object.resourceState === 'not_exists')
         return null;
-    // Full file path (bands/<bandId>/input/<fileName>.zip)
+    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
     if (!filePath.endsWith('.zip'))
         return null;
-    const zipPathParts = filePath.split('/');
-    if (zipPathParts[0] !== 'bands' || zipPathParts[2] !== 'input')
-        return null;
-    const bandId = zipPathParts[1];
+    let [bandId, fileNameExt] = filePath.split('/');
     // File name without extension
-    const fileName = path.basename(filePath, '.zip');
+    const fileName = path.basename(fileNameExt, '.zip');
     // Create storage bucket
     const bucket = storage.bucket(object.bucket);
     try {
         // Download to local directory
-        yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.zip` });
+        yield bucket.file(filePath).download({ destination: '/tmp/file.zip' });
+        yield bucket.file(filePath).delete();
         // Unzip
-        const dir = yield unzipper.Open.file(`/tmp/${fileName}.zip`);
+        const dir = yield unzipper.Open.file('/tmp/file.zip');
         yield Promise.all(dir.files
-            .filter(file => !file.path.endsWith('/'))
             .filter(file => file.path.endsWith('.pdf'))
             .filter(file => !file.path.startsWith('__MACOSX'))
             .map((file) => __awaiter(this, void 0, void 0, function* () {
@@ -49,70 +52,75 @@ exports.extractZip = functions.storage.object().onChange((event) => __awaiter(th
                 pdfPathParts = pdfPathParts.slice(1);
             }
             const name = pdfPathParts.join(' - ');
-            yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({ name: name });
             yield new Promise((resolve, reject) => {
                 file.stream()
-                    .pipe(bucket.file(`bands/${bandId}/input/${name}`).createWriteStream())
+                    .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
                     .on('error', reject)
                     .on('finish', resolve);
             });
         })));
         // Clean up
-        yield bucket.file(filePath).delete();
-        yield fs.remove(`/tmp/${fileName}.zip`);
+        yield fs.remove('/tmp/file.zip');
     }
     catch (err) {
         console.log(err);
     }
 }));
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
-exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, void 0, void 0, function* () {
+exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(this, void 0, void 0, function* () {
     const object = event.data;
     if (object.resourceState === 'not_exists')
         return null;
-    // Full file path (bands/<bandId>/input/<fileName>.pdf)
+    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
     if (!filePath.endsWith('.pdf'))
         return null;
-    const pdfPathParts = filePath.split('/');
-    if (pdfPathParts[0] !== 'bands' || pdfPathParts[2] !== 'input')
-        return null;
-    const bandId = pdfPathParts[1];
+    let [bandId, fileNameExt] = filePath.split('/');
     // File name without extension
-    const fileName = path.basename(filePath, '.pdf');
+    const fileName = path.basename(fileNameExt, '.pdf');
     // Create storage bucket
-    const bucket = storage.bucket(object.bucket);
+    const inputBucket = storage.bucket(object.bucket);
+    const pdfBucket = storage.bucket('scores-butler-pdfs');
+    // Create document
+    const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+        name: fileName,
+        uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+        state: 'processing'
+    });
     try {
         // Download to local directory
-        yield bucket.file(filePath).download({ destination: `/tmp/${fileName}.pdf` });
+        yield inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
+        // Delete PDF file
+        yield inputBucket.file(filePath).delete();
         // Create output directories
-        yield fs.ensureDir(`/tmp/output-original`);
-        yield fs.ensureDir(`/tmp/output-cropped`);
+        yield fs.ensureDir('/tmp/output-original');
+        yield fs.ensureDir('/tmp/output-cropped');
+        yield fs.ensureDir('/tmp/output-cropped-compressed');
         // Generate images
         const gsProcess = yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
             '-sDEVICE=pngmonod',
-            `-sOutputFile=/tmp/output-original/${fileName}-%03d.png`,
+            `-sOutputFile=/tmp/output-original/score-%03d.png`,
             '-r300',
-            `/tmp/${fileName}.pdf`
+            `/tmp/score.pdf`
         ]);
         gsProcess.childProcess.kill();
-        const mogrifyProcess = yield child_process_promise_1.spawn('mogrify', [
-            '-crop', '5000x666+0+0',
-            '-resize', '50%',
+        console.log('PDF conversion complete!');
+        const convertProcess = yield child_process_promise_1.spawn('mogrify', [
+            '-crop', '4000x666+0+0',
+            '-resize', '40%',
             '-path', '../output-cropped',
             '*.png'
-        ], { cwd: '/tmp/output-original' });
-        mogrifyProcess.childProcess.kill();
-        // Create document
-        const docRef = admin.firestore().collection(`bands/${bandId}/pdfs`).doc();
+        ], { cwd: '/tmp/output-original/' });
+        console.log('Image crop complete!');
+        convertProcess.childProcess.kill();
         const upload = (outputType) => __awaiter(this, void 0, void 0, function* () {
             // Read files
             const fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
             // Upload files
-            const uploadResponses = yield Promise.all(fileNames.map((name, index) => bucket.upload(`/tmp/output-${outputType}/${name}`, {
-                destination: `bands/${bandId}/pdfs/${docRef.id}/${outputType}/${index}.png`,
+            const uploadResponses = yield Promise.all(fileNames.map((name, index) => pdfBucket.upload(`/tmp/output-${outputType}/${name}`, {
+                destination: `${bandId}/${pdfRef.id}/${outputType}/${index}.png`,
                 metadata: {
                     contentType: 'image/png'
                 }
@@ -123,25 +131,118 @@ exports.addPDF = functions.storage.object().onChange((event) => __awaiter(this, 
                 expires: '03-09-2491'
             })));
         });
-        let croppedUrlResponses = yield upload('cropped');
-        let originalUrlResponses = yield upload('original');
-        // Add pages to document
-        yield docRef.set({
-            name: fileName,
-            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
-            pagesCropped: croppedUrlResponses.map(([url]) => url),
-            pagesOriginal: originalUrlResponses.map(([url]) => url)
-        });
+        const croppedPageUrls = (yield upload('cropped')).map(([url]) => url);
+        const originalPageUrls = (yield upload('original')).map(([url]) => url);
+        // Add page documents
+        const pages = [];
+        for (let i = 0; i < croppedPageUrls.length; i++) {
+            pages.push({
+                croppedURL: croppedPageUrls[i],
+                originalURL: originalPageUrls[i]
+            });
+        }
+        // Analyze PDF
+        yield fs.writeFile('/tmp/.xpdfrc', '');
+        const process2 = yield child_process_promise_1.spawn('xpdf/pdftotext', [
+            '-raw',
+            '-cfg', '/tmp/.xpdfrc',
+            '/tmp/score.pdf',
+        ]);
+        process2.childProcess.kill();
+        const data = {
+            processing: admin.firestore.FieldValue.delete(),
+            thumbnailURL: croppedPageUrls[0],
+            pages: pages
+        };
+        const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
+        const patternShort = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/g;
+        const patternFull = /(vocal|(alto|tenor) sax|trumpet|trombone|guitar|piano|bass|drum set)/g;
+        if (pdfText.includes('jazzbandcharts')) {
+            const _pages = pdfText.split('\f');
+            const instruments = [{ pageRange: [2], name: 'score' }];
+            for (let i = 3; i < _pages.length; i++) {
+                const page = _pages[i];
+                const mShort = page.match(patternShort);
+                const mFull = page.match(patternFull);
+                if (!mShort && mFull && mFull.length < 3) {
+                    instruments[instruments.length - 1].pageRange.push(i);
+                    const [instr1, instr2] = mFull;
+                    if (mFull.length === 2) {
+                        instruments.push({ pageRange: [i], name: [instr1, instr2] });
+                    }
+                    else {
+                        const instrCount = instruments.filter(instr => !Array.isArray(instr.name) && instr.name.includes(instr1)).length;
+                        instruments.push({ pageRange: [i], name: instr1 });
+                        if (instrCount > 0) {
+                            instruments[instruments.length - 2].name = `${instr1} ${instrCount}`;
+                            instruments[instruments.length - 1].name = `${instr1} ${instrCount + 1}`;
+                        }
+                    }
+                }
+            }
+            instruments[instruments.length - 1].pageRange.push(pages.length);
+            data['instruments'] = instruments;
+        }
+        yield pdfRef.update(data);
         // Clean up
         yield Promise.all([
-            fs.remove(`/tmp/${fileName}.pdf`),
-            fs.remove(`/tmp/output-original`),
-            fs.remove(`/tmp/output-cropped`)
+            fs.remove('/tmp/score.pdf'),
+            fs.remove('/tmp/output-original'),
+            fs.remove('/tmp/output-cropped'),
         ]);
-        yield bucket.file(filePath).delete();
     }
     catch (err) {
         console.log(err);
+    }
+}));
+exports.analyzePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
+    const { bandId, pdfId } = req.query;
+    const bucket = storage.bucket('scores-butler.appspot.com');
+    yield bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({ destination: '/tmp/image.png' });
+    const client = new vision.ImageAnnotatorClient();
+    const response = yield client.textDetection('/tmp/image.png');
+    const detections = response[0];
+    yield res.json(detections);
+}));
+exports.generatePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
+    const bucket = storage.bucket('scores-butler.appspot.com');
+    const doc = new PDFDocument();
+    const image = '';
+    const file = bucket.file('test/test.pdf');
+    yield file.setMetadata({ contentType: 'application/pdf' });
+    const writeStream = file.createWriteStream();
+    doc.pipe(writeStream);
+    doc.image(image, 0, 0);
+    doc.end();
+    writeStream.on('finish', () => __awaiter(this, void 0, void 0, function* () {
+        res.status(200).send();
+    }));
+}));
+exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
+    return cors({ origin: true })(req, res, () => __awaiter(this, void 0, void 0, function* () {
+        const { bandId, folderPath, accessToken } = req.query;
+        const dropbox = new dropbox_1.Dropbox({ accessToken: accessToken });
+        const response = yield dropbox.filesDownloadZip({ path: folderPath });
+        const bucket = storage.bucket('scores-butler.appspot.com');
+        yield bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
+        res.status(200).send();
+    }));
+});
+exports.updatePartCount = functions.firestore
+    .document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite((event) => __awaiter(this, void 0, void 0, function* () {
+    const partRef = event.data.ref.parent.parent;
+    const partCount = (yield partRef.collection('parts').get()).size;
+    yield partRef.update({ partCount: partCount });
+}));
+exports.createThumbnail = functions.firestore
+    .document('bands/{bandId}/scores/{scoreId}').onCreate((event) => __awaiter(this, void 0, void 0, function* () {
+    const data = event.data.data();
+    if (data.composer) {
+        const response = yield request({
+            uri: `https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=${data.composer}&searchType=image`,
+            json: true
+        });
+        event.data.ref.update({ thumbnailURL: response.items[0].link });
     }
 }));
 //# sourceMappingURL=index.js.map

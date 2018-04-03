@@ -12,12 +12,20 @@
   "main": "lib/index.js",
   "dependencies": {
     "@google-cloud/storage": "^1.5.2",
+    "@google-cloud/vision": "^0.16.0",
     "child-process-promise": "^2.2.1",
-    "directory-tree": "^2.0.0",
+    "cors": "^2.8.4",
+    "dropbox": "^4.0.1",
     "firebase-admin": "~5.8.1",
     "firebase-functions": "^0.8.1",
     "fs-extra": "^5.0.0",
     "gs": "git+https://github.com/sina-masnadi/node-gs.git",
+    "install": "^0.11.0",
+    "isomorphic-fetch": "^2.2.1",
+    "npm": "^5.8.0",
+    "pdfkit": "^0.8.3",
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5",
     "unzipper": "^0.8.11"
   },
   "devDependencies": {

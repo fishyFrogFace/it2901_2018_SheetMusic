@@ -6,433 +6,670 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {
-    Avatar,
-    Button,
-    Card,
-    CardContent,
-    CardMedia,
-    IconButton, Input,
-    List,
-    ListItem,
-    ListItemText,
-    Menu,
-    MenuItem,
-    Paper,
-    Snackbar,
+    Button, CircularProgress, IconButton, List, ListItem, ListItemText, Menu, MenuItem,
+    Snackbar
 } from "material-ui";
 
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
 
-import {
-    ArrowDropDown, Dehaze, FileUpload, LibraryBooks, LibraryMusic, PlaylistAdd, QueueMusic,
-    SupervisorAccount
-} from "material-ui-icons";
+import {FileUpload, LibraryBooks, LibraryMusic, QueueMusic, SupervisorAccount} from "material-ui-icons";
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 import SearchBar from '../components/SearchBar';
 import Members from "./Home/Members";
 import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
+import UploadDialog from "../components/dialogs/UploadDialog";
+import levenshtein from 'fast-levenshtein';
+
 
 const styles = {
     root: {
-        height: '100%'
+        height: '100%',
+        display: 'grid',
+        gridTemplateRows: '56px 1fr min-content',
+        gridTemplateColumns: '220px auto',
     },
+
     flex: {
         flex: 1
     },
 
-    appBar: {},
+    button__label: {
+        width: 130,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        display: 'block'
+    },
 
-    dialogContent: {
+    appBarContainer: {
+        gridRow: 1,
+        gridColumn: '1 / -1'
+    },
+
+    content: {
+        overflowY: 'auto',
+        position: 'relative'
+    },
+
+    absoluteCenter: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         flexDirection: 'column'
-    },
-    banner: {
-        background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
-        backgroundSize: 'cover',
-        height: 144
-    },
-
-    content: {},
-
-    instrumentSelector: {
-        marginLeft: 25
-    },
-
-    instrumentSelector__select: {
-        color: 'white'
-    },
-    instrumentSelector__icon: {
-        fill: 'white'
     }
 };
 
 class Home extends React.Component {
     state = {
-        anchorEl: null,
-        selectedPage: 3,
+        bandAnchorEl: null,
+        uploadAnchorEl: null,
         uploadSheetsDialogOpen: false,
-        message: null
+        message: null,
+        windowSize: null,
+
+        band: {},
+        bands: null,
+
+        pdfSelected: false
     };
 
-    _onAddButtonClick(e) {
-        this.setState({anchorEl: e.currentTarget});
+    unsubs = [];
+
+    componentWillMount() {
+        this.setState({windowSize: window.innerWidth < 780 ? 'mobile' : 'desktop'});
+
+        window.onresize = event => {
+            if (event.target.innerWidth < 780 && this.state.windowSize === 'desktop') {
+                this.setState({windowSize: 'mobile'});
+            }
+
+            if (event.target.innerWidth > 780 && this.state.windowSize === 'mobile') {
+                this.setState({windowSize: 'desktop'});
+            }
+        };
     }
 
-    _onMenuClose() {
-        this.setState({anchorEl: null});
+    async createScoreDoc(band, scoreData) {
+        const data = {};
+        data.title = scoreData.title || 'Untitled Score';
+
+        if (scoreData.composer) {
+            data.composer = scoreData.composer;
+        }
+
+        if (scoreData.arranger) {
+            data.arranger = scoreData.arranger;
+        }
+
+        if (scoreData.extraInstruments) {
+            data.arranger = scoreData.extraInstruments;
+        }
+
+        if (scoreData.tempo) {
+            data.tempo = scoreData.tempo;
+        }
+
+        if (scoreData.genres && scoreData.genres.length > 0) {
+            data.genres = scoreData.genres;
+        }
+
+        if (scoreData.tags && scoreData.tags.length > 0) {
+            data.tags = scoreData.tags;
+        }
+
+        return await firebase.firestore().collection(`bands/${band.id}/scores`).add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        })
     }
 
-    _onMenuButtonClick() {
+    _onAddFullScore = async (scoreData, parts, pdf) => {
+        const {band} = this.state;
 
-    }
-
-    _onNavClick = index => {
-        this.setState({selectedPage: index});
-    };
-
-    _onAddFullScore = async (score, parts) => {
-        const bandId = this.props.user.defaultBand.id;
+        this.setState({message: 'Adding score...'});
 
         let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
+        if (scoreData.id) {
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
         } else {
-            scoreRef = await firebase.firestore().collection('scores').add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: scoreRef
-            })
+            scoreRef = await this.createScoreDoc(band, scoreData);
         }
 
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
 
-        for (let part of parts) {
-            await scoreRef.collection('parts').add({
-                pagesCropped: part.pagesCropped,
-                pagesOriginal: part.pagesOriginal,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                instrumentNumber: part.instrumentNumber
-            });
-        }
-
-        this.setState({message: 'Score added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        this.setState({message: null});
-    };
-
-    _onAddParts = async (score, parts) => {
-        const bandId = this.props.user.defaultBand.id;
-
-        let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
-        } else {
-            scoreRef = await firebase.firestore().collection('scores').add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: scoreRef
-            })
-        }
-
-        for (let part of parts) {
-            const pdfDocRef = firebase.firestore().doc(`bands/${bandId}/pdfs/${part.pdfId}`);
-
-            const doc = await pdfDocRef.get();
-
-            await scoreRef.collection('parts').add({
-                pagesCropped: doc.data().pagesCropped,
-                pagesOriginal: doc.data().pagesOriginal,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                instrumentNumber: part.instrumentNumber
-            });
-        }
-
-        this.setState({message: 'Parts added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        this.setState({message: null});
-    };
-
-    _onAddPart = async (score, part) => {
-        const bandId = this.props.user.defaultBand.id;
-
-        let scoreRef;
-        if (score.id) {
-            scoreRef = firebase.firestore().doc(`scores/${score.id}`);
-        } else {
-            scoreRef = await firebase.firestore().collection('scores').add({
-                title: score.title || 'Untitled Score',
-                composer: score.composer || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await firebase.firestore().collection(`bands/${bandId}/scores`).add({
-                ref: scoreRef
-            })
-        }
-
-        await scoreRef.collection('parts').add({
-            pagesCropped: part.pagesCropped,
-            pagesOriginal: part.pagesOriginal,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            instrument: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-            instrumentNumber: part.instrumentNumber
-        });
-
-        this.setState({message: 'Part added'});
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        this.setState({message: null});
-    };
-
-    _onFileChange = async e => {
-        // https://reactjs.org/docs/events.html#event-pooling
-        e.persist();
-
-        if (!e.target.files.length) return;
-
-        this.setState({message: 'Uploading...'});
-
         await Promise.all(
-            Array.from(e.target.files).map(file =>
-                firebase.storage().ref(`bands/${this.props.user.defaultBand.id}/input/${file.name}`).put(file)
-            )
-        );
+            parts.map(part => scoreRef.collection('parts').add({
+                    pages: part.pages,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
+                })
+            ));
 
+        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
         this.setState({message: null});
     };
 
-    _onFileUploadButtonClick = () => {
-        this.fileBrowser.click();
+    _onAddParts = async (scoreData, parts) => {
+        const {band} = this.state;
+
+        this.setState({message: 'Adding parts...'});
+
+        let scoreRef;
+        if (scoreData.id) {
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
+        } else {
+            scoreRef = await this.createScoreDoc(band, scoreData);
+        }
+
+        for (let part of parts) {
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdfId}`).get();
+
+            await scoreRef.collection('parts').add({
+                pages: pdfDoc.data().pages,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
+            });
+
+            await pdfDoc.ref.delete();
+        }
+
+        this.setState({message: null});
     };
 
     _onBandClick = e => {
-        this.setState({anchorEl: e.currentTarget})
+        this.setState({bandAnchorEl: e.currentTarget})
     };
 
     _onCreateBand = async () => {
-        this.setState({anchorEl: null});
+        this.setState({bandAnchorEl: null});
 
-        const {name} = await this.createDialog.open();
+        const {name, instruments} = await this.createDialog.open();
 
-        const {user} = this.props;
+        this.setState({message: 'Creating band...'});
+
+        const user = firebase.auth().currentUser;
+
+        const userRef = firebase.firestore().doc(`users/${user.uid}`);
+
+        const userDoc = await userRef.get();
 
         try {
-            const band = {
+            let bandRef = await firebase.firestore().collection('bands').add({
                 name: name,
-                creator: firebase.firestore().doc(`users/${user.id}`),
-                code: Math.random().toString(36).substring(2, 7)
-            };
+                creatorRef: firebase.firestore().doc(`users/${user.uid}`),
+                code: Math.random().toString(36).substring(2, 7),
+            });
 
-            let bandRef = await firebase.firestore().collection('bands').add(band);
+            await firebase.firestore().doc(`users/${user.uid}`).update({
+                defaultBandRef: bandRef,
+                bandRefs: [...(userDoc.data().bandRefs || []), bandRef],
+            });
 
-            const instrumentRefs = (await firebase.firestore().collection('instruments').get()).docs.map(doc => doc.ref);
-            await Promise.all(instrumentRefs.map(ref => bandRef.collection('instruments').add({ref: ref})));
-
-            await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: bandRef});
-            await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: bandRef});
+            await Promise.all(instruments.map(instrument => bandRef.collection('instruments').add({name: instrument})));
         } catch (err) {
             console.log(err);
         }
-    };
-
-    _onJoinBand = async () => {
-        this.setState({anchorEl: null});
-
-        const {code} = await this.joinDialog.open();
-
-        const {user} = this.props;
-
-        let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
-
-        if (bandSnapshot.docs.length > 0) {
-            let bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
-
-            let userBandSnapshot = await firebase.firestore().collection(`users/${user.id}/bands`).where('ref', '==', bandRef).get();
-
-            if (userBandSnapshot.docs.length > 0) {
-                this.setState({message: 'Band already joined!'});
-            } else {
-                await firebase.firestore().collection(`users/${user.id}/bands`).add({ref: bandRef});
-                await bandRef.collection('members').add({ref: firebase.firestore().doc(`users/${user.id}`)});
-                await firebase.firestore().doc(`users/${user.id}`).update({defaultBand: bandRef})
-            }
-        } else {
-            this.setState({message: 'Band does not exist!'});
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 3000));
 
         this.setState({message: null})
     };
 
+    _onJoinBand = async () => {
+        this.setState({bandAnchorEl: null});
+
+        const {code} = await this.joinDialog.open();
+
+        const user = firebase.auth().currentUser;
+
+        const userRef = firebase.firestore().doc(`users/${user.uid}`);
+
+        let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
+
+        if (bandSnapshot.docs.length > 0) {
+            const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+
+            let userBandRefs = (await userRef.get()).data() || [];
+
+            if (userBandRefs.some(ref => ref.id === bandRef.id)) {
+                this.setState({message: 'Band already joined!'});
+            } else {
+                this.setState({message: 'Joining band...'});
+
+                await bandRef.collection('members').add({ref: userRef});
+
+                await userRef.update({
+                    defaultBandRef: bandRef,
+                    bandRefs: [...userBandRefs, bandRef]
+                })
+            }
+        } else {
+            this.setState({message: 'Band does not exist!'});
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            this.setState({message: null});
+        }
+
+        this.setState({message: null});
+    };
+
     _onBandSelect = async bandId => {
-        this.setState({anchorEl: null});
-        await firebase.firestore().doc(`users/${this.props.user.id}`).update({
-            defaultBand: firebase.firestore().doc(`bands/${bandId}`)
+        this.setState({bandAnchorEl: null});
+        const user = firebase.auth().currentUser;
+        await firebase.firestore().doc(`users/${user.uid}`).update({
+            defaultBandRef: firebase.firestore().doc(`bands/${bandId}`)
         });
     };
 
     _onCreateSetlist = async () => {
-        let uid = this.props.user.uid;
-        let bandId = this.props.user.defaultBand.id;
+        const user = firebase.auth().currentUser;
 
-        const {title, place, date} = await this.setlistDialog.open();
+        const {band} = this.state;
+
+        const {title, date} = await this.setlistDialog.open();
+
+        this.setState({message: 'Creating setlist...'});
 
         try {
-            const setlist = {
+            let setlistRef = await firebase.firestore().collection(`bands/${band.id}/setlists`).add({
                 title: title,
-                place: place,
-                date: date._d,
-                creator: firebase.firestore().doc(`users/${uid}`),
-                band: firebase.firestore().doc(`bands/${bandId}`)
-            };
-
-            let ref = await firebase.firestore().collection('setlists').add(setlist);
-
-            await firebase.firestore().collection(`bands/${bandId}/setlists`).add({
-                ref: firebase.firestore().doc(`setlists/${ref.id}`)
+                date: date,
+                creatorRef: firebase.firestore().doc(`users/${user.uid}`)
             });
-            window.location.hash = `#/setlist/${ref.id}`;
+
+            window.location.hash = `#/setlist/${band.id}${setlistRef.id}`;
         } catch (err) {
             console.log(err);
         }
+
+        this.setState({message: null});
+    };
+
+    _onNavClick = nameShort => {
+        window.location.hash = `/${nameShort}`;
+    };
+
+    _onFileUploadButtonClick = e => {
+        this.setState({uploadAnchorEl: e.currentTarget});
+    };
+
+    _onUploadMenuClick = async type => {
+        const {files, path, accessToken} = await this.uploadDialog.open(type);
+
+        const {band} = this.state;
+
+        this.setState({uploadAnchorEl: null});
+
+        switch (type) {
+            case 'computer':
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    this.setState({message: `Uploading file ${i + 1}/${files.length}...`});
+                    await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
+                }
+                this.setState({message: null});
+                break;
+            case 'dropbox':
+                const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
+                console.log(response.status);
+                break;
+            case 'drive':
+                break;
+        }
+    };
+
+    _onMenuClose = () => {
+        this.setState({bandAnchorEl: null, uploadAnchorEl: null});
+    };
+
+    async componentDidUpdate(prevProps, prevState) {
+        const user = firebase.auth().currentUser;
+
+        const {page, loaded} = this.props;
+        const {bands, band, windowSize} = this.state;
+
+        if (page !== prevProps.page) {
+            this.unsubs.forEach(unsub => unsub());
+
+            this.unsubs.push(
+                firebase.firestore().doc(`users/${user.uid}`).onSnapshot(async snapshot => {
+                    if (!snapshot.exists) {
+                        await snapshot.ref.set({
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                        });
+
+                        return;
+                    }
+
+                    const data = snapshot.data();
+
+                    if (!data.bandRefs) {
+                        this.setState({bands: []});
+                        return;
+                    }
+
+                    this.unsubs.push(
+                        data.defaultBandRef.onSnapshot(async snapshot => {
+                            this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                        })
+                    );
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection(page).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                            );
+
+                            if (page === 'pdfs') {
+                                const groups = [];
+                                const visited = [];
+
+                                for (let item of items) {
+                                    if (item.pages && item.pages.length > 10) {
+                                        groups.push({
+                                            name: item.name,
+                                            item: item,
+                                            type: 'full'
+                                        })
+                                    } else {
+                                        const similarItems = [];
+
+                                        if (visited.includes(item.id)) continue;
+
+                                        for (let _item of items) {
+                                            if (_item.id !== item.id &&
+                                                !visited.includes(_item.id) &&
+                                                levenshtein.get(item.name, _item.name) < 5) {
+                                                similarItems.push(_item);
+                                                visited.push(_item.id);
+                                            }
+                                        }
+
+                                        groups.push({
+                                            name: item.name.split('-')[0].trimRight(),
+                                            items: [item, ...similarItems],
+                                            type: 'part'
+                                        })
+                                    }
+                                }
+
+                                items = groups
+                                    .map(group => ({...group, name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`}))
+                                    .sort((a, b) => a.name.localeCompare(b.name));
+                            }
+
+                            this.setState({band: {...this.state.band, [page]: items}});
+                        })
+                    );
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('instruments').onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                            );
+
+                            this.setState({band: {...this.state.band, instruments: items}});
+                        })
+                    );
+
+                    const bands = await Promise.all(
+                        data.bandRefs.map(async bandRef =>
+                            ({...(await bandRef.get()).data(), id: bandRef.id})
+                        )
+                    );
+
+                    this.setState({bands: bands});
+                })
+            );
+        }
+
+        const options = {
+            duration: 200,
+            fill: 'both',
+            easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
+        };
+
+        if (!prevState.band.pdfs && band.pdfs ||
+            !prevState.band.scores && band.scores ||
+            !prevState.band.setlists && band.setlists) {
+
+            await this.contentEl.animate([
+                {transform: 'translateY(70px)', opacity: 0},
+                {transform: 'none', opacity: 1}
+            ], options).finished;
+        }
+
+        if (!loaded) {
+            if ((prevState.bands || []).length === 0 && (bands && bands.length > 0)) {
+                await this.navEl.animate([{transform: 'none'}], options).finished;
+                await this.appBarContainerEl.animate([{transform: 'none'}], options).finished;
+            }
+        }
+    }
+
+    _onPDFSelect = selectedPDFs => {
+        this.setState({pdfSelected: selectedPDFs.size > 0});
     };
 
     render() {
-        const {anchorEl, selectedPage, message} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
 
-        const {classes, user} = this.props;
+        const user = firebase.auth().currentUser;
 
-        const band = user.defaultBand;
+        const {classes, page, loaded} = this.props;
 
-        return (
-            <div className={classes.root}>
-                <AppBar position="fixed" className={classes.appBar}>
-                    <Toolbar>
-                        <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
-                        <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
-                        <div style={{width: 130}}>
+        const pages = [['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']];
+
+        return <div className={classes.root}>
+            {
+                !bands && !loaded &&
+                <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref}>
+                    <CircularProgress color='secondary' size={50}/>
+                </div>
+            }
+            <div className={classes.appBarContainer} style={{transform: loaded ? 'none' : 'translateY(-70px)'}}
+                 ref={ref => this.appBarContainerEl = ref}>
+                {
+                    !pdfSelected &&
+                    <AppBar position='static'>
+                        <Toolbar style={{minHeight: 56}}>
                             {
-                                band.name &&
-                                <Button onClick={this._onBandClick} size='small'
-                                        style={{color: 'rgb(115, 115, 115)'}}>
-                                    {band.name}
-                                </Button>
+                                windowSize === 'desktop' &&
+                                <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
                             }
-                        </div>
-                        <SearchBar/>
-                        <div className={classes.flex}/>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={e => this.setState({anchorEl: null})}
-                        >
-                            <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
-                                Create band
-                            </MenuItem>
-                            <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
-                                Join Band
-                            </MenuItem>
-                            <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
                             {
-                                user.bands && user.bands.map((band, index) =>
-                                    <MenuItem style={{height: 15}} key={index}
-                                              onClick={() => this._onBandSelect(band.id)}>
-                                        {band.name}
-                                    </MenuItem>
-                                )
+                                windowSize === 'desktop' &&
+                                <div style={{height: 32, width: 1, margin: '0 15px', background: 'rgba(0,0,0,0.12)'}}/>
                             }
-                        </Menu>
-                        <IconButton color="inherit" onClick={() => this._onFileUploadButtonClick()}>
-                            <FileUpload/>
-                        </IconButton>
-                    </Toolbar>
-                </AppBar>
-                <div style={{display: 'flex', paddingTop: 64, height: '100%', overflow: 'hidden', boxSizing: 'border-box'}}>
-                    <div style={{width: 220, paddingTop: 16, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box'}}>
-                        <List>
-                            {['Scores', 'Setlists', 'Members', 'Unsorted PDFs'].map((name, index) => {
-                                const selected = index === selectedPage;
-                                const color = selected ? '#448AFF' : '#757575';
-                                return <ListItem style={{paddingLeft: 24}} key={index} button onClick={() => this._onNavClick(index)}>
-                                    {name === 'Scores' && <LibraryMusic style={{color: color}}/>}
-                                    {name === 'Setlists' && <QueueMusic style={{color: color}}/>}
-                                    {name === 'Members' && <SupervisorAccount style={{color: color}}/>}
-                                    {name === 'Unsorted PDFs' && <LibraryBooks style={{color: color}}/>}
-                                    <ListItemText
-                                        disableTypography
-                                        inset
-                                        primary={<Typography type="body2" style={{color: color}}>{name}</Typography>}
-                                    />
-                                </ListItem>
-                            })}
-                        </List>
-                        <div style={{flex: 1}}/>
-                        <div style={{paddingLeft: 24, paddingBottom: 24}}>
-                            <Typography variant='caption'>Band code: {band.code}</Typography>
+
+                            <Button
+                                onClick={this._onBandClick}
+                                size='small'
+                                classes={{label: classes.button__label}}
+                                style={{color: 'rgb(115, 115, 115)', marginRight: 10}}
+                            >
+                                {band.name || ''}
+                            </Button>
+                            <Menu
+                                anchorEl={bandAnchorEl}
+                                open={Boolean(bandAnchorEl)}
+                                onClose={this._onMenuClose}
+                            >
+                                <MenuItem onClick={this._onCreateBand} style={{height: 15}}>
+                                    Create band
+                                </MenuItem>
+                                <MenuItem onClick={this._onJoinBand} style={{height: 15}}>
+                                    Join Band
+                                </MenuItem>
+                                <div style={{height: '1px', background: 'rgba(0,0,0,0.12)', margin: '8px 0'}}/>
+                                {
+                                    bands && bands.map((band, index) =>
+                                        <MenuItem style={{height: 15}} key={index}
+                                                  onClick={() => this._onBandSelect(band.id)}>
+                                            {band.name}
+                                        </MenuItem>
+                                    )
+                                }
+                            </Menu>
+                            <SearchBar bandId={band.id}/>
+                            <div style={{flex: 1}}/>
+                            <IconButton style={{marginLeft: 10}} color="inherit"
+                                        onClick={this._onFileUploadButtonClick}>
+                                <FileUpload/>
+                            </IconButton>
+                            <Menu
+                                anchorEl={uploadAnchorEl}
+                                open={Boolean(uploadAnchorEl)}
+                                onClose={this._onMenuClose}
+                            >
+                                <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
+                                    computer</MenuItem>
+                                <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
+                                    Dropbox</MenuItem>
+                            </Menu>
+                        </Toolbar>
+                    </AppBar>
+                }
+            </div>
+            <div
+                style={{
+                    ...(windowSize === 'desktop' ? {
+                        gridRow: 2,
+                        gridColumn: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxSizing: 'border-box',
+                        transform: loaded ? 'none' : 'translateX(-220px)'
+                    } : {
+                        gridRow: 3,
+                        gridColumn: '1/-1',
+                        display: 'flex',
+                        justifyContent: 'space-around',
+                        background: 'white',
+                        height: '56px',
+                        transform: loaded ? 'none' : 'translateY(56px)'
+                    })
+                }}
+                ref={ref => this.navEl = ref}
+            >
+                {
+                    windowSize === 'desktop' &&
+                    <List>
+                        {pages.map(([nameLong, nameShort]) => {
+                            const selected = nameShort === page;
+                            const color = selected ? '#448AFF' : '#757575';
+                            return <ListItem style={{paddingLeft: 24}} key={nameShort} button
+                                             onClick={() => this._onNavClick(nameShort)}>
+                                {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
+                                {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
+                                {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
+                                {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
+                                <ListItemText
+                                    disableTypography
+                                    inset
+                                    primary={<Typography type="body2"
+                                                         style={{color: color}}>{nameLong}</Typography>}
+                                />
+                            </ListItem>
+                        })}
+                    </List>
+                }
+                {
+                    windowSize === 'mobile' &&
+                    pages.map(([nameLong, nameShort]) => {
+                        const selected = nameShort === page;
+                        const color = selected ? '#448AFF' : '#757575';
+
+                        return <div key={nameShort} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            marginTop: -5
+                        }}>
+                            <IconButton onClick={() => this._onNavClick(nameShort)}>
+                                {nameShort === 'scores' && <LibraryMusic style={{color: color}}/>}
+                                {nameShort === 'setlists' && <QueueMusic style={{color: color}}/>}
+                                {nameShort === 'members' && <SupervisorAccount style={{color: color}}/>}
+                                {nameShort === 'pdfs' && <LibraryBooks style={{color: color}}/>}
+                            </IconButton>
+                            <Typography type="body1" style={{
+                                color: color,
+                                marginTop: -10,
+                                fontSize: 11
+                            }}>{nameLong}</Typography>
                         </div>
-                    </div>
-                    <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
-                        {
-                            selectedPage === 0 &&
-                            <Scores band={band}/>
-                        }
-                        {
-                            selectedPage === 1 &&
-                            <Setlists
-                                band={band}
-                                onCreateSetlist={this._onCreateSetlist}
-                            />
-                        }
-                        {
-                            selectedPage === 2 &&
-                            <Members band={band}/>
-                        }
-                        {
-                            selectedPage === 3 &&
-                            <UnsortedPDFs
-                                band={band}
-                                onAddFullScore={this._onAddFullScore}
-                                onAddParts={this._onAddParts}
-                                onAddPart={this._onAddPart}
-                            />
-                        }
+                    })
+                }
+            </div>
+            <div
+                className={classes.content}
+                style={{
+                    opacity: loaded ? 1 : 0,
+                    ...(windowSize === 'desktop' ? {gridRow: '2/-1', gridColumn: 2} : {gridRow: 2, gridColumn: '1/-1'})
+                }} ref={ref => this.contentEl = ref}
+            >
+                {
+                    page === 'scores' &&
+                    <Scores band={band}/>
+                }
+                {
+                    page === 'setlists' &&
+                    <Setlists
+                        band={band}
+                        onCreateSetlist={this._onCreateSetlist}
+                    />
+                }
+                {
+                    page === 'members' &&
+                    <Members band={band}/>
+                }
+                {
+                    page === 'pdfs' &&
+                    <UnsortedPDFs
+                        band={band}
+                        onAddFullScore={this._onAddFullScore}
+                        onAddParts={this._onAddParts}
+                        onSelect={this._onPDFSelect}
+                    />
+                }
+            </div>
+            {
+                bands && bands.length === 0 &&
+                <div className={classes.absoluteCenter} ref={ref => this.wizardEl = ref}>
+                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {user.displayName.split(' ')[0]}! Do
+                        you want to join or create a band?</Typography>
+                    <div style={{display: 'flex', justifyContent: 'center'}}>
+                        <Button onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
+                            Band</Button>
+                        <Button onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
                     </div>
                 </div>
-                <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
-                <CreateBandDialog onRef={ref => this.createDialog = ref}/>
-                <JoinBandDialog onRef={ref => this.joinDialog = ref}/>
-                <input
-                    ref={ref => this.fileBrowser = ref}
-                    type='file'
-                    style={{display: 'none'}}
-                    onChange={this._onFileChange}
-                    multiple
-                />
-                <Snackbar
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    open={Boolean(message)}
-                    message={message}
-                />
-            </div>
-        );
+            }
+            <CreateSetlistDialog onRef={ref => this.setlistDialog = ref}/>
+            <CreateBandDialog onRef={ref => this.createDialog = ref}/>
+            <JoinBandDialog onRef={ref => this.joinDialog = ref}/>
+            <UploadDialog onRef={ref => this.uploadDialog = ref}/>
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                open={Boolean(message)}
+                message={message}
+                action={message && message.includes('...') ? <CircularProgress size={30} color='secondary'/> : null}
+            />
+        </div>
     }
 }
 

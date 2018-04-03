@@ -1,70 +1,32 @@
-import React, {Component} from 'react';
-import {AppBar, Button, IconButton, Slide, Toolbar, Typography} from "material-ui";
+import React from 'react';
+import {
+    AppBar, Button, Checkbox, CircularProgress, Divider, IconButton, List, ListItem, ListItemText, Paper, Toolbar,
+    Typography
+} from "material-ui";
 
 import {withStyles} from "material-ui/styles";
 
-import {Close, ArrowBack} from "material-ui-icons";
+import {Close} from "material-ui-icons";
 import Selectable from "../../components/Selectable";
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
-import AddPartDialog from "../../components/dialogs/AddPartDialog";
 
+const styles = theme => ({
+    checkbox__checked: {
+        color: theme.palette.secondary.main
+    },
 
-const drawerWidth = 240;
-
-const styles = {
     root: {},
 
     flex: {
         flex: 1
     },
 
-    appBar: {
-        zIndex: 10000,
-    },
-
-    selectable1: {
+    selectable__root: {
         height: 250,
         width: 250,
         marginRight: 20,
         marginBottom: 20
-    },
-
-    selectable2: {
-        width: '100%',
-        height: 200,
-        marginBottom: 20,
-    },
-
-    content: {
-        paddingTop: 64,
-        height: '100%',
-        boxSizing: 'border-box'
-    },
-
-    paper: {
-        display: 'flex',
-        height: '100%'
-    },
-
-    paneHeader: {
-        height: 44,
-        background: 'rgb(245, 245, 245)',
-        borderBottom: '1px solid rgba(0,0,0,0.12)',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 20px'
-    },
-
-    uploadPane: {
-        flex: 1,
-        height: '100%',
-        borderRight: '1px solid rgba(0,0,0,0.12)'
-    },
-
-    explorerPane: {
-        width: '400px',
-        height: '100%'
     },
 
     flexWrapContainer: {
@@ -74,40 +36,13 @@ const styles = {
         flexWrap: 'wrap',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
-    },
-
-    anchor: {
-        textDecoration: 'underline',
-        cursor: 'pointer',
-        color: 'rgb(0,188,212)'
-    },
-
-    paneContent: {
-        height: 'calc(100% - 45px)',
-        overflowY: 'auto'
-    },
-
-    selectionToolbar: {
-        position: 'absolute',
-        top: 0,
-        left: 0
-    },
-
-    appBar__root: {
-        boxShadow: 'none',
     }
-};
+});
 
-function Transition(props) {
-    return <Slide direction="up" {...props} />;
-}
-
-class UnsortedPDFs extends Component {
+class UnsortedPDFs extends React.Component {
     state = {
-        selectedItems: new Set(),
-        lastClicked: null,
-        anchorEl: null,
-        selectedPDF: null
+        selectedPDFs: new Set(),
+        lastClicked: null
     };
 
     keys = {};
@@ -124,207 +59,132 @@ class UnsortedPDFs extends Component {
         }
     }
 
-    _onDialogClose = () => {
-        this.setState({selectedItems: new Set()});
-        this.props.onClose();
+    _onPDFClick = pdfId => {
+        window.location.hash = `/pdf/${this.props.band.id}${pdfId}`
     };
 
-    _onSelectFileClick() {
-        this.fileBrowser.click();
-    }
-
-    _onPDFClick = index => {
-        this.setState({selectedPDF: index});
-    };
-
-    _onItemSelect = index => {
-        const selectedItems = new Set(this.state.selectedItems);
+    _onPDFSelect = (id, checked) => {
+        const selectedPDFs = new Set(this.state.selectedPDFs);
 
         if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
-            let indices = [];
-            for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
-                indices.push(i);
-            }
-
-            for (let i of indices) {
-                selectedItems.add(i);
-            }
+            // let indices = [];
+            // for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
+            //     indices.push(i);
+            // }
+            //
+            // for (let i of indices) {
+            //     selectedPDFs.add(i);
+            // }
         } else {
-            if (selectedItems.has(index)) {
-                selectedItems.delete(index);
+            if (checked) {
+                selectedPDFs.add(id);
             } else {
-                selectedItems.add(index);
+                selectedPDFs.delete(id);
             }
         }
 
-        this.setState({selectedItems: selectedItems, lastClicked: index});
-    };
+        this.props.onSelect(selectedPDFs);
 
-    _onDragStart(e) {
-        const image = new Image();
-        e.dataTransfer.setDragImage(image, 0, 0);
-    }
-
-    _onListItemDrop = (e, sheetMusic) => {
-        this.props.onUploadSheets(
-            this.state.selectedScoreId,
-            sheetMusic.id,
-            this.state.sheets.filter(sheet => sheet.selected).map(sheet => sheet.image));
-    };
-
-    _onSheetDelete() {
-
-    }
-
-    _onAddButtonClick = e => {
-        this.setState({anchorEl: e.currentTarget});
-    };
-
-
-    _onUploadPaneClick = () => {
-        // const selectedSheets = {...this.state.selectedSheets};
-        //
-        // for (let key of Object.keys(selectedSheets)) {
-        //     selectedSheets[key] = false;
-        // }
-        //
-        // this.setState({selectedPDFs: selectedPDFs});
-    };
-
-    _onDragEnd = result => {
-        // dropped outside the list
-        if (!result.destination) {
-            return;
-        }
-
-        const reorder = (list, startIndex, endIndex) => {
-            const result = Array.from(list);
-            const [removed] = result.splice(startIndex, 1);
-            result.splice(endIndex, 0, removed);
-            return result;
-        };
-
-        const {selectedScoreId, selectedSheetMusicId} = this.state;
-
-        const selectedScore = this.props.band.scores.find(score => score.id === selectedScoreId);
-        const selectedSheetMusic = selectedScore.sheetMusic.find(s => s.id === selectedSheetMusicId);
-
-        const sheets = reorder(
-            selectedSheetMusic.sheets,
-            result.source.index,
-            result.destination.index
-        );
-
-        this.props.onSheetsChange(selectedScoreId, selectedSheetMusicId, sheets);
-    };
-
-    _onMenuClick = () => {
-        this.setState({anchorEl: null});
-    };
-
-    _onMenuClose = () => {
-        this.setState({anchorEl: null});
+        this.setState({selectedPDFs: selectedPDFs});
     };
 
     _onSelectionCloseClick = () => {
-        this.setState({selectedItems: new Set()});
+        this.props.onSelect(new Set());
+        this.setState({selectedPDFs: new Set()});
     };
 
     _onAddAsParts = async () => {
-        const pdfs = Array.from(this.state.selectedItems).map(i => this.props.band.pdfs[i]);
-        this.setState({selectedItems: new Set()});
+        const pdfs = Array.from(this.state.selectedPDFs).map(i => this.props.band.pdfs[i]);
         const {score, parts} = await this.addPartsDialog.open(pdfs);
+        this.setState({selectedPDFs: new Set()});
         this.props.onAddParts(score, parts);
     };
 
     _onAddAsFullScore = async () => {
-        const pdf = this.props.band.pdfs[Array.from(this.state.selectedItems)[0]];
-        this.setState({selectedItems: new Set()});
+        const pdf = this.props.band.pdfs[Array.from(this.state.selectedPDFs)[0]];
         const {score, parts} = await this.addFullScoreDialog.open(pdf);
-        this.props.onAddFullScore(score, parts);
-    };
-
-    _onAddAsPart = async () => {
-        const pages = Array.from(this.state.selectedItems);
-        this.setState({selectedItems: new Set()});
-        const {score, part} = await this.addPartDialog.open();
-
-        const pdf = this.props.band.pdfs[this.state.selectedPDF];
-
-        part.pagesCropped = pages.map(page => pdf.pagesCropped[page]);
-        part.pagesOriginal = pages.map(page => pdf.pagesOriginal[page]);
-
-        this.props.onAddPart(score, part);
+        this.setState({selectedPDFs: new Set()});
+        this.props.onAddFullScore(score, parts, pdf);
     };
 
     render() {
         const {classes, band} = this.props;
-        const {selectedPDF, selectedItems} = this.state;
+        const {selectedPDFs} = this.state;
 
         return <div>
-            {selectedItems.size > 0 &&
-            <AppBar className={classes.appBar} color='secondary' classes={{root: classes.appBar__root}}>
-                <Toolbar>
-                    <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
-                        <Close/>
-                    </IconButton>
-                    <Typography variant="title" color="inherit" className={classes.flex}>
-                        {selectedItems.size} selected
-                    </Typography>
-                    {selectedPDF === null && selectedItems.size === 1 &&
-                    <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>}
-                    {selectedPDF === null &&
-                    <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>}
-                    {selectedPDF !== null &&
-                    <Button color='inherit' onClick={this._onAddAsPart}>Add as part</Button>}
-                </Toolbar>
-            </AppBar>
-            }
-
             {
-                selectedPDF !== null &&
-                <div style={{display: 'flex', height: 40, alignItems: 'center', marginTop: 20}}>
-                    <IconButton onClick={() => this.setState({
-                        selectedPDF: null,
-                        selectedItems: new Set()
-                    })}><ArrowBack/></IconButton>
-                    <Typography variant='subheading'>{band.pdfs[selectedPDF].name}</Typography>
-                </div>
+                selectedPDFs.size > 0 &&
+                <AppBar color='secondary' classes={{root: classes.appBar__root}}>
+                    <Toolbar style={{minHeight: 56}}>
+                        <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
+                            <Close/>
+                        </IconButton>
+                        <Typography variant="title" color="inherit" className={classes.flex}>
+                            {selectedPDFs.size} selected
+                        </Typography>
+                        {
+                            selectedPDFs.size === 1 &&
+                            <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>
+                        }
+                        <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>
+                    </Toolbar>
+                </AppBar>
             }
-
-            <div className={classes.flexWrapContainer}>
+            <div style={{paddingTop: 20, paddingLeft: 20}}>
                 {
-                    selectedPDF === null && band.pdfs && band.pdfs.map((doc, docIndex) =>
-                        <Selectable
-                            zoomed
-                            key={doc.id}
-                            classes={{root: classes.selectable1}}
-                            title={doc.name}
-                            imageURL={doc.pagesCropped ? doc.pagesCropped[0] : ''}
-                            selected={selectedItems.has(docIndex)}
-                            onClick={e => this._onPDFClick(docIndex)}
-                            onSelect={e => this._onItemSelect(docIndex)}
-                            selectMode={selectedItems.size > 0}
-                        />
-                    )
+                    band.pdfs && band.pdfs.map(group => {
+                        switch (group.type) {
+                            case 'full':
+                                return <Paper key={group.item.id} style={{marginRight: 20, marginBottom: 20}}>
+                                    <ListItem key={group.item.id} style={{height: 40, padding: '10px 0'}} button disableRipple>
+                                        {group.item.processing && <div style={{width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center'}}><CircularProgress color="secondary" size={20}/></div>}
+                                        {
+                                            !group.item.processing && <Checkbox classes={{checked: classes.checkbox__checked}} onChange={(_, checked) => this._onPDFSelect(group.item.id, checked)}/>
+                                        }
+                                        <ListItemText primary={group.item.name}/>
+                                    </ListItem>
+                                </Paper>;
+                            case 'part':
+                                return <Paper key={group.name} style={{marginRight: 20, marginBottom: 20}}>
+                                    <div style={{padding: '10px 20px'}}>
+                                        <Typography variant='body2'>{group.name}</Typography>
+                                    </div>
+                                    <Divider/>
+                                    <List>
+                                        {
+                                            group.items.map(item =>
+                                                <ListItem key={item.id} style={{height: 40, padding: '10px 0'}} button disableRipple>
+                                                    {item.processing && <div style={{width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center'}}><CircularProgress color="secondary" size={20}/></div>}
+                                                    {!item.processing && <Checkbox classes={{checked: classes.checkbox__checked}} onChange={(_, checked) => this._onPDFSelect(item.id, checked)}/>}
+                                                    <ListItemText primary={item.name}/>
+                                                </ListItem>
+                                            )
+                                        }
+                                    </List>
+                                </Paper>
+                        }
+                    })
                 }
             </div>
-            <div style={{padding: '0 20px'}}>
-                {
-                    selectedPDF !== null && band.pdfs[selectedPDF].pagesCropped.map((page, index) =>
-                        <Selectable
-                            key={index}
-                            classes={{root: classes.selectable2}}
-                            selected={selectedItems.has(index)}
-                            imageURL={page}
-                            onClick={e => {
-                            }}
-                            onSelect={e => this._onItemSelect(index)}
-                            selectMode={true}
-                        />
-                    )}
-            </div>
-            <AddPartDialog band={band} onRef={ref => this.addPartDialog = ref}/>
+            {/*<Typography style={{marginLeft: 20, marginTop: 20, color: 'rgba(0,0,0,.54)'}}*/}
+            {/*variant='body1'>All</Typography>*/}
+            {/*<div className={classes.flexWrapContainer}>*/}
+            {/*{*/}
+            {/*band.pdfs && band.pdfs.map((doc, docIndex) =>*/}
+            {/*<Selectable*/}
+            {/*zoomed*/}
+            {/*key={doc.id}*/}
+            {/*classes={{root: classes.selectable__root}}*/}
+            {/*title={doc.name}*/}
+            {/*imageURL={doc.thumbnailURL}*/}
+            {/*selected={selectedPDFs.has(docIndex)}*/}
+            {/*onClick={e => this._onPDFClick(doc.id)}*/}
+            {/*onSelect={e => this._onPDFSelect(docIndex)}*/}
+            {/*selectMode={selectedPDFs.size > 0}*/}
+            {/*/>*/}
+            {/*)*/}
+            {/*}*/}
+            {/*</div>*/}
             <AddPartsDialog band={band} onRef={ref => this.addPartsDialog = ref}/>
             <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref}/>
         </div>;

@@ -1,15 +1,12 @@
 import React from 'react';
-
 import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle,
-    FormControl, Input, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper, SvgIcon,
-    TextField,
-    Typography,
-    withStyles
+    FormControl, IconButton, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper,
+    SvgIcon, withStyles
 } from "material-ui";
-import AsyncDialog from "./AsyncDialog";
-import {Add, CheckCircle} from "material-ui-icons";
+import {Add, Close} from "material-ui-icons";
 import Selectable from "../Selectable";
+import CreateScoreStep from "./CreateScoreStep";
 
 const styles = {
     selectable: {
@@ -18,12 +15,12 @@ const styles = {
         marginBottom: 15
     },
 
-    stepLabel__iconContainer: {
-        color: 'black'
-    },
-
     dialog__paper: {
         maxWidth: 800
+    },
+
+    stepLabel__iconContainer: {
+        color: 'black'
     }
 };
 
@@ -42,20 +39,19 @@ function StepIcon(props) {
         </SvgIcon> :
         <SvgIcon {...props} {...extraProps}>
             <circle cx="12" cy="12" r="12"/>
-            <text x="12" y="16" textAnchor="middle" style={{fill: '#fff', fontSize: '0.75rem', fontFamily: 'Roboto'}}>{props.number}</text>
+            <text x="12" y="16" textAnchor="middle"
+                  style={{fill: '#fff', fontSize: '0.75rem', fontFamily: 'Roboto'}}>{props.number}</text>
         </SvgIcon>;
 }
 
 class AddFullScoreDialog extends React.Component {
     state = {
-        pdfData: [],
+        page2instrumentId: {},
         activeStep: 0,
         open: false,
         pdf: null,
-        entered: false,
-        selectedPages: new Set(),
         scoreCreated: false,
-        scoreData: {}
+        scoreData: {},
     };
 
     componentDidMount() {
@@ -75,9 +71,9 @@ class AddFullScoreDialog extends React.Component {
     }
 
     _onSelectChange(type, index, e) {
-        const pdfData = [...this.state.pdfData];
-        pdfData[index][type] = e.target.value;
-        this.setState({pdfData: pdfData})
+        const page2instrumentId = {...this.state.page2instrumentId};
+        page2instrumentId[index] = e.target.value;
+        this.setState({page2instrumentId: page2instrumentId})
     }
 
     _onScoreClick(scoreId) {
@@ -89,10 +85,10 @@ class AddFullScoreDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, pdfData, scoreData, pdf, selectedPages} = this.state;
+        const {activeStep, scoreData, pdf, page2instrumentId} = this.state;
         const {band} = this.props;
 
-        if (activeStep < 3) {
+        if (activeStep < 2) {
             this.setState({activeStep: activeStep + 1});
         }
 
@@ -101,34 +97,28 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            this.setState({pdfData: Array.from(selectedPages).map(page => ({page: page, instrument: 0, instrumentNumber: 0}))});
-        }
-
-        if (activeStep === 3) {
             const parts = [];
 
-            const lastPage = pdf.pagesCropped.length - 1;
+            let pages = [...Object.keys(page2instrumentId).sort(), pdf.pages.length];
 
-            for (let i = 0; i < pdfData.length; i++) {
-                let data = pdfData[i];
+            for (let i = 0; i < pages.length - 1; i++) {
+                let page = pages[i];
 
-                const pages = [];
-                const nextPageIndex = i === pdfData.length - 1 ? lastPage : pdfData[i + 1].page;
-                for (let j = data.page; j < nextPageIndex; j++) {
-                    pages.push(j);
+                const nextPages = [];
+                for (let j = page; j < pages[i + 1]; j++) {
+                    nextPages.push(j);
                 }
 
                 parts.push({
-                    instrumentId: band.instruments[data.instrument].id,
-                    instrumentNumber: data.instrumentNumber,
-                    pagesCropped: pages.map(page => pdf.pagesCropped[page]),
-                    pagesOriginal: pages.map(page => pdf.pagesOriginal[page])
+                    instrumentId: page2instrumentId[page],
+                    pages: nextPages.map(page => pdf.pages[page])
                 });
             }
 
             this.__resolve({
                 score: scoreData,
-                parts: parts
+                parts: parts,
+                pdf: pdf
             });
 
             this.setState({
@@ -136,7 +126,7 @@ class AddFullScoreDialog extends React.Component {
                 activeStep: 0,
                 scoreCreated: false,
                 scoreData: {},
-                pdfData: []
+                page2instrumentId: {}
             });
         }
     };
@@ -151,48 +141,46 @@ class AddFullScoreDialog extends React.Component {
         this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
     };
 
-    _onDialogEntered = () => {
-        this.setState({entered: true});
+    _onScoreDataChange = data => {
+        this.setState({scoreData: data})
     };
 
-    _onItemSelect = index => {
-        const selectedPages = new Set(this.state.selectedPages);
-        if (selectedPages.has(index)) {
-            selectedPages.delete(index);
-        } else {
-            selectedPages.add(index);
-        }
-        this.setState({selectedPages: selectedPages});
+    _onAddPart = index => {
+        const page2instrumentId = {...this.state.page2instrumentId};
+        page2instrumentId[index] = this.props.band.instruments[0].id;
+        this.setState({page2instrumentId});
     };
 
-    _onScoreDataChange = (type, e) => {
-        this.setState({scoreData: {...this.state.scoreData, [type]: e.target.value}});
+    _onRemovePart = index => {
+        const page2instrumentId = {...this.state.page2instrumentId};
+        delete page2instrumentId[index];
+        this.setState({page2instrumentId});
     };
 
     render() {
-        const {activeStep, open, pdf, entered, selectedPages, pdfData, scoreData, scoreCreated} = this.state;
+        const {activeStep, open, pdf, page2instrumentId, scoreCreated, scoreData} = this.state;
         const {classes, band} = this.props;
 
         if (!open) return null;
 
-        return <Dialog open={open} onEntered={this._onDialogEntered} classes={{paper: classes.dialog__paper}}>
+        return <Dialog open={open} classes={{paper: classes.dialog__paper}} fullScreen>
             <DialogTitle>Add full score</DialogTitle>
             <DialogContent style={{display: 'flex', flexDirection: 'column'}}>
                 <Stepper activeStep={activeStep}>
                     <Step>
-                        <StepLabel icon={<StepIcon active={activeStep === 0 ? 1 : 0} completed={activeStep > 0 ? 1 : 0} number={1}/>}>Select score</StepLabel>
+                        <StepLabel icon={<StepIcon active={activeStep === 0 ? 1 : 0} completed={activeStep > 0 ? 1 : 0}
+                                                   number={1}/>}>Select score</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel icon={<StepIcon active={activeStep === 1 ? 1 : 0} completed={scoreCreated ? 1 : 0} number={2}/>}>Create new</StepLabel>
+                        <StepLabel icon={<StepIcon active={activeStep === 1 ? 1 : 0} completed={scoreCreated ? 1 : 0}
+                                                   number={2}/>}>Create new</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} completed={activeStep > 2 ? 1 : 0} number={3}/>}>Select split points</StepLabel>
-                    </Step>
-                    <Step >
-                        <StepLabel icon={<StepIcon active={activeStep === 3 ? 1 : 0} number={4}/>}>Select instruments</StepLabel>
+                        <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} completed={activeStep > 2 ? 1 : 0}
+                                                   number={3}/>}>Select instruments</StepLabel>
                     </Step>
                 </Stepper>
-                <div style={{overflowY: 'auto', width: '100%', height: 500}}>
+                <div style={{overflowY: 'auto', flex: 1}}>
                     {
                         activeStep === 0 &&
                         <List>
@@ -209,60 +197,48 @@ class AddFullScoreDialog extends React.Component {
                             }
                         </List>
                     }
-
                     {
-                        activeStep === 1 && <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <TextField label='Title' style={{marginBottom: 20}} value={scoreData.title} onChange={e => this._onScoreDataChange('title', e)}/>
-                            <TextField label='Composer' style={{marginBottom: 20}} onChange={e => this._onScoreDataChange('composer', e)}/>
-                        </div>
+                        activeStep === 1 &&
+                        <CreateScoreStep defaultData={scoreData} pdf={pdf} onChange={this._onScoreDataChange}/>
                     }
-
                     {
-                        activeStep === 2 && entered && pdf.pagesCropped.map((page, index) =>
-                            <Selectable
-                                selected={selectedPages.has(index)}
-                                classes={{root: classes.selectable}}
-                                key={index}
-                                imageURL={page}
-                                selectMode
-                                onSelect={() => this._onItemSelect(index)}
-                            />
-                        )
-                    }
-
-
-                    {
-                        activeStep === 3 && pdf.pagesCropped.filter((_, index) => selectedPages.has(index)).map((page, index) =>
+                        activeStep === 2 && pdf.pages.map((page, index) =>
                             <div key={index} style={{display: 'flex', alignItems: 'center', marginBottom: 20}}>
-                                <div style={{width: 200, height: 150, overflow: 'hidden', marginRight: 20, border: '1px solid #E8E8E8'}}>
-                                    <img width="300%" src={page}/>
+                                <div style={{
+                                    width: 400,
+                                    height: 200,
+                                    overflow: 'hidden',
+                                    marginRight: 20,
+                                    border: '1px solid #E8E8E8'
+                                }}>
+                                    <img width="300%" src={page.croppedURL}/>
                                 </div>
-                                <FormControl style={{marginRight: 20, width: 150}}>
-                                    <InputLabel htmlFor="instrument">Instrument</InputLabel>
-                                    <Select
-                                        value={pdfData[index].instrument}
-                                        onChange={e => this._onSelectChange('instrument', index, e)}
-                                        inputProps={{id: 'instrument'}}
-                                    >
-                                        {
-                                            band.instruments && band.instruments.map((instrument, index) =>
-                                                <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
-                                            )
-                                        }
-                                    </Select>
-                                </FormControl>
-                                <FormControl style={{width: 70}}>
-                                    <InputLabel htmlFor="number">Number</InputLabel>
-                                    <Select
-                                        value={pdfData[index].instrumentNumber}
-                                        onChange={e => this._onSelectChange('instrumentNumber', index, e)}
-                                    >
-                                        <MenuItem value={0}>None</MenuItem>
-                                        {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
-                                    </Select>
-                                </FormControl>
+                                {
+                                    page2instrumentId[index] &&
+                                    <div>
+                                        <FormControl style={{marginRight: 20, width: 150}}>
+                                            <InputLabel htmlFor="instrument">Instrument</InputLabel>
+                                            <Select
+                                                value={page2instrumentId[index]}
+                                                onChange={e => this._onSelectChange('instrument', index, e)}
+                                                inputProps={{id: 'instrument'}}
+                                            >
+                                                {
+                                                    band.instruments && band.instruments.map(instrument =>
+                                                        <MenuItem key={instrument.id}
+                                                                  value={instrument.id}>{instrument.name}</MenuItem>
+                                                    )
+                                                }
+                                            </Select>
+                                        </FormControl>
+                                        <IconButton onClick={() => this._onRemovePart(index)}><Close/></IconButton>
+                                    </div>
+                                }
+                                {
+                                    !page2instrumentId[index] &&
+                                    <Button onClick={() => this._onAddPart(index)}>Add Part</Button>
+                                }
                             </div>
-
                         )
                     }
                 </div>
@@ -270,7 +246,8 @@ class AddFullScoreDialog extends React.Component {
             <DialogActions>
                 <Button color="secondary" onClick={this._onCancelClick}>Cancel</Button>
                 <Button color="secondary" onClick={this._onBackClick} disabled={activeStep === 0}>Back</Button>
-                <Button color="secondary" onClick={this._onNextClick} disabled={activeStep === 0 || (activeStep === 2 && selectedPages.size === 0)}>{activeStep === 3 ? 'Done' : 'Next'}</Button>
+                <Button color="secondary" onClick={this._onNextClick}
+                        disabled={activeStep === 0}>{activeStep === 3 ? 'Done' : 'Next'}</Button>
             </DialogActions>
         </Dialog>
     }

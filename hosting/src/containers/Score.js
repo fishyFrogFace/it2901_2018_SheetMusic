@@ -13,6 +13,7 @@ import firebase from 'firebase';
 import 'firebase/storage';
 
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
+import {FileDownload} from "material-ui-icons";
 
 const styles = {
     root: {},
@@ -25,7 +26,9 @@ const styles = {
         flex: 1
     },
 
-    sheetContainer: {},
+    sheetContainer: {
+        paddingTop: 64
+    },
 
     sheet: {
         width: '100%'
@@ -37,54 +40,19 @@ class Score extends React.Component {
         fileUploaderOpen: false,
         selectedPartId: null,
         anchorEl: null,
+        selectedPart: 0,
         score: {}
     };
 
-    unsubscribeCallbacks = [];
-
-    componentDidMount() {
-        const scoreId = this.props.detail;
-
-        this.unsubscribeCallbacks.push(
-            firebase.firestore().doc(`scores/${scoreId}`).onSnapshot(async snapshot => {
-                this.setState({score: {...this.state.score, ...snapshot.data()}});
-            })
-        );
-
-        this.unsubscribeCallbacks.push(
-            firebase.firestore().collection(`scores/${scoreId}/parts`).onSnapshot(async snapshot => {
-                const parts = await Promise.all(
-                    snapshot.docs.map(async doc => ({
-                        ...doc.data(),
-                        id: doc.id,
-                        instrument: (await doc.data().instrument.get()).data()
-                    }))
-                );
-
-                const partsSorted = parts
-                    .sort((a, b) => `${a.instrument.name} ${a.instrumentNumber}`.localeCompare(`${b.instrument.name} ${b.instrumentNumber}`));
-
-                this.setState({
-                    score: {...this.state.score, parts: partsSorted},
-                    selectedPartId: partsSorted.length > 0 ? partsSorted[0].id : null
-                });
-            })
-        );
-    }
-
-    componentWillUnmount() {
-        for (let cb of this.unsubscribeCallbacks) {
-            cb();
-        }
-    }
+    unsubs = [];
 
     _onInstrumentSelectChange(e) {
-        this.setState({selectedPartId: e.target.value});
+        this.setState({selectedPart: e.target.value});
     }
 
-    async _onArrowBackButtonClick() {
-        window.location.hash = ``;
-    }
+    _onArrowBackButtonClick = () => {
+        window.location.hash = '';
+    };
 
     _onMenuClose() {
         this.setState({anchorEl: null});
@@ -100,9 +68,10 @@ class Score extends React.Component {
         switch (type) {
             case 'download':
                 try {
-                    const {score, selectedPartId} = this.state;
+                    const {score} = this.props;
+                    const {selectedPart} = this.state;
 
-                    const part = score.parts.find(part => part.id === selectedPartId);
+                    const part = score.parts[selectedPart];
 
                     const {} = await this.downloadDialog.open(part.instrument);
 
@@ -113,17 +82,17 @@ class Score extends React.Component {
                     const {width, height} = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
-                        img.src = part.sheets[0];
+                        img.src = part.pagesOriginal[0];
                     });
 
                     const doc = new jsPDF('p', 'px', [width, height]);
 
-                    for (let i = 0; i < part.sheets.length; i++) {
+                    for (let i = 0; i < part.pagesOriginal.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = part.sheets[i];
+                        const url = part.pagesOriginal[i];
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -135,7 +104,7 @@ class Score extends React.Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${score.band.name}     ${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.sheets.length}`, 20, height - 20);
+                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.pagesOriginal.length}`, 20, height - 20);
                     }
 
                     doc.save(`${score.title}.pdf`);
@@ -146,18 +115,54 @@ class Score extends React.Component {
 
                 break;
         }
+    }
 
+    componentDidUpdate(prevProps, prevState) {
+        const {page, detail} = this.props;
+
+        if (page !== prevProps.page) {
+            const [bandId, scoreId] = [detail.slice(0, 20), detail.slice(20)];
+
+            const bandRef = firebase.firestore().doc(`bands/${bandId}`);
+
+            const scoreDoc = bandRef.collection('scores').doc(scoreId);
+
+            this.unsubs.forEach(unsub => unsub());
+
+            this.unsubs.push(
+                scoreDoc.onSnapshot(async snapshot => {
+                    this.setState({score: {...this.state.score, ...snapshot.data(), id: snapshot.id}});
+                })
+            );
+
+            this.unsubs.push(
+                scoreDoc.collection('parts').onSnapshot(async snapshot => {
+                    const parts = await Promise.all(
+                        snapshot.docs.map(async doc => ({
+                            ...doc.data(),
+                            id: doc.id,
+                            instrument: (await doc.data().instrumentRef.get()).data()
+                        }))
+                    );
+
+                    const partsSorted = parts
+                        .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
+
+                    this.setState({score: {...this.state.score, parts: partsSorted}});
+                })
+            );
+        }
     }
 
     render() {
         const {classes} = this.props;
-        const {selectedPartId, anchorEl, score, message} = this.state;
+        const {anchorEl, message, selectedPart, score} = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
 
         return (
             <div className={classes.root}>
-                <AppBar position="static">
+                <AppBar>
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
                             <ArrowBackIcon/>
@@ -169,36 +174,29 @@ class Score extends React.Component {
                             hasParts &&
                             <Select
                                 className={classes.instrumentSelector}
-                                value={selectedPartId}
+                                value={selectedPart}
                                 onChange={e => this._onInstrumentSelectChange(e)}
                                 disableUnderline={true}
                             >
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                                  value={part.id}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}</MenuItem>
+                                                  value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}</MenuItem>
                                     )
                                 }
                             </Select>
                         }
-                        <div className={classes.flex}></div>
-                        <IconButton color="inherit" onClick={e => this._onMoreVertClick(e)}>
-                            <MoreVertIcon/>
+                        <div className={classes.flex}/>
+                        <IconButton color="inherit" onClick={e => this._onMenuClick('download')}>
+                            <FileDownload/>
                         </IconButton>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={() => this._onMenuClose()}
-                        >
-                            <MenuItem onClick={() => this._onMenuClick('download')}>Download Instrument</MenuItem>
-                        </Menu>
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
                     {
                         hasParts &&
-                        (score.parts.find(s => s.id === selectedPartId).pagesOriginal || []).map((page, index) =>
-                            <img key={index} className={classes.sheet} src={page}/>
+                        (score.parts[selectedPart].pages || []).map((page, index) =>
+                            <img key={index} className={classes.sheet} src={page.originalURL}/>
                         )
                     }
                 </div>

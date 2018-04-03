@@ -3,14 +3,16 @@ import React from 'react';
 import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle,
     FormControl, Input, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper, SvgIcon,
-    TextField,
-    Typography,
     withStyles
 } from "material-ui";
-import AsyncDialog from "./AsyncDialog";
 import {Add} from "material-ui-icons";
+import CreateScoreStep from "./CreateScoreStep";
 
-const styles = {};
+const styles = {
+    dialog__paper: {
+        maxWidth: 800
+    }
+};
 
 function StepIcon(props) {
     const extraProps = {};
@@ -54,7 +56,7 @@ class AddPartsDialog extends React.Component {
             this.setState({
                 open: true,
                 pdfs: pdfs,
-                pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0})),
+                pdfData: pdfs.map(_ => ({instrument: 0})),
                 scoreData: {title: pdfs[0].name}
             });
 
@@ -78,7 +80,7 @@ class AddPartsDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, pdfData, scoreData, pdfs} = this.state;
+        const {pdfData, scoreData, pdfs} = this.state;
         const {band} = this.props;
 
         if (this.state.activeStep === 1) {
@@ -89,7 +91,6 @@ class AddPartsDialog extends React.Component {
                 parts: Object.keys(pdfData).map(i => ({
                     pdfId: pdfs[i].id,
                     instrumentId: band.instruments[pdfData[i].instrument].id,
-                    instrumentNumber: pdfData[i].instrumentNumber
                 }))
             });
 
@@ -97,7 +98,7 @@ class AddPartsDialog extends React.Component {
                 open: false,
                 activeStep: 0,
                 scoreCreated: false,
-                selectionData: {pdfData: pdfs.map(_ => ({instrument: 0, instrumentNumber: 0}))},
+                selectionData: {pdfData: pdfs.map(_ => ({instrument: 0}))},
                 scoreData: {}
             });
         }
@@ -113,20 +114,20 @@ class AddPartsDialog extends React.Component {
         this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
     };
 
-    _onScoreDataChange = (type, e) => {
-        this.setState({scoreData: {...this.state.scoreData, [type]: e.target.value}});
+    _onScoreDataChange = data => {
+        this.setState({scoreData: data})
     };
 
     render() {
         const {pdfData, scoreData, activeStep, scoreCreated, open, pdfs} = this.state;
 
-        const {band} = this.props;
+        const {band, classes} = this.props;
 
         if (!open) return null;
 
-        return <Dialog open={open}>
+        return <Dialog open={open} classes={{paper: classes.dialog__paper}} fullScreen>
             <DialogTitle>Add parts</DialogTitle>
-            <DialogContent style={{display: 'flex', flexDirection: 'column', height: 500, width: 500}}>
+            <DialogContent style={{display: 'flex', flexDirection: 'column'}}>
                 <Stepper activeStep={activeStep}>
                     <Step>
                         <StepLabel icon={<StepIcon active={activeStep === 0 ? 1 : 0} completed={activeStep > 0 ? 1 : 0} number={1}/>}>Select score</StepLabel>
@@ -138,7 +139,7 @@ class AddPartsDialog extends React.Component {
                         <StepLabel icon={<StepIcon active={activeStep === 2 ? 1 : 0} number={3}/>}>Select instruments</StepLabel>
                     </Step>
                 </Stepper>
-                <div>
+                <div style={{overflowY: 'auto', flex: 1}}>
                     {
                         activeStep === 0 &&
                         <List>
@@ -156,12 +157,8 @@ class AddPartsDialog extends React.Component {
                         </List>
                     }
                     {
-                        activeStep === 1 && <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <TextField label='Title' style={{marginBottom: 20}} value={scoreData.title} onChange={e => this._onScoreDataChange('title', e)}/>
-                            <TextField label='Composer' style={{marginBottom: 20}} onChange={e => this._onScoreDataChange('composer', e)}/>
-                        </div>
+                        activeStep === 1 && <CreateScoreStep pdf={pdfs[0]} defaultData={scoreData} onChange={this._onScoreDataChange}/>
                     }
-
                     {
                         activeStep === 2 &&
                         <div>
@@ -184,16 +181,6 @@ class AddPartsDialog extends React.Component {
                                                         <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
                                                     )
                                                 }
-                                            </Select>
-                                        </FormControl>
-                                        <FormControl style={{width: 70}}>
-                                            <InputLabel htmlFor="number">Number</InputLabel>
-                                            <Select
-                                                value={pdfData[index].instrumentNumber}
-                                                onChange={e => this._onSelectChange('instrumentNumber', index, e)}
-                                            >
-                                                <MenuItem value={0}>None</MenuItem>
-                                                {[1, 2, 3, 4, 5].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
                                             </Select>
                                         </FormControl>
                                     </div>

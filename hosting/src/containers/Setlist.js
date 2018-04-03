@@ -5,12 +5,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {
-    IconButton, Menu, MenuItem, Card, CardContent
-} from "material-ui";
-import ArrowBackIcon from 'material-ui-icons/ArrowBack';
-import AddIcon from 'material-ui-icons/Add';
-import Edit from 'material-ui-icons/Edit'
+import {IconButton, Menu, MenuItem, Card, CardContent} from "material-ui";
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -20,322 +15,194 @@ import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
+import {Add, ArrowBack, Edit} from "material-ui-icons";
 
 const styles = {
-    root: {
-    },
+    root: {},
+
     flex: {
         flex: 1
     },
 
-    dialogContent: {
-        display: 'flex',
-        flexDirection: 'column'
-    },
     card: {
-        marginBottom: 10
-    },
-    listCard: {
-        width: '100%',
-        marginRight: 24,
-        marginBottom: 24,
-        cursor: 'pointer'
-    },
-    media: {
-        height: 200,
-    },
-    grid: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        padding: 24
-    },
-    banner: {
-        background: 'url(https://4.bp.blogspot.com/-vq0wrcE-1BI/VvQ3L96sCUI/AAAAAAAAAI4/p2tb_hJnwK42cvImR4zrn_aNly7c5hUuQ/s1600/BandPeople.jpg) center center no-repeat',
-        backgroundSize: 'cover',
-        height: 144
-    },
-    selectable: {
-        height: 150,
+        width: 600,
+        marginLeft: 'auto',
+        marginRight: 'auto',
         marginBottom: 20
-    },
-    listView: {
-        marginLeft: '20%',
-        marginTop:20,
-        width:'60%'
     }
 };
 
-
-
-
 class Setlist extends Component {
-
     state = {
         anchorEl: null,
-        addArrDialogOpen: false,
-        addPauseDialogOpen: false,
+        updatedItems: null,
         setlist: {},
-        bandid: '',
-        bandScores: []
+        band: {}
     };
 
-    addScoreDialog = null;
-    addEventDialog = null;
-    editSetlistDialog = null;
+    addScoreDialog;
+    addEventDialog;
+    editSetlistDialog;
 
-    async addSetListScores (setlistid, arrIds, currLength){
-        console.log();
-        await Promise.all(arrIds.map(async (arr, index) =>
-            await   firebase.firestore().collection(`setlists/${setlistid}/scores`)
-                .add({order: currLength + index, ref: firebase.firestore().doc(`scores/${arrIds[index]}`)})));
+    unsubs = [];
 
-    }
     _onAddButtonClick(e) {
         this.setState({anchorEl: e.currentTarget});
     }
+
     _onMenuClose() {
         this.setState({anchorEl: null});
     }
 
-    async addSetlistEvent(setlistId, eventTitle, eventDesc, eventTime, currLength){
-        try{
-            await firebase.firestore().collection(`setlists/${setlistId}/events`).add({order: currLength, title:eventTitle, time: eventTime, desc:eventDesc});
-        }catch(err){
-            console.error(err);
-        }
-    }
-
-    async updateSetlistData(setlistId, title, place, date){
-        try{
-            await firebase.firestore().doc(`setlists/${setlistId}`).update({title: title, place: place, date: date});
-        }catch(err){
-            console.log(err);
-        }
-    }
-
-    _onDragEnd = result => {
+    _onDragEnd = async result => {
         // dropped outside the list
         if (!result.destination) {
             return;
         }
 
         const reorder = (list, startIndex, endIndex) => {
-            const result = Array.from(list);
+            const result = [...list];
             const [removed] = result.splice(startIndex, 1);
             result.splice(endIndex, 0, removed);
             return result;
         };
 
+        const {band, setlist} = this.state;
 
-        const combinedArray = reorder(
-            this.state.setlist.combinedArray,
+        const newItems = reorder(
+            setlist.items,
             result.source.index,
             result.destination.index
-        ).map((arr, index) => arr = {...arr, order: index});
+        );
 
+        this.setState({updatedItems: newItems});
 
-        let scores = this.state.setlist.scores;
-        let events = this.state.setlist.events;
-
-        for(var c in combinedArray){
-            switch(combinedArray[c].type){
-                case 0:
-                    var item = scores.find( (arr) => arr.id === combinedArray[c].id);
-                    item.order = c;
-                    break;
-
-                case 1:
-                    var item = events.find( (arr) => arr.id === combinedArray[c].id);
-                    item.order = c;
-                    break;
-
-                default:
-                    break;
-            }
-
-        }
-
-        this.setState({setlist:{...this.state.setlist, scores: scores, events: events, combinedArray: combinedArray}})
-
-        this.updateFirebaseOrders(this.state.setlist.id, combinedArray);
+        await firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`).update({
+            items: newItems
+        })
     };
 
-    unsubscribeCallbacks = [];
-
     async _onMenuClick(type) {
-        switch(type){
-            case 'addScore':
-                var selectedScores = await this.addScoreDialog.open(this.state.bandScores);
-                this.addSetListScores(this.state.setlist.id, selectedScores, this.state.setlist.combinedArray.length);
-                break;
-            case 'addEvent':
-                const {eventTitle, description, time} = await this.addEventDialog.open();
-                this.addSetlistEvent(this.state.setlist.id, eventTitle, description, time, this.state.setlist.combinedArray.length);
-                break;
-            case 'editSetlist':
-                const {title, place, date} = await this.editSetlistDialog.open(this.state.setlist);
-                this.updateSetlistData(this.state.setlist.id, title, place, date._d);
-            default:
-                break;
+        const {band, setlist} = this.state;
+        const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
+
+        try {
+            switch (type) {
+                case 'addScore':
+                    const selectedScoreIds = await this.addScoreDialog.open();
+
+                    const scoreItems = selectedScoreIds.map(id => ({
+                        type: 'score',
+                        scoreRef: firebase.firestore().doc(`bands/${band.id}/scores/${id}`)
+                    }));
+
+                    await setlistRef.update({
+                        items: [...(setlist.items || []), ...scoreItems]
+                    });
+                    break;
+                case 'addEvent':
+                    const {eventTitle, description, time} = await this.addEventDialog.open();
+                    await setlistRef.update({
+                        items: [...(setlist.items || []), {
+                            type: 'event',
+                            title: eventTitle,
+                            time: time,
+                            description: description
+                        }]
+                    });
+                    break;
+                case 'editSetlist':
+                    const {title, date} = await this.editSetlistDialog.open(setlist);
+                    await setlistRef.update({title: title, date: date});
+                    break;
+            }
+        } catch (err) {
+            console.log(err);
         }
+
         this.setState({anchorEl: null});
     }
 
-    async fetchSetlistData (setlistID){
-        let doc = await firebase.firestore().doc(`setlists/${setlistID}`).get();
-        let setlist = doc.data();
-        try{
-            var scoresCollection = await firebase.firestore().collection(`setlists/${setlistID}/scores`).get();
-            var setlistScores = await Promise.all(scoresCollection.docs.map(async doc => {
-                let score = await doc.data().ref.get();
-                return {id: doc.id, order: doc.data().order, ...score.data(), type:0};
-            }));
-            setlistScores = setlistScores.sort((a, b) => a.order - b.order);
-        }catch(e){
-            console.log(e);
-            var setlistScores = [];
-        }
+    _onArrowBackButtonClick = () => {
+        window.location.hash = '/setlists';
+    };
 
-        try{
-            var eventCollection = await firebase.firestore().collection(`setlists/${setlistID}/events`).get();
-            var events = await Promise.all(eventCollection.docs.map(async doc => {
-                return {id: doc.id, ...doc.data(), type:1};
-            }));
-            events = events.sort((a, b) => a.order - b.order);
-        }catch(e){
-            console.log(e);
-            var events = [];
-        }
+    componentDidUpdate(prevProps, prevState) {
+        const {page, detail} = this.props;
 
+        if (page !== prevProps.page) {
+            const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
 
-        let combinedArray = Array.from(events);
-        combinedArray.push.apply(combinedArray, setlistScores);
-        combinedArray = combinedArray.sort((a, b) => a.order - b.order);
+            const bandRef = firebase.firestore().doc(`bands/${bandId}`);
 
-        let bandSnapshot = await setlist.band.get();
-        const bandScoresSnapshot =  await firebase.firestore().collection(`bands/${bandSnapshot.id}/scores`).get();
+            const setlistDoc = bandRef.collection('setlists').doc(setlistId);
 
-        let bandScores = await Promise.all(bandScoresSnapshot.docs.map(async doc => {
-            let score = await doc.data().ref.get();
+            this.unsubs.forEach(unsub => unsub());
 
-            return {id: score.id, ...score.data()};
-        }));
-        this.setState({setlist: {id: setlistID, ...setlist, scores: setlistScores, events: events, combinedArray: combinedArray}, bandid: bandSnapshot.id, bandScores:bandScores } );
-    }
+            this.unsubs.push(
+                setlistDoc.onSnapshot(async snapshot => {
+                    const data = snapshot.data();
 
+                    data.items = await Promise.all(
+                        (data.items || []).map(async item => {
+                            if (item.type === 'score') {
+                                return {...item, score: (await item.scoreRef.get()).data()};
+                            }
 
-    async componentWillMount() {
-        let setlistId = this.props.detail;
+                            return {...item};
+                        })
+                    );
 
-        await this.fetchSetlistData(setlistId);
-
-        this.unsubscribeCallbacks.push( firebase.firestore().collection(`setlists/${setlistId}/scores`).onSnapshot(async snapshot => {
-            const scores = await Promise.all(
-                snapshot.docs.map(async doc => {
-                    let score = await doc.data().ref.get();
-                    return {id: doc.id, order: doc.data().order, ...score.data(), type:0}
+                    this.setState({setlist: {...this.state.setlist, ...data, id: snapshot.id}});
                 })
             );
 
-            let combinedArray = this.state.setlist.combinedArray;
-            for(var e in scores){
-                var score = combinedArray.find((arr) => arr.id === scores[e].id);
-
-                if (!score){
-                    combinedArray.push(scores[e]);
-                }else{
-                    score.order = scores[e].order;
-                }
-            }
-
-            this.setState({
-                setlist: {...this.state.setlist, scores: scores, combinedArray: combinedArray.sort((a, b) => a.order - b.order)}
-            });
-        }));
-
-        this.unsubscribeCallbacks.push( firebase.firestore().collection(`setlists/${setlistId}/events`).onSnapshot(async snapshot => {
-            const events = await Promise.all(
-                snapshot.docs.map(async doc => {
-                    return {id: doc.id, ...doc.data(), type:1}
+            this.unsubs.push(
+                bandRef.onSnapshot(async snapshot => {
+                    this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
                 })
             );
 
-            let combinedArray = this.state.setlist.combinedArray;
-            for(var e in events){
-                var event = combinedArray.find( (arr) => arr.id === events[e].id);
+            this.unsubs.push(
+                bandRef.collection('scores').onSnapshot(async snapshot => {
+                    let scores = await Promise.all(
+                        snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                    );
 
-                if (!event){
-                    combinedArray.push(events[e]);
-                }else{
-                    event.order = events[e].order;
-                }
-            }
-
-            this.setState({
-                setlist: {...this.state.setlist, events: events, combinedArray: combinedArray.sort((a, b) => a.order - b.order)}
-            });
-        }));
-
-        this.unsubscribeCallbacks.push( firebase.firestore().doc(`setlists/${setlistId}`).onSnapshot(async snapshot => {
-            const setlist = await snapshot.data();
-            this.setState({setlist: {...this.state.setlist, ...setlist}})
-        }));
-    }
-
-    componentWillUnmount(){
-        this.unsubscribeCallbacks.forEach(c => c());
-    }
-
-
-    async updateFirebaseOrders(setlistId, combined){
-        let batch = firebase.firestore().batch();
-        await combined.map(async (score, index) => {
-            let doc;
-            switch(score.type){
-                case 0:
-                    doc = await firebase.firestore().doc(`setlists/${setlistId}/scores/${score.id}`);
-                    batch.update(doc, {order:index})
-                    break;
-                case 1:
-                    doc = await firebase.firestore().doc(`setlists/${setlistId}/events/${score.id}`);
-                    batch.update(doc, {order:index})
-                    break;
-                default:
-                    break;
-            }
-        });
-        await batch.commit();
-    }
-
-    async _onArrowBackButtonClick() {
-        window.location.hash = '';
+                    this.setState({band: {...this.state.band, scores: scores}});
+                })
+            );
+        }
     }
 
     render() {
-        const { anchorEl, setlist} = this.state;
+        const {anchorEl, updatedItems, setlist, band} = this.state;
         const {classes} = this.props;
+
+        const items = updatedItems || (setlist.items || []);
 
         return (
             <div className={classes.root}>
                 <DragDropContext onDragEnd={this._onDragEnd}>
-                    <AppBar position="static">
+                    <AppBar>
                         <Toolbar>
                             <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                                <ArrowBackIcon/>
+                                <ArrowBack/>
                             </IconButton>
-                            <div className={classes.flex}>
+                            <div style={{marginLeft: 10}}>
                                 <Typography variant="title" color="inherit" className={classes.flex}>
-                                    {setlist.title} | {setlist.date && setlist.date.toLocaleString()}
+                                    {setlist.title}
                                 </Typography>
                                 <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                    {setlist.place}
+                                    {setlist.date && setlist.date.toLocaleDateString()}
                                 </Typography>
                             </div>
+                            <div className={classes.flex}/>
                             <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
-                                <Edit />
+                                <Edit/>
                             </IconButton>
                             <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                                <AddIcon/>
+                                <Add/>
                             </IconButton>
                             <Menu
                                 anchorEl={anchorEl}
@@ -347,65 +214,63 @@ class Setlist extends Component {
                             </Menu>
                         </Toolbar>
                     </AppBar>
-                    <div>
-
-                        <div className={classes.listView}>
-
-                            <Droppable droppableId="droppable">
-                                {(provided, snapshot) =>
-                                    <div ref={provided.innerRef}>
-                                        {
-                                            setlist.combinedArray && setlist.combinedArray.map((score, index) =>
-                                                <Draggable
-                                                    key={score.id + score.type}
-                                                    draggableId={score.id + score.type}
-                                                    index={index}
-                                                >
-                                                    {(provided, snapshot) =>
-                                                        <div>
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                            >
-                                                                <Card className={classes.card}>
-                                                                    {
-                                                                        (score.type === 0 ) ?
-                                                                            <CardContent>
-                                                                                <Typography variant='headline'>
-                                                                                    {index + 1}. {score.title}
-                                                                                </Typography>
-                                                                                <Typography variant='subheading'>
-                                                                                    by {score.composer}
-                                                                                </Typography>
-                                                                            </CardContent>
-                                                                            :
-                                                                            <CardContent>
-                                                                                <Typography variant='headline'>
-                                                                                    {index + 1} {score.title} | {score.time} minutes
-                                                                                </Typography>
-                                                                                <Typography variant='subheading'>
-                                                                                    {score.desc}
-                                                                                </Typography>
-                                                                            </CardContent>
-                                                                    }
-                                                                </Card>
-                                                            </div>
-                                                            {provided.placeholder}
+                    <div style={{paddingTop: 64 + 20}}>
+                        <Droppable droppableId="droppable">
+                            {(provided, snapshot) =>
+                                <div ref={provided.innerRef}>
+                                    {
+                                        items.map((item, index) =>
+                                            <Draggable
+                                                key={index}
+                                                draggableId={index}
+                                                index={index}
+                                            >
+                                                {(provided, snapshot) =>
+                                                    <div>
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                        >
+                                                            <Card className={classes.card}>
+                                                                {
+                                                                    item.type === 'score' &&
+                                                                    <CardContent>
+                                                                        <Typography variant='headline'>
+                                                                            {item.score.title}
+                                                                        </Typography>
+                                                                        <Typography variant='subheading'>
+                                                                            by {item.score.composer}
+                                                                        </Typography>
+                                                                    </CardContent>
+                                                                }
+                                                                {
+                                                                    item.type === 'event' &&
+                                                                    <CardContent>
+                                                                        <Typography variant='headline'>
+                                                                            {item.title} | {item.time} minutes
+                                                                        </Typography>
+                                                                        <Typography variant='subheading'>
+                                                                            {item.description}
+                                                                        </Typography>
+                                                                    </CardContent>
+                                                                }
+                                                            </Card>
                                                         </div>
-                                                    }
-                                                </Draggable>
-                                            )
-                                        }
-                                    </div>
-                                }
-                            </Droppable>
-                        </div>
+                                                        {provided.placeholder}
+                                                    </div>
+                                                }
+                                            </Draggable>
+                                        )
+                                    }
+                                </div>
+                            }
+                        </Droppable>
                     </div>
                 </DragDropContext>
-                <AddSetlistScoresDialog onRef= {ref => this.addScoreDialog = ref}/>
-                <AddSetlistEventDialog onRef= {ref => this.addEventDialog = ref}/>
-                <EditSetlistDialog onRef= {ref => this.editSetlistDialog = ref}/>
+                <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref}/>
+                <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref}/>
+                <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref}/>
             </div>
         );
     }

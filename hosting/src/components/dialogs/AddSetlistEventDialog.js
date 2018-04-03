@@ -3,9 +3,6 @@ import React from 'react';
 import {TextField, InputLabel, Input, InputAdornment, FormControl} from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
-import {DateTimePicker} from "material-ui-pickers";
-import Moment from 'moment';
-
 class AddSetlistEventDialog extends React.Component {
     data = {
         description: ''
