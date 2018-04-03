@@ -81,12 +81,6 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
     // Create storage bucket
     const inputBucket = storage.bucket(object.bucket);
     const pdfBucket = storage.bucket('scores-butler-pdfs');
-    // Create document
-    const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
-        name: fileName,
-        uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
-        state: 'processing'
-    });
     try {
         // Download to local directory
         yield inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
@@ -96,6 +90,25 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
         yield fs.ensureDir('/tmp/output-original');
         yield fs.ensureDir('/tmp/output-cropped');
         yield fs.ensureDir('/tmp/output-cropped-compressed');
+        const pdfInfo = yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+            const promise = child_process_promise_1.spawn('xpdf/pdfinfo', [
+                '-cfg', '/tmp/.xpdfrc',
+                '/tmp/score.pdf',
+            ]);
+            promise.childProcess.stdout.on('data', _data => {
+                promise.childProcess.kill();
+                resolve(_data.toString());
+            });
+            yield promise;
+        }));
+        const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
+        // Create document
+        const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+            name: fileName,
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+            pageCount: parseInt(match[1]),
+            processing: true
+        });
         // Generate images
         const gsProcess = yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
             '-dBATCH',
@@ -152,11 +165,11 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
         const data = {
             processing: admin.firestore.FieldValue.delete(),
             thumbnailURL: croppedPageUrls[0],
-            pages: pages
+            pages: pages,
         };
         const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
-        const patternShort = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/g;
-        const patternFull = /(vocal|(alto|tenor) sax|trumpet|trombone|guitar|piano|bass|drum set)/g;
+        const patternShort = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
+        const patternFull = /(vocal|(alto|tenor) sax|trumpet|trombone|guitar|piano|bass|drum set)/ig;
         if (pdfText.includes('jazzbandcharts')) {
             const _pages = pdfText.split('\f');
             const instruments = [{ pageRange: [2], name: 'score' }];
@@ -186,6 +199,7 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
         yield pdfRef.update(data);
         // Clean up
         yield Promise.all([
+            fs.remove('/tmp/score.txt'),
             fs.remove('/tmp/score.pdf'),
             fs.remove('/tmp/output-original'),
             fs.remove('/tmp/output-cropped'),

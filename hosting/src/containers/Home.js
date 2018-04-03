@@ -374,7 +374,7 @@ class Home extends React.Component {
                                 const visited = [];
 
                                 for (let item of items) {
-                                    if (item.pages && item.pages.length > 10) {
+                                    if (item.pageCount > 10) {
                                         groups.push({
                                             name: item.name,
                                             item: item,
