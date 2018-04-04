@@ -559,9 +559,28 @@ class Home extends React.Component {
                                 onClose={this._onMenuClose}
                                 MenuListProps={{style: {paddingTop: 0, paddingBottom: 0}}}
                             >
-                                <div style={{backgroundColor: "#EEEEEE", display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', outline: 'none', paddingRight: 50, paddingLeft: 10}}>
-                                    <img src={user.photoURL} style={{width: "50px", height: "50px", margin: "10px", borderRadius: '50%'}}></img>
-                                    <div style={{display: "flex", flexDirection: 'column', justifyContent: 'center', marginRight: '30px'}}>
+                                <div style={{
+                                  backgroundColor: "#EEEEEE",
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  justifyContent: 'flex-start',
+                                  outline: 'none',
+                                  paddingRight: 50,
+                                  paddingLeft: 10
+                                }}>
+                                    <img src={user.photoURL} style={{
+                                      width: "50px",
+                                      height: "50px",
+                                      margin: "10px",
+                                      borderRadius: '50%'
+                                    }}>
+                                    </img>
+                                    <div style={{
+                                      display: "flex",
+                                      flexDirection: 'column',
+                                      justifyContent: 'center',
+                                      marginRight: '30px'
+                                    }}>
                                         <Typography>
                                             <b> {user.displayName} </b>
                                         </Typography>
