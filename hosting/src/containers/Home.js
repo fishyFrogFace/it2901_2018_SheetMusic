@@ -10,6 +10,7 @@ import {
     Snackbar
 } from "material-ui";
 
+import AccountCircleIcon from 'material-ui-icons/AccountCircle';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
@@ -72,6 +73,7 @@ class Home extends React.Component {
     state = {
         bandAnchorEl: null,
         uploadAnchorEl: null,
+        accountAnchorEl: null,
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null,
@@ -326,7 +328,11 @@ class Home extends React.Component {
     };
 
     _onMenuClose = () => {
-        this.setState({bandAnchorEl: null, uploadAnchorEl: null});
+        this.setState({bandAnchorEl: null, uploadAnchorEl: null, accountAnchorEl: null});
+    };
+
+    _onAccountCircleClick = e => {
+        this.setState({accountAnchorEl: e.currentTarget});
     };
 
     async componentDidUpdate(prevProps, prevState) {
@@ -461,7 +467,7 @@ class Home extends React.Component {
     };
 
     render() {
-        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
 
         const user = firebase.auth().currentUser;
 
@@ -522,6 +528,7 @@ class Home extends React.Component {
                             </Menu>
                             <SearchBar bandId={band.id}/>
                             <div style={{flex: 1}}/>
+
                             <IconButton style={{marginLeft: 10}} color="inherit"
                                         onClick={this._onFileUploadButtonClick}>
                                 <FileUpload/>
@@ -529,6 +536,21 @@ class Home extends React.Component {
                             <Menu
                                 anchorEl={uploadAnchorEl}
                                 open={Boolean(uploadAnchorEl)}
+                                onClose={this._onMenuClose}
+                            >
+                                <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
+                                    computer</MenuItem>
+                                <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
+                                    Dropbox</MenuItem>
+                            </Menu>
+
+                            <IconButton onClick={this._onAccountCircleClick}>
+                                <AccountCircleIcon>
+                                </AccountCircleIcon>
+                            </IconButton>
+                            <Menu
+                                anchorEl={accountAnchorEl}
+                                open={Boolean(accountAnchorEl)}
                                 onClose={this._onMenuClose}
                             >
                                 <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
