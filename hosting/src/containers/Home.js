@@ -47,7 +47,8 @@ const styles = {
 
     appBarContainer: {
         gridRow: 1,
-        gridColumn: '1 / -1'
+        gridColumn: '1 / -1',
+        zIndex: 10
     },
 
     content: {
@@ -151,7 +152,7 @@ class Home extends React.Component {
             parts.map(part => scoreRef.collection('parts').add({
                     pages: part.pages,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
+                    instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
                 })
             ));
 
@@ -193,7 +194,7 @@ class Home extends React.Component {
     _onCreateBand = async () => {
         this.setState({bandAnchorEl: null});
 
-        const {name, instruments} = await this.createDialog.open();
+        const {name} = await this.createDialog.open();
 
         this.setState({message: 'Creating band...'});
 
@@ -214,8 +215,6 @@ class Home extends React.Component {
                 defaultBandRef: bandRef,
                 bandRefs: [...(userDoc.data().bandRefs || []), bandRef],
             });
-
-            await Promise.all(instruments.map(instrument => bandRef.collection('instruments').add({name: instrument})));
         } catch (err) {
             console.log(err);
         }
@@ -375,13 +374,28 @@ class Home extends React.Component {
 
                                 for (let item of items) {
                                     if (item.pageCount > 10) {
+
+                                        if (item.parts) {
+                                            item.parts = await Promise.all(
+                                                item.parts.map(async part => ({
+                                                    ...part,
+                                                    instruments: await Promise.all(
+                                                        part.instruments.map(async instr => {
+                                                            const doc = await instr.get();
+                                                            return {...doc.data(), id: doc.id};
+                                                        })
+                                                    )
+                                                }))
+                                            );
+                                        }
+
                                         groups.push({
-                                            name: item.name,
-                                            item: item,
+                                            name: item.name.split('-')[0].trimRight(),
+                                            pdf: item,
                                             type: 'full'
-                                        })
+                                        });
                                     } else {
-                                        const similarItems = [];
+                                        const similarPdfs = [];
 
                                         if (visited.includes(item.id)) continue;
 
@@ -389,21 +403,24 @@ class Home extends React.Component {
                                             if (_item.id !== item.id &&
                                                 !visited.includes(_item.id) &&
                                                 levenshtein.get(item.name, _item.name) < 5) {
-                                                similarItems.push(_item);
+                                                similarPdfs.push(_item);
                                                 visited.push(_item.id);
                                             }
                                         }
 
                                         groups.push({
                                             name: item.name.split('-')[0].trimRight(),
-                                            items: [item, ...similarItems],
+                                            pdfs: [item, ...similarPdfs],
                                             type: 'part'
                                         })
                                     }
                                 }
 
                                 items = groups
-                                    .map(group => ({...group, name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`}))
+                                    .map(group => ({
+                                        ...group,
+                                        name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`
+                                    }))
                                     .sort((a, b) => a.name.localeCompare(b.name));
                             }
 
@@ -450,8 +467,14 @@ class Home extends React.Component {
 
         if (!loaded) {
             if ((prevState.bands || []).length === 0 && (bands && bands.length > 0)) {
-                await this.navEl.animate([{transform: 'none'}], options).finished;
-                await this.appBarContainerEl.animate([{transform: 'none'}], options).finished;
+                await this.navEl.animate([
+                    {transform: this.navEl.style.transform},
+                    {transform: 'none'},
+                ], options).finished;
+                await this.appBarContainerEl.animate([
+                    {transform: this.appBarContainerEl.style.transform},
+                    {transform: 'none'}
+                ], options).finished;
             }
         }
     }

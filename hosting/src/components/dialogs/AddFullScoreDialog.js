@@ -5,8 +5,8 @@ import {
     SvgIcon, withStyles
 } from "material-ui";
 import {Add, Close} from "material-ui-icons";
-import Selectable from "../Selectable";
 import CreateScoreStep from "./CreateScoreStep";
+import firebase from 'firebase';
 
 const styles = {
     selectable: {
@@ -46,12 +46,13 @@ function StepIcon(props) {
 
 class AddFullScoreDialog extends React.Component {
     state = {
-        page2instrumentId: {},
+        parts: [],
         activeStep: 0,
         open: false,
         pdf: null,
         scoreCreated: false,
         scoreData: {},
+        instruments: []
     };
 
     componentDidMount() {
@@ -63,17 +64,26 @@ class AddFullScoreDialog extends React.Component {
     }
 
     async open(pdf) {
-        return new Promise((resolve, reject) => {
-            this.setState({open: true, pdf: pdf, scoreData: {title: pdf.name}});
+        return new Promise(async (resolve, reject) => {
+            this.setState({
+                open: true,
+                pdf: pdf,
+                scoreData: {title: pdf.name.split('-')[0].trim()}
+            });
+
+            const snapshot = await firebase.firestore().collection('instruments').get();
+            const instruments = snapshot.docs
+                .map(doc => ({...doc.data(), id: doc.id}))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            this.setState({
+                instruments: instruments,
+                parts: pdf.parts || []
+            });
+
             this.__resolve = resolve;
             this.__reject = reject;
         });
-    }
-
-    _onSelectChange(type, index, e) {
-        const page2instrumentId = {...this.state.page2instrumentId};
-        page2instrumentId[index] = e.target.value;
-        this.setState({page2instrumentId: page2instrumentId})
     }
 
     _onScoreClick(scoreId) {
@@ -85,7 +95,7 @@ class AddFullScoreDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {activeStep, scoreData, pdf, page2instrumentId} = this.state;
+        let {activeStep, scoreData, pdf, parts} = this.state;
         const {band} = this.props;
 
         if (activeStep < 2) {
@@ -97,28 +107,28 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            const parts = [];
+            parts = [...parts.sort((a, b) => b.page = a.page), {page: pdf.pages.length}];
 
-            let pages = [...Object.keys(page2instrumentId).sort(), pdf.pages.length];
+            const _parts = [];
 
-            for (let i = 0; i < pages.length - 1; i++) {
-                let page = pages[i];
+            for (let i = 0; i < parts.length - 1; i++) {
+                const part = parts[i];
 
-                const nextPages = [];
-                for (let j = page; j < pages[i + 1]; j++) {
-                    nextPages.push(j);
+                for (let instr of part.instruments) {
+                    const _part = {instrumentId: instr.id, pages: []};
+
+                    for (let j = parts[i].page; j < parts[i + 1].page; j++) {
+                        _part.pages.push(pdf.pages[j]);
+                    }
+
+                    _parts.push(_part);
                 }
-
-                parts.push({
-                    instrumentId: page2instrumentId[page],
-                    pages: nextPages.map(page => pdf.pages[page])
-                });
             }
 
             this.__resolve({
                 score: scoreData,
-                parts: parts,
-                pdf: pdf
+                pdf: pdf,
+                parts: _parts
             });
 
             this.setState({
@@ -126,7 +136,7 @@ class AddFullScoreDialog extends React.Component {
                 activeStep: 0,
                 scoreCreated: false,
                 scoreData: {},
-                page2instrumentId: {}
+                parts: []
             });
         }
     };
@@ -146,19 +156,39 @@ class AddFullScoreDialog extends React.Component {
     };
 
     _onAddPart = index => {
-        const page2instrumentId = {...this.state.page2instrumentId};
-        page2instrumentId[index] = this.props.band.instruments[0].id;
-        this.setState({page2instrumentId});
+        const parts = [...this.state.parts];
+
+        if (parts.some(part => part.page === index)) {
+            parts.find(part => part.page === index).instruments.push({
+                id: this.state.instruments[0].id
+            })
+        } else {
+            parts.push({
+                page: index,
+                instruments: [{id: this.state.instruments[0].id}]
+            });
+        }
+
+        this.setState({parts});
     };
 
+    _onSelectChange(pageIndex, instrIndex, e) {
+        const parts = [...this.state.parts];
+
+        const part = parts.find(part => part.page === pageIndex);
+        part.instruments[instrIndex].id = e.target.value;
+
+        this.setState({parts: parts})
+    }
+
     _onRemovePart = index => {
-        const page2instrumentId = {...this.state.page2instrumentId};
-        delete page2instrumentId[index];
-        this.setState({page2instrumentId});
+        const parts = [...this.state.parts];
+        parts.splice(parts.findIndex(part => part.page === index), 1);
+        this.setState({parts});
     };
 
     render() {
-        const {activeStep, open, pdf, page2instrumentId, scoreCreated, scoreData} = this.state;
+        const {activeStep, open, pdf, parts, scoreCreated, scoreData, instruments} = this.state;
         const {classes, band} = this.props;
 
         if (!open) return null;
@@ -202,42 +232,52 @@ class AddFullScoreDialog extends React.Component {
                         <CreateScoreStep defaultData={scoreData} pdf={pdf} onChange={this._onScoreDataChange}/>
                     }
                     {
-                        activeStep === 2 && pdf.pages.map((page, index) =>
-                            <div key={index} style={{display: 'flex', alignItems: 'center', marginBottom: 20}}>
+                        activeStep === 2 && pdf.pages.map((page, pageIndex) =>
+                            <div key={pageIndex} style={{
+                                display: 'flex',
+                                marginBottom: 20,
+                                border: '1px solid #E8E8E8',
+                                height: 200
+                            }}>
                                 <div style={{
-                                    width: 400,
-                                    height: 200,
+                                    flex: 1,
                                     overflow: 'hidden',
-                                    marginRight: 20,
-                                    border: '1px solid #E8E8E8'
+                                    borderRight: '1px solid #E8E8E8'
                                 }}>
                                     <img width="300%" src={page.croppedURL}/>
                                 </div>
-                                {
-                                    page2instrumentId[index] &&
-                                    <div>
-                                        <FormControl style={{marginRight: 20, width: 150}}>
-                                            <InputLabel htmlFor="instrument">Instrument</InputLabel>
-                                            <Select
-                                                value={page2instrumentId[index]}
-                                                onChange={e => this._onSelectChange('instrument', index, e)}
-                                                inputProps={{id: 'instrument'}}
-                                            >
-                                                {
-                                                    band.instruments && band.instruments.map(instrument =>
-                                                        <MenuItem key={instrument.id}
-                                                                  value={instrument.id}>{instrument.name}</MenuItem>
-                                                    )
-                                                }
-                                            </Select>
-                                        </FormControl>
-                                        <IconButton onClick={() => this._onRemovePart(index)}><Close/></IconButton>
-                                    </div>
-                                }
-                                {
-                                    !page2instrumentId[index] &&
-                                    <Button onClick={() => this._onAddPart(index)}>Add Part</Button>
-                                }
+                                <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
+                                    {
+                                        parts.some(part => part.page === pageIndex) &&
+                                        parts.find(part => part.page === pageIndex).instruments.map((instr, instrIndex) =>
+                                            <div key={instrIndex} style={{display: 'flex', padding: '12px 16px', borderBottom: '1px solid #E8E8E8', justifyContent: 'space-between'}}>
+                                                <FormControl style={{marginRight: 20, width: 150}}>
+                                                    <InputLabel
+                                                        htmlFor={`instrument${instrIndex}`}>Instrument {instrIndex + 1}</InputLabel>
+                                                    <Select
+                                                        value={instr.id}
+                                                        onChange={e => this._onSelectChange(pageIndex, instrIndex, e)}
+                                                        inputProps={{id: `instrument${instrIndex}`}}
+                                                        disableUnderline={true}
+                                                    >
+                                                        {
+                                                            instruments.map(instrument =>
+                                                                <MenuItem key={instrument.id}
+                                                                          value={instrument.id}>{instrument.name}</MenuItem>
+                                                            )
+                                                        }
+                                                    </Select>
+                                                </FormControl>
+                                                <IconButton onClick={() => this._onRemovePart(pageIndex, instrIndex)}>
+                                                    <Close/>
+                                                </IconButton>
+                                            </div>
+                                        )
+                                    }
+                                    <ListItem onClick={() => this._onAddPart(pageIndex)} button>
+                                        <ListItemText primary="Add Part" />
+                                    </ListItem>
+                                </div>
                             </div>
                         )
                     }

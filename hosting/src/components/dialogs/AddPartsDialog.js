@@ -7,6 +7,7 @@ import {
 } from "material-ui";
 import {Add} from "material-ui-icons";
 import CreateScoreStep from "./CreateScoreStep";
+import firebase from "firebase";
 
 const styles = {
     dialog__paper: {
@@ -52,12 +53,20 @@ class AddPartsDialog extends React.Component {
     }
 
     async open(pdfs) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             this.setState({
                 open: true,
                 pdfs: pdfs,
                 pdfData: pdfs.map(_ => ({instrument: 0})),
                 scoreData: {title: pdfs[0].name}
+            });
+
+
+            const snapshot = await firebase.firestore().collection('instruments').get();
+            const instruments = snapshot.docs.map(doc => ({...doc.data(), id: doc.id}));
+
+            this.setState({
+                instruments: instruments,
             });
 
             this.__resolve = resolve;

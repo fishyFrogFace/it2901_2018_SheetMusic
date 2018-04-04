@@ -198,7 +198,6 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
         await fs.writeFile('/tmp/.xpdfrc', '');
 
         const process2 = await spawn('xpdf/pdftotext', [
-            '-raw',
             '-cfg', '/tmp/.xpdfrc',
             '/tmp/score.pdf',
         ]);
@@ -213,44 +212,116 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
 
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
 
-        const patternShort = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
-        const patternFull = /(vocal|(alto|tenor) sax|trumpet|trombone|guitar|piano|bass|drum set)/ig;
-
         if (pdfText.includes('jazzbandcharts')) {
+            const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
+
+            const patterns = [{
+                name: 'Score',
+                expr: /(: )?score/i
+            }, {
+                name: 'Vocal',
+                expr: /(\w )?vocal/i
+            }, {
+                name: 'Alto Sax',
+                expr: /(\w )?alto sax\. \d/i
+            }, {
+                name: 'Tenor Sax',
+                expr: /(\w )?tenor sax\. \d/i
+            }, {
+                name: 'Baritone Sax',
+                expr: /(\w )?baritone sax\./i
+            }, {
+                name: 'Trumpet',
+                expr: /(\w )?trumpet .{0,6}\d/i
+            }, {
+                name: 'Trombone',
+                expr: /(\w )?trombone \d/i
+            }, {
+                name: 'Guitar',
+                expr: /(\w )?guitar/i
+            }, {
+                name: 'Piano',
+                expr: /(\w )?piano/i
+            }, {
+                name: 'Bass',
+                expr: /(\w )?bass/i
+            }, {
+                name: 'Drum Set',
+                expr: /(\w )?drum set/i
+            }];
+
             const _pages = pdfText.split('\f');
-            const instruments = <[any]>[{pageRange: [2], name: 'score'}];
+
+            const snapshot = await admin.firestore().collection('instruments').get();
+
+            const instruments = snapshot.docs.map(doc => ({...doc.data(), ref: doc.ref}));
+
+            const parts = [{
+                page: 2,
+                instruments: [admin.firestore().doc('instruments/YFNsZF5GxxpkfBqtbouy')]
+            }];
+
+            const nameCount = {};
 
             for (let i = 3; i < _pages.length; i++) {
                 const page = _pages[i];
 
-                const mShort = page.match(patternShort);
-                const mFull = page.match(patternFull);
+                const mExclude = excludePattern.test(page);
 
-                if (!mShort && mFull && mFull.length < 3) {
-                    instruments[instruments.length - 1].pageRange.push(i);
+                const detectedInstrNames = [];
 
-                    const [instr1, instr2] = mFull;
+                if (!mExclude) {
+                    for (let pattern of patterns) {
+                        const isMatch = pattern.expr.test(page);
 
-                    if (mFull.length === 2) {
-                        instruments.push({pageRange: [i], name: [instr1, instr2]});
-                    } else {
-                        const instrCount = instruments.filter(instr =>
-                            !Array.isArray(instr.name) && instr.name.includes(instr1)
-                        ).length;
-
-                        instruments.push({pageRange: [i], name: instr1});
-
-                        if (instrCount > 0) {
-                            instruments[instruments.length - 2].name = `${instr1} ${instrCount}`;
-                            instruments[instruments.length - 1].name = `${instr1} ${instrCount + 1}`;
+                        if (isMatch &&
+                            /*Simulate negative lookbehind*/
+                            !pattern.expr.exec(page)[1]) {
+                            detectedInstrNames.push(pattern.name);
                         }
+                    }
+                }
+
+                if (detectedInstrNames.length > 0) {
+                    if (detectedInstrNames.length === 1) {
+                        const [name] = detectedInstrNames;
+
+                        if (['Alto Sax', 'Tenor Sax', 'Trumpet', 'Trombone'].indexOf(name) > -1) {
+                            if (!nameCount[name]) {
+                                nameCount[name] = 0;
+                            }
+
+                            const instrRef = instruments.find(instr =>
+                                instr['name'] === `${name} ${nameCount[name] + 1}`).ref;
+
+                            parts.push({
+                                page: i,
+                                instruments: [instrRef]
+                            });
+
+                            nameCount[name] += 1;
+                        } else {
+                            const instrRef = instruments.find(instr => instr['name'] === name).ref;
+
+                            parts.push({
+                                page: i,
+                                instruments: [instrRef]
+                            });
+                        }
+                    } else {
+                        const instrRefs = detectedInstrNames.map(name =>
+                            instruments.find(instr => instr['name'] === name).ref
+                        );
+
+                        parts.push({
+                            page: i,
+                            instruments: instrRefs
+                        });
                     }
                 }
             }
 
-            instruments[instruments.length - 1].pageRange.push(pages.length);
-
-            data['instruments'] = instruments;
+            data['parts'] = parts;
         }
 
         await pdfRef.update(data);

@@ -1,13 +1,11 @@
 import React from 'react';
 import {
-    AppBar, Button, Checkbox, CircularProgress, Divider, IconButton, List, ListItem, ListItemText, Paper, Toolbar,
-    Typography
+    Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText,
+    Paper, Typography
 } from "material-ui";
 
 import {withStyles} from "material-ui/styles";
 
-import {Close} from "material-ui-icons";
-import Selectable from "../../components/Selectable";
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
 
@@ -36,127 +34,81 @@ const styles = theme => ({
         flexWrap: 'wrap',
         boxSizing: 'border-box',
         alignContent: 'flex-start'
+    },
+
+    checkboxWrapper: {
+        width: 48,
+        height: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
     }
 });
 
 class UnsortedPDFs extends React.Component {
-    state = {
-        selectedPDFs: new Set(),
-        lastClicked: null
-    };
-
-    keys = {};
-
-    constructor(props) {
-        super(props);
-
-        window.onkeydown = e => {
-            this.keys[e.code] = true;
-        };
-
-        window.onkeyup = e => {
-            this.keys[e.code] = false;
-        }
-    }
-
     _onPDFClick = pdfId => {
         window.location.hash = `/pdf/${this.props.band.id}${pdfId}`
     };
 
-    _onPDFSelect = (id, checked) => {
-        const selectedPDFs = new Set(this.state.selectedPDFs);
-
-        if (this.keys.ShiftLeft && this.state.lastClicked !== null) {
-            // let indices = [];
-            // for (let i = Math.min(this.state.lastClicked, index); i <= Math.max(this.state.lastClicked, index); i++) {
-            //     indices.push(i);
-            // }
-            //
-            // for (let i of indices) {
-            //     selectedPDFs.add(i);
-            // }
-        } else {
-            if (checked) {
-                selectedPDFs.add(id);
-            } else {
-                selectedPDFs.delete(id);
-            }
-        }
-
-        this.props.onSelect(selectedPDFs);
-
-        this.setState({selectedPDFs: selectedPDFs});
-    };
-
-    _onSelectionCloseClick = () => {
-        this.props.onSelect(new Set());
-        this.setState({selectedPDFs: new Set()});
-    };
-
-    _onAddAsParts = async () => {
-        const pdfs = Array.from(this.state.selectedPDFs).map(i => this.props.band.pdfs[i]);
+    _onAddParts = async pdfs => {
         const {score, parts} = await this.addPartsDialog.open(pdfs);
-        this.setState({selectedPDFs: new Set()});
         this.props.onAddParts(score, parts);
     };
 
-    _onAddAsFullScore = async () => {
-        const pdf = this.props.band.pdfs[Array.from(this.state.selectedPDFs)[0]];
+    _onAddFullScore = async pdf => {
         const {score, parts} = await this.addFullScoreDialog.open(pdf);
-        this.setState({selectedPDFs: new Set()});
         this.props.onAddFullScore(score, parts, pdf);
     };
 
     render() {
         const {classes, band} = this.props;
-        const {selectedPDFs} = this.state;
 
         return <div>
-            {
-                selectedPDFs.size > 0 &&
-                <AppBar color='secondary' classes={{root: classes.appBar__root}}>
-                    <Toolbar style={{minHeight: 56}}>
-                        <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
-                            <Close/>
-                        </IconButton>
-                        <Typography variant="title" color="inherit" className={classes.flex}>
-                            {selectedPDFs.size} selected
-                        </Typography>
-                        {
-                            selectedPDFs.size === 1 &&
-                            <Button color='inherit' onClick={this._onAddAsFullScore}>Add as full score</Button>
-                        }
-                        <Button color='inherit' onClick={this._onAddAsParts}>Add as parts</Button>
-                    </Toolbar>
-                </AppBar>
-            }
             <div style={{paddingTop: 20, paddingLeft: 20}}>
                 {
                     band.pdfs && band.pdfs.map(group => {
                         switch (group.type) {
                             case 'full':
-                                return <Paper key={group.item.id} style={{marginRight: 20, marginBottom: 20}}>
-                                    <ListItem key={group.item.id} style={{height: 40, padding: '10px 0'}} button disableRipple>
-                                        {group.item.processing && <div style={{width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center'}}><CircularProgress color="secondary" size={20}/></div>}
+                                return <Paper key={group.pdf.id} style={{marginRight: 20, marginBottom: 20, position: 'relative'}}>
+                                    <div style={{padding: '10px 20px', display: 'flex', alignItems: 'center'}}>
+                                        <Typography variant='body2'>{group.name}</Typography>
+                                        <div style={{flex: 1}}/>
+                                        <div style={{position: 'relative'}}>
+                                            <Button color='secondary' onClick={() => this._onAddFullScore(group.pdf)} disabled={group.pdf.processing}>Add</Button>
+                                            {group.pdf.processing && <CircularProgress color='secondary' style={{position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12}} size={24}/>}
+                                        </div>
+                                    </div>
+                                    <Divider/>
+                                    <div style={{display: 'flex', paddingTop: 10, paddingLeft: 10, flexWrap: 'wrap'}}>
                                         {
-                                            !group.item.processing && <Checkbox classes={{checked: classes.checkbox__checked}} onChange={(_, checked) => this._onPDFSelect(group.item.id, checked)}/>
+                                            group.pdf.parts && group.pdf.parts.map((part, i) =>
+                                                <Chip key={i} style={{marginRight: 10, marginBottom: 10}}
+                                                      label={part.instruments.map(instr => instr.name).join('/')}/>
+                                            )
                                         }
-                                        <ListItemText primary={group.item.name}/>
-                                    </ListItem>
+                                        {
+                                            !group.pdf.processing && !group.pdf.parts &&
+                                            <Typography style={{marginLeft: 10, marginBottom: 10, color: 'rgba(0,0,0,.54)'}}>No instruments detected.</Typography>
+                                        }
+                                    </div>
                                 </Paper>;
                             case 'part':
-                                return <Paper key={group.name} style={{marginRight: 20, marginBottom: 20}}>
-                                    <div style={{padding: '10px 20px'}}>
+                                return <Paper key={group.name} style={{marginRight: 20, marginBottom: 20, position: 'relative'}}>
+                                    <div style={{padding: '10px 20px', display: 'flex', alignItems: 'center'}}>
                                         <Typography variant='body2'>{group.name}</Typography>
+                                        <div style={{flex: 1}}/>
+                                        <div style={{position: 'relative'}}>
+                                            <Button color='secondary' disabled={group.pdfs.some(pdf => pdf.processing)} onClick={() => this._onAddParts(group.pdfs)}>Add</Button>
+                                            {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary' style={{position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12}} size={24}/>}
+                                        </div>
                                     </div>
                                     <Divider/>
                                     <List>
                                         {
-                                            group.items.map(item =>
-                                                <ListItem key={item.id} style={{height: 40, padding: '10px 0'}} button disableRipple>
-                                                    {item.processing && <div style={{width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center'}}><CircularProgress color="secondary" size={20}/></div>}
-                                                    {!item.processing && <Checkbox classes={{checked: classes.checkbox__checked}} onChange={(_, checked) => this._onPDFSelect(item.id, checked)}/>}
-                                                    <ListItemText primary={item.name}/>
+                                            group.pdfs.map(pdf =>
+                                                <ListItem key={pdf.id} style={{height: 40, padding: '10px 20px'}} button
+                                                          disableRipple>
+                                                    <ListItemText primary={pdf.name}/>
                                                 </ListItem>
                                             )
                                         }
