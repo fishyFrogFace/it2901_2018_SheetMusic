@@ -111,10 +111,6 @@ class Home extends React.Component {
             data.arranger = scoreData.arranger;
         }
 
-        if (scoreData.extraInstruments) {
-            data.arranger = scoreData.extraInstruments;
-        }
-
         if (scoreData.tempo) {
             data.tempo = scoreData.tempo;
         }
@@ -173,12 +169,12 @@ class Home extends React.Component {
         }
 
         for (let part of parts) {
-            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdfId}`).get();
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
 
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
+                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
             });
 
             await pdfDoc.ref.delete();
@@ -374,7 +370,6 @@ class Home extends React.Component {
 
                                 for (let item of items) {
                                     if (item.pageCount > 10) {
-
                                         if (item.parts) {
                                             item.parts = await Promise.all(
                                                 item.parts.map(async part => ({
@@ -425,16 +420,6 @@ class Home extends React.Component {
                             }
 
                             this.setState({band: {...this.state.band, [page]: items}});
-                        })
-                    );
-
-                    this.unsubs.push(
-                        data.defaultBandRef.collection('instruments').onSnapshot(async snapshot => {
-                            let items = await Promise.all(
-                                snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
-                            );
-
-                            this.setState({band: {...this.state.band, instruments: items}});
                         })
                     );
 

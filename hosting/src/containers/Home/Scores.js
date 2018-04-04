@@ -140,7 +140,7 @@ class Scores extends React.Component {
                                         {score.composer}
                                     </Typography>
                                     <Typography variant='body1'>
-                                        {score.partCount && band.instruments ? `${score.partCount}/${band.instruments.length} parts` : ''}
+                                        {score.partCount} parts
                                     </Typography>
                                     {/*<Badge style={{position: 'absolute', top: 20, right: 20}} badgeContent={4} color="secondary">*/}
                                     {/*<InstrumentIcon/>*/}
