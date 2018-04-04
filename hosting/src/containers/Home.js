@@ -335,6 +335,10 @@ class Home extends React.Component {
         this.setState({accountAnchorEl: e.currentTarget});
     };
 
+    signOut() {
+      return firebase.auth().signOut();
+    }
+
     async componentDidUpdate(prevProps, prevState) {
         const user = firebase.auth().currentUser;
 
@@ -553,10 +557,7 @@ class Home extends React.Component {
                                 open={Boolean(accountAnchorEl)}
                                 onClose={this._onMenuClose}
                             >
-                                <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
-                                    computer</MenuItem>
-                                <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
-                                    Dropbox</MenuItem>
+                                <MenuItem onClick={() => this.signOut()}>Sign out</MenuItem>
                             </Menu>
                         </Toolbar>
                     </AppBar>
