@@ -10,7 +10,7 @@ import {
     Snackbar
 } from "material-ui";
 
-import AccountCircleIcon from 'material-ui-icons/AccountCircle';
+import ExitToApp from 'material-ui-icons/ExitToApp';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
@@ -550,8 +550,12 @@ class Home extends React.Component {
                             </Menu>
 
                             <IconButton onClick={this._onAccountCircleClick}>
-                                <AccountCircleIcon>
-                                </AccountCircleIcon>
+                                <img src={user.photoURL} style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  borderRadius: '50%'
+                                }}>
+                                </img>
                             </IconButton>
                             <Menu
                                 anchorEl={accountAnchorEl}
@@ -589,7 +593,7 @@ class Home extends React.Component {
                                         </Typography>
                                     </div>
                                 </div>
-                                <MenuItem onClick={() => this.signOut()}>Sign out</MenuItem>
+                                <MenuItem onClick={() => this.signOut()}><ExitToApp style={{margin: '5px'}}></ExitToApp>Sign out</MenuItem>
                             </Menu>
                         </Toolbar>
                     </AppBar>
