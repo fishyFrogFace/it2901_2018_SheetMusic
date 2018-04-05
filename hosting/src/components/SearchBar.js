@@ -87,7 +87,7 @@ class SearchBar extends React.Component {
                 />
                 {
                     resultsVisible && results && results.length > 0 &&
-                    <Paper style={{position: 'absolute', top: 56, background: 'white', width: '100%'}}>
+                    <Paper style={{position: 'absolute', top: 48, background: 'white', width: '100%'}}>
                         <List>
                             {
                                 results.slice(0, 5).map((result, index) =>

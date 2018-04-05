@@ -112,12 +112,12 @@ class AddPartsDialog extends React.Component {
 
     _onCancelClick = () => {
         this.__reject("Dialog canceled");
-        this.setState({open: false});
+        this.setState({open: false, parts: [], scoreData: {}, activeStep: 0, scoreCreated: false});
     };
 
     _onBackClick = () => {
         const {activeStep, scoreCreated} = this.state;
-        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
+        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1, scoreCreated: false});
     };
 
     _onScoreDataChange = data => {
