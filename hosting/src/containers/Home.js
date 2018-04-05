@@ -551,8 +551,8 @@ class Home extends React.Component {
 
                             <IconButton onClick={this._onAccountCircleClick}>
                                 <img src={user.photoURL} style={{
-                                  width: "40px",
-                                  height: "40px",
+                                  width: "32px",
+                                  height: "32px",
                                   borderRadius: '50%'
                                 }}>
                                 </img>
