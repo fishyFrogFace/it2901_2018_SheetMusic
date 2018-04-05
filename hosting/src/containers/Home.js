@@ -239,12 +239,12 @@ class Home extends React.Component {
             } else {
                 this.setState({message: 'Joining band...'});
 
-                await bandRef.collection('members').add({ref: userRef});
+                await bandRef.collection('members').add({ref: userRef, status: "pending"});
 
-                await userRef.update({
+                /*await userRef.update({
                     defaultBandRef: bandRef,
                     bandRefs: [...userBandRefs, bandRef]
-                })
+                })*/
             }
         } else {
             this.setState({message: 'Band does not exist!'});
@@ -369,6 +369,7 @@ class Home extends React.Component {
                                 const visited = [];
 
                                 for (let item of items) {
+                                    console.log(item);
                                     if (item.pageCount > 10) {
                                         if (item.parts) {
                                             item.parts = await Promise.all(
@@ -418,6 +419,12 @@ class Home extends React.Component {
                                     }))
                                     .sort((a, b) => a.name.localeCompare(b.name));
                             }
+                            if(page === "members") {
+                                for(let item of items) {
+                                    item.user = (await item.ref.get()).data();
+                                }
+                            }
+
 
                             this.setState({band: {...this.state.band, [page]: items}});
                         })

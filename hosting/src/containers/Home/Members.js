@@ -1,7 +1,10 @@
 import React from 'react';
 
+import firebase from 'firebase';
+
 import {withStyles} from "material-ui/styles";
-import {Avatar, List, ListItem, ListItemText, Paper, Typography} from "material-ui";
+import {Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography} from "material-ui";
+import {Done, Clear} from 'material-ui-icons';
 
 const styles = {
     root: {}
@@ -9,6 +12,16 @@ const styles = {
 
 class Members extends React.Component {
     state = {};
+
+    _onAccept = async (member) => {
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
+        await memberRef.update({status: 'accepted'});
+    }
+
+    _onReject = async (member) => {
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
+        await memberRef.delete();
+    }
 
     render() {
         const {classes, band} = this.props;
@@ -18,10 +31,12 @@ class Members extends React.Component {
                 <Paper style={{width: 400}}>
                     <List>
                         {
-                            band.members.map((member, index) =>
-                            <ListItem key={index} dense button>
-                                <Avatar src={member.photoURL}/>
-                                <ListItemText primary={member.displayName}/>
+                            band.members.map((member, index) => 
+                            <ListItem key={index} dense button disableRipple>
+                                <Avatar src={member.user.photoURL}/>
+                                <ListItemText primary={member.user.displayName}/>
+                                {member.status === 'pending' && <IconButton onClick={() => this._onAccept(member)}><Done /></IconButton>}
+                                <IconButton onClick={() => this._onReject(member)}><Clear /></IconButton>
                             </ListItem>)
                         }
                     </List>
