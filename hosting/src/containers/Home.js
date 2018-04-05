@@ -553,7 +553,7 @@ class Home extends React.Component {
                                 <img src={user.photoURL} style={{
                                   width: "32px",
                                   height: "32px",
-                                  borderRadius: '50%'
+                                  borderRadius: '50%',
                                 }}>
                                 </img>
                             </IconButton>
@@ -570,25 +570,25 @@ class Home extends React.Component {
                                   justifyContent: 'flex-start',
                                   outline: 'none',
                                   paddingRight: 50,
-                                  paddingLeft: 10
+                                  paddingLeft: 10,
                                 }}>
                                     <img src={user.photoURL} style={{
-                                      width: "50px",
-                                      height: "50px",
+                                      width: "46px",
+                                      height: "46px",
                                       margin: "10px",
-                                      borderRadius: '50%'
+                                      borderRadius: '50%',
                                     }}>
                                     </img>
                                     <div style={{
                                       display: "flex",
                                       flexDirection: 'column',
                                       justifyContent: 'center',
-                                      marginRight: '30px'
+                                      marginRight: '30px',
                                     }}>
-                                        <Typography>
-                                            <b> {user.displayName} </b>
+                                        <Typography variant="body2" style={{fontSize: "16px", fontWeight: "500"}}>
+                                            {user.displayName}
                                         </Typography>
-                                        <Typography>
+                                        <Typography variant="body1">
                                             {user.email}
                                         </Typography>
                                     </div>
