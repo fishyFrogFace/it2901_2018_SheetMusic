@@ -107,7 +107,7 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            parts = [...parts.sort((a, b) => b.page = a.page), {page: pdf.pages.length}];
+            parts = [...parts.sort((a, b) => a.page - b.page), {page: pdf.pages.length}];
 
             const _parts = [];
 
