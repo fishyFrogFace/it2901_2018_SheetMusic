@@ -168,7 +168,7 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
         };
         const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
         if (pdfText.includes('jazzbandcharts')) {
-            const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
+            // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
                     name: 'Score',
                     expr: /(: )?score/i
@@ -213,18 +213,18 @@ exports.convertPDF = functions.storage.object().onChange((event) => __awaiter(th
             const nameCount = {};
             for (let i = 3; i < _pages.length; i++) {
                 const page = _pages[i];
-                const mExclude = excludePattern.test(page);
+                // const mExclude = excludePattern.test(page);
                 const detectedInstrNames = [];
-                if (!mExclude) {
-                    for (let pattern of patterns) {
-                        const isMatch = pattern.expr.test(page);
-                        if (isMatch &&
-                            /*Simulate negative lookbehind*/
-                            !pattern.expr.exec(page)[1]) {
-                            detectedInstrNames.push(pattern.name);
-                        }
+                // if (!mExclude) {
+                for (let pattern of patterns) {
+                    const isMatch = pattern.expr.test(page);
+                    if (isMatch &&
+                        /*Simulate negative lookbehind*/
+                        !pattern.expr.exec(page)[1]) {
+                        detectedInstrNames.push(pattern.name);
                     }
                 }
+                // }
                 if (detectedInstrNames.length > 0) {
                     if (detectedInstrNames.length === 1) {
                         const [name] = detectedInstrNames;

@@ -65,11 +65,12 @@ class Score extends React.Component {
     async _onMenuClick(type) {
         this.setState({anchorEl: null});
 
+        const user = firebase.auth().currentUser;
+
         switch (type) {
             case 'download':
                 try {
-                    const {score} = this.props;
-                    const {selectedPart} = this.state;
+                    const {selectedPart, score} = this.state;
 
                     const part = score.parts[selectedPart];
 
@@ -82,17 +83,17 @@ class Score extends React.Component {
                     const {width, height} = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
-                        img.src = part.pagesOriginal[0];
+                        img.src = part.pages[0].originalURL;
                     });
 
                     const doc = new jsPDF('p', 'px', [width, height]);
 
-                    for (let i = 0; i < part.pagesOriginal.length; i++) {
+                    for (let i = 0; i < part.pages.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = part.pagesOriginal[i];
+                        const url = part.pages[0].originalURL;
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -104,7 +105,7 @@ class Score extends React.Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.pagesOriginal.length}`, 20, height - 20);
+                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
                     }
 
                     doc.save(`${score.title}.pdf`);

@@ -213,7 +213,7 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
 
         if (pdfText.includes('jazzbandcharts')) {
-            const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
+            // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
 
             const patterns = [{
                 name: 'Score',
@@ -266,11 +266,11 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             for (let i = 3; i < _pages.length; i++) {
                 const page = _pages[i];
 
-                const mExclude = excludePattern.test(page);
+                // const mExclude = excludePattern.test(page);
 
                 const detectedInstrNames = [];
 
-                if (!mExclude) {
+                // if (!mExclude) {
                     for (let pattern of patterns) {
                         const isMatch = pattern.expr.test(page);
 
@@ -280,7 +280,7 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
                             detectedInstrNames.push(pattern.name);
                         }
                     }
-                }
+                // }
 
                 if (detectedInstrNames.length > 0) {
                     if (detectedInstrNames.length === 1) {
