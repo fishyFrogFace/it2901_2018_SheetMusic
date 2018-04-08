@@ -207,6 +207,16 @@ class Home extends React.Component {
                 code: Math.random().toString(36).substring(2, 7),
             });
 
+            await bandRef.collection('members').add({
+                ref: userRef,
+                uid: user.uid,
+                status: "member"
+            });
+
+            await bandRef.update({
+                admins: [user.uid]
+            });
+
             await firebase.firestore().doc(`users/${user.uid}`).update({
                 defaultBandRef: bandRef,
                 bandRefs: [...(userDoc.data().bandRefs || []), bandRef],
@@ -237,7 +247,7 @@ class Home extends React.Component {
             if (userBandRefs.some(ref => ref.id === bandRef.id)) {
                 this.setState({message: 'Band already joined!'});
             } else {
-                this.setState({message: 'Joining band...'});
+                this.setState({message: 'Sending request to join band...'});
 
                 await bandRef.collection('members').add({ref: userRef, status: "pending"});
 
