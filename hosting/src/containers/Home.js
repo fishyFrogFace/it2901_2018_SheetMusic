@@ -250,11 +250,6 @@ class Home extends React.Component {
                 this.setState({message: 'Sending request to join band...'});
 
                 await bandRef.collection('members').add({ref: userRef, status: "pending"});
-
-                /*await userRef.update({
-                    defaultBandRef: bandRef,
-                    bandRefs: [...userBandRefs, bandRef]
-                })*/
             }
         } else {
             this.setState({message: 'Band does not exist!'});
@@ -432,6 +427,10 @@ class Home extends React.Component {
                             if(page === "members") {
                                 for(let item of items) {
                                     item.user = (await item.ref.get()).data();
+                                    const admins = (await item.user.defaultBandRef.get()).data().admins;
+                                    const supervisors = (await item.user.defaultBandRef.get()).data().supervisors || [];
+                                    item.isAdmin = this.inList(item.uid, admins);
+                                    item.isSupervisor = this.inList(item.uid, supervisors);
                                 }
                             }
 
@@ -479,6 +478,15 @@ class Home extends React.Component {
                 ], options).finished;
             }
         }
+    }
+
+    inList = (user, list) => {
+        for(let i in list) {
+            if(user === list[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     _onPDFSelect = selectedPDFs => {
