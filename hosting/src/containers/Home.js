@@ -243,7 +243,6 @@ class Home extends React.Component {
             const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
             let userBandRefs = (await userRef.get()).data().bandRefs || [];
-            console.log(userBandRefs);
 
             if (userBandRefs.some(ref => ref.id === bandRef.id)) {
                 this.setState({message: 'Band already joined!'});
