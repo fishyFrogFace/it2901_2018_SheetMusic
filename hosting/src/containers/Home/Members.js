@@ -5,6 +5,7 @@ import firebase from 'firebase';
 import {withStyles} from "material-ui/styles";
 import {Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography} from "material-ui";
 import {Done, Clear, Star, RemoveCircle, QueueMusic} from 'material-ui-icons';
+import AsyncDialog from '../../components/dialogs/AsyncDialog';
 
 const styles = theme => ({
     root: {}
@@ -14,14 +15,30 @@ class Members extends React.Component {
     state = {
         isAdmin: false,
         user: "none",
+        title: "",
+        message: "",
     };
+
+    open = async () => {
+        try {
+            await this.dialog.open();
+            return true;
+        } catch(error) {
+            return false;
+        }
+    }
 
     _onAccept = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
         const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}//${member.id}`);
         const userRef = firebase.firestore().doc(`users/${member.uid}`);
         
-        // TODO: confirm modal about accepting
+        // confirm modal about accepting
+        this.setState({
+            title: "Accept new member",
+            message: `Are you sure you want to accept ${member.user.displayName} as a member?`,
+        });
+        if(!await this.open()) return;
 
         // update users band refs
         let userBandRefs = (await userRef.get()).data() || [];
@@ -35,7 +52,13 @@ class Members extends React.Component {
 
     _onReject = async (member) => {
         const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}//${member.id}`);
-        // TODO: confirm modal about rejecting
+        
+        // confirm modal about rejecting
+        this.setState({
+            title: "Reject new member",
+            message: `Are you sure you want to reject ${member.user.displayName} as a member?`,
+        });
+        if(!await this.open()) return;
 
         // remove member from bands member list 
         await memberRef.delete();
@@ -49,8 +72,13 @@ class Members extends React.Component {
         const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/member/${member.id}`);
         const userRef = firebase.firestore().doc(`users/${member.uid}`);
 
-        // TODO: confirm modal about leaving
-        
+        // confirm modal about leaving
+        this.setState({
+            title: "Leave band",
+            message: `Are you sure you want to leave ${this.props.band.name}?`,
+        });
+        if(!await this.open()) return;
+
         // remove member from bands member list
         await memberRef.delete();
 
@@ -87,7 +115,13 @@ class Members extends React.Component {
         const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/member/${member.id}`);
         const userRef = firebase.firestore().doc(`users/${member.uid}`);
 
-        // TODO: confirm modal about removal
+        // confirm modal about removal
+        this.setState({
+            title: "Remove member",
+            message: `Are you sure you want to remove ${member.user.displayName} from ${this.props.band.name}?`,
+        });
+        if(!await this.open()) return;
+
         
         // remove member from bands member list
         await memberRef.delete();
@@ -126,6 +160,12 @@ class Members extends React.Component {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
 
         // TODO: confirm modal about promotion to admin
+        this.setState({
+            title: "Promote to admin",
+            message: `Are you sure you want to promote ${member.user.displayName} to admin of ${this.props.band.name}?`,
+        });
+        if(!await this.open()) return;
+
 
         // add member to the admin list
         let admins = (await bandRef.get()).data().admins || [];
@@ -139,6 +179,13 @@ class Members extends React.Component {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
 
         // TODO: confirm modal about promotion to music supervisor
+        this.setState({
+            title: "Promotion",
+            message: `Are you sure you want to promote ${member.user.displayName} to music supervisor?`
+        });
+        if(!await this.open()) {
+            return;
+        }
 
         // add member to the supervisor list
         let supervisors = (await bandRef.get()).data().supervisors || [];
@@ -152,6 +199,11 @@ class Members extends React.Component {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
 
         // TODO: confirm modal about demoting from music supervisor
+        this.setState({
+            title: "Demote music supervisor",
+            message: `Are you sure you want to demote ${member.user.displayName} from music supervisor of ${this.props.band.name}?`,
+        });
+        if(!await this.open()) return;
 
         // remove member from the supervisor list
         const supervisors = (await bandRef.get()).data().supervisors || [];
@@ -226,6 +278,9 @@ class Members extends React.Component {
                     </List>
                 </Paper>
             }
+            <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+                <Typography variant="body1" >{this.state.message}</Typography>
+            </AsyncDialog>
         </div>
     }
 }
