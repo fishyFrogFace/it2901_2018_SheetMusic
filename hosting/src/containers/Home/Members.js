@@ -6,6 +6,7 @@ import {withStyles} from "material-ui/styles";
 import {Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography} from "material-ui";
 import {Done, Clear, Star, RemoveCircle, QueueMusic} from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
+import Tooltip from 'material-ui/Tooltip';
 
 const styles = theme => ({
     root: {}
@@ -248,13 +249,21 @@ class Members extends React.Component {
                             <ListItem key={index} dense button disableRipple>
                                 <Avatar src={member.user.photoURL}/>
                                 <ListItemText primary={member.user.displayName}/>
-                                {member.isAdmin && <Star color="secondary" />}
-                                {!member.isAdmin && <IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton>}
-                                {member.isSupervisor && <IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton>}
-                                {!member.isSupervisor && <IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton>}
-                                {member.status === 'pending' && <div><IconButton onClick={() => this._onAccept(member)}><Done /></IconButton>
-                                <IconButton onClick={() => this._onReject(member)}><Clear /></IconButton></div>}
-                                {member.uid === this.state.user && <IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton>}
+                                {member.isAdmin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
+                                {!member.isAdmin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                {member.isSupervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                {!member.isSupervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                {
+                                    member.status === 'pending' && 
+                                    <div>
+                                        <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done /></IconButton></Tooltip>
+                                        <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear /></IconButton></Tooltip>
+                                    </div>
+                                }
+                                {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                {
+                                    member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>
+                                }
                             </ListItem>)
                         }
                     </List>
@@ -269,9 +278,9 @@ class Members extends React.Component {
                                 {member.status === 'member' && <ListItem key={index} dense button disableRipple>
                                     <Avatar src={member.user.photoURL}/>
                                     <ListItemText primary={member.user.displayName}/>
-                                    {member.isAdmin && <Star color="secondary" />}
-                                    {member.isSupervisor && <QueueMusic color="secondary" />}
-                                    {member.uid === this.state.user && <IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton>}
+                                    {member.isAdmin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
+                                    {member.isSupervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
+                                    {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
                                 </ListItem>}
                             </div>)
                         }
