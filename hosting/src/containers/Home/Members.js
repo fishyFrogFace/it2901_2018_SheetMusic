@@ -159,7 +159,7 @@ class Members extends React.Component {
     _onMakeAdmin = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
 
-        // TODO: confirm modal about promotion to admin
+        // confirm modal about promotion to admin
         this.setState({
             title: "Promote to admin",
             message: `Are you sure you want to promote ${member.user.displayName} to admin of ${this.props.band.name}?`,
@@ -178,7 +178,7 @@ class Members extends React.Component {
     _onMakeSupervisor = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
 
-        // TODO: confirm modal about promotion to music supervisor
+        // confirm modal about promotion to music supervisor
         this.setState({
             title: "Promotion",
             message: `Are you sure you want to promote ${member.user.displayName} to music supervisor?`
@@ -198,7 +198,7 @@ class Members extends React.Component {
     _onDemoteSupervisor = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
 
-        // TODO: confirm modal about demoting from music supervisor
+        // confirm modal about demoting from music supervisor
         this.setState({
             title: "Demote music supervisor",
             message: `Are you sure you want to demote ${member.user.displayName} from music supervisor of ${this.props.band.name}?`,
