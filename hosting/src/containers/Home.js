@@ -185,6 +185,26 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
+    _onRemoveUnsortedPdf = async (pdf) => {
+        const {band} = this.state;
+        this.setState({message: 'Removing PDFs...'});
+        console.log(band.id);
+
+        if (pdf.type == 'part') {
+            for (let part of pdf.pdfs) {
+              const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
+              console.log(pdfDoc);
+              await pdfDoc.ref.delete();
+            }
+        } else {
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
+            console.log(pdfDoc);
+            await pdfDoc.ref.delete();
+        }
+
+        this.setState({message: null});
+    };
+
     _onBandClick = e => {
         this.setState({bandAnchorEl: e.currentTarget})
     };
@@ -708,6 +728,7 @@ class Home extends React.Component {
                         onAddFullScore={this._onAddFullScore}
                         onAddParts={this._onAddParts}
                         onSelect={this._onPDFSelect}
+                        onRemoveUnsortedPdf={this._onRemoveUnsortedPdf}
                     />
                 }
             </div>
