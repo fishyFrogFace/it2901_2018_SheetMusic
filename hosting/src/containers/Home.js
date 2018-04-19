@@ -187,21 +187,17 @@ class Home extends React.Component {
 
     _onRemoveUnsortedPdf = async (pdf) => {
         const {band} = this.state;
-        this.setState({message: 'Removing PDFs...'});
-        console.log(band.id);
+        this.setState({message: 'Removing PDF...'});
 
         if (pdf.type == 'part') {
             for (let part of pdf.pdfs) {
               const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
-              console.log(pdfDoc);
               await pdfDoc.ref.delete();
             }
         } else {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
-            console.log(pdfDoc);
             await pdfDoc.ref.delete();
         }
-
         this.setState({message: null});
     };
 

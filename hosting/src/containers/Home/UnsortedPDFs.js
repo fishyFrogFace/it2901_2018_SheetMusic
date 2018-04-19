@@ -57,7 +57,6 @@ class UnsortedPDFs extends React.Component {
     };
 
     _onRemoveUnsortedPdf = async pdf => {
-        // console.log(pdf);
         this.props.onRemoveUnsortedPdf(pdf);
     };
 
