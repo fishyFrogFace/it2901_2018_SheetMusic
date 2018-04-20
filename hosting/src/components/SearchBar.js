@@ -70,7 +70,6 @@ class SearchBar extends React.Component {
     };
 
     _onResultClick = result => {
-        console.log(this.props);
         window.location.hash = `/${result.type}/${this.props.bandId}${result.id}`;
     };
 
