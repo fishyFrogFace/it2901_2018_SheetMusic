@@ -205,16 +205,15 @@ class Home extends React.Component {
                 name: name,
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`),
                 code: Math.random().toString(36).substring(2, 7),
+                admins: [user.uid],
             });
 
             await bandRef.collection('members').add({
                 ref: userRef,
                 uid: user.uid,
-                status: "member"
-            });
-
-            await bandRef.update({
-                admins: [user.uid]
+                status: "member",
+                admin: true,
+                supervisor: true,
             });
 
             await firebase.firestore().doc(`users/${user.uid}`).update({
@@ -427,10 +426,6 @@ class Home extends React.Component {
                             if(page === "members") {
                                 for(let item of items) {
                                     item.user = (await item.ref.get()).data();
-                                    const admins = (await item.user.defaultBandRef.get()).data().admins;
-                                    const supervisors = (await item.user.defaultBandRef.get()).data().supervisors || [];
-                                    item.isAdmin = this.inList(item.uid, admins);
-                                    item.isSupervisor = this.inList(item.uid, supervisors);
                                 }
                             }
 
@@ -478,15 +473,6 @@ class Home extends React.Component {
                 ], options).finished;
             }
         }
-    }
-
-    inList = (user, list) => {
-        for(let i in list) {
-            if(user === list[i]) {
-                return true;
-            }
-        }
-        return false;
     }
 
     _onPDFSelect = selectedPDFs => {
