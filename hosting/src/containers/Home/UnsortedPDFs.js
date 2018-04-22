@@ -8,6 +8,7 @@ import {withStyles} from "material-ui/styles";
 
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
+import PDFTypeDialog from "../../components/dialogs/PDFTypeDialog";
 
 const styles = theme => ({
     checkbox__checked: {
@@ -56,8 +57,12 @@ class UnsortedPDFs extends React.Component {
     };
 
     _onAddFullScore = async pdf => {
-        const {score, parts} = await this.addFullScoreDialog.open(pdf);
-        this.props.onAddFullScore(score, parts, pdf);
+        const {type} = await this.pdfTypeDialog.open();
+
+        if (type === 0) {
+            const {score, parts} = await this.addFullScoreDialog.open(pdf);
+            this.props.onAddFullScore(score, parts, pdf);
+        }
     };
 
     render() {
@@ -137,6 +142,7 @@ class UnsortedPDFs extends React.Component {
             {/*)*/}
             {/*}*/}
             {/*</div>*/}
+            <PDFTypeDialog onRef={ref => this.pdfTypeDialog = ref}/>
             <AddPartsDialog band={band} onRef={ref => this.addPartsDialog = ref}/>
             <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref}/>
         </div>;

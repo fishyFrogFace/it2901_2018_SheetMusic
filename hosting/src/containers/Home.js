@@ -10,6 +10,7 @@ import {
     Snackbar
 } from "material-ui";
 
+import ExitToApp from 'material-ui-icons/ExitToApp';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
@@ -73,6 +74,7 @@ class Home extends React.Component {
     state = {
         bandAnchorEl: null,
         uploadAnchorEl: null,
+        accountAnchorEl: null,
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null,
@@ -325,8 +327,16 @@ class Home extends React.Component {
     };
 
     _onMenuClose = () => {
-        this.setState({bandAnchorEl: null, uploadAnchorEl: null});
+        this.setState({bandAnchorEl: null, uploadAnchorEl: null, accountAnchorEl: null});
     };
+
+    _onAccountCircleClick = e => {
+        this.setState({accountAnchorEl: e.currentTarget});
+    };
+
+    signOut() {
+      return firebase.auth().signOut();
+    }
 
     async componentDidUpdate(prevProps, prevState) {
         const user = firebase.auth().currentUser;
@@ -480,7 +490,7 @@ class Home extends React.Component {
     };
 
     render() {
-        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
 
         const user = firebase.auth().currentUser;
 
@@ -541,6 +551,7 @@ class Home extends React.Component {
                             </Menu>
                             <SearchBar bandId={band.id}/>
                             <div style={{flex: 1}}/>
+
                             <IconButton style={{marginLeft: 10}} color="inherit"
                                         onClick={this._onFileUploadButtonClick}>
                                 <FileUpload/>
@@ -549,11 +560,59 @@ class Home extends React.Component {
                                 anchorEl={uploadAnchorEl}
                                 open={Boolean(uploadAnchorEl)}
                                 onClose={this._onMenuClose}
+                                style={{marginTop: 0}}
                             >
                                 <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
                                     computer</MenuItem>
                                 <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
                                     Dropbox</MenuItem>
+                            </Menu>
+
+                            <IconButton onClick={this._onAccountCircleClick}>
+                                <img src={user.photoURL} style={{
+                                  width: "32px",
+                                  height: "32px",
+                                  borderRadius: '50%',
+                                }}>
+                                </img>
+                            </IconButton>
+                            <Menu
+                                anchorEl={accountAnchorEl}
+                                open={Boolean(accountAnchorEl)}
+                                onClose={this._onMenuClose}
+                                MenuListProps={{style: {paddingTop: 0, paddingBottom: 0}}}
+                            >
+                                <div style={{
+                                  backgroundColor: "#EEEEEE",
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  justifyContent: 'flex-start',
+                                  outline: 'none',
+                                  paddingRight: 50,
+                                  paddingLeft: 10,
+                                }}>
+                                    <img src={user.photoURL} style={{
+                                      width: "46px",
+                                      height: "46px",
+                                      margin: "10px",
+                                      borderRadius: '50%',
+                                    }}>
+                                    </img>
+                                    <div style={{
+                                      display: "flex",
+                                      flexDirection: 'column',
+                                      justifyContent: 'center',
+                                      marginRight: '30px',
+                                    }}>
+                                        <Typography variant="body2" style={{fontSize: "16px", fontWeight: "500"}}>
+                                            {user.displayName}
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            {user.email}
+                                        </Typography>
+                                    </div>
+                                </div>
+                                <MenuItem onClick={() => this.signOut()}><ExitToApp style={{margin: '5px'}}></ExitToApp>Sign out</MenuItem>
                             </Menu>
                         </Toolbar>
                     </AppBar>

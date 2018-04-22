@@ -5,7 +5,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
+import {Drawer, IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 
@@ -13,7 +13,7 @@ import firebase from 'firebase';
 import 'firebase/storage';
 
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
-import {FileDownload} from "material-ui-icons";
+import {FileDownload, Info, InfoOutline} from "material-ui-icons";
 
 const styles = {
     root: {},
@@ -32,6 +32,10 @@ const styles = {
 
     sheet: {
         width: '100%'
+    },
+
+    drawer__paper: {
+        width: 250
     }
 };
 
@@ -65,11 +69,12 @@ class Score extends React.Component {
     async _onMenuClick(type) {
         this.setState({anchorEl: null});
 
+        const user = firebase.auth().currentUser;
+
         switch (type) {
             case 'download':
                 try {
-                    const {score} = this.props;
-                    const {selectedPart} = this.state;
+                    const {selectedPart, score} = this.state;
 
                     const part = score.parts[selectedPart];
 
@@ -82,17 +87,17 @@ class Score extends React.Component {
                     const {width, height} = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
-                        img.src = part.pagesOriginal[0];
+                        img.src = part.pages[0].originalURL;
                     });
 
                     const doc = new jsPDF('p', 'px', [width, height]);
 
-                    for (let i = 0; i < part.pagesOriginal.length; i++) {
+                    for (let i = 0; i < part.pages.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = part.pagesOriginal[i];
+                        const url = part.pages[0].originalURL;
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -104,7 +109,7 @@ class Score extends React.Component {
                         });
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${this.props.user.displayName}     Page: ${i + 1}/${part.pagesOriginal.length}`, 20, height - 20);
+                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
                     }
 
                     doc.save(`${score.title}.pdf`);
@@ -187,8 +192,11 @@ class Score extends React.Component {
                             </Select>
                         }
                         <div className={classes.flex}/>
-                        <IconButton color="inherit" onClick={e => this._onMenuClick('download')}>
+                        <IconButton color='inherit' onClick={e => this._onMenuClick('download')}>
                             <FileDownload/>
+                        </IconButton>
+                        <IconButton color='inherit' onClick={e => this._onMenuClick('info')}>
+                            <InfoOutline/>
                         </IconButton>
                     </Toolbar>
                 </AppBar>
@@ -200,6 +208,13 @@ class Score extends React.Component {
                         )
                     }
                 </div>
+                <Drawer
+                    anchor='right'
+                    open={false}
+                    classes={{paper: classes.drawer__paper}}
+                >
+                    lol
+                </Drawer>
                 <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref}/>
                 <Snackbar
                     anchorOrigin={{

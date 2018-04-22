@@ -107,7 +107,7 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            parts = [...parts.sort((a, b) => b.page = a.page), {page: pdf.pages.length}];
+            parts = [...parts.sort((a, b) => a.page - b.page), {page: pdf.pages.length}];
 
             const _parts = [];
 
@@ -143,12 +143,12 @@ class AddFullScoreDialog extends React.Component {
 
     _onCancelClick = () => {
         this.__reject("Dialog canceled");
-        this.setState({open: false});
+        this.setState({open: false, parts: [], scoreData: {}, activeStep: 0, scoreCreated: false});
     };
 
     _onBackClick = () => {
         const {activeStep, scoreCreated} = this.state;
-        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
+        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1, scoreCreated: false});
     };
 
     _onScoreDataChange = data => {
