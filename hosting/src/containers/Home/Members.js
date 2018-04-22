@@ -310,7 +310,6 @@ class Members extends React.Component {
                     <List>
                         {
                             band.members.map((member, index) => 
-                            <div>
                                 {member.status === 'member' && <ListItem key={index} dense button disableRipple>
                                     <Avatar src={member.user.photoURL}/>
                                     <ListItemText primary={member.user.displayName}/>
@@ -318,7 +317,7 @@ class Members extends React.Component {
                                     {member.supervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
                                     {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
                                 </ListItem>}
-                            </div>)
+                            )
                         }
                     </List>
                 </Paper>
