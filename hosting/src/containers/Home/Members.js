@@ -31,7 +31,7 @@ class Members extends React.Component {
 
     _onAccept = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}//${member.id}`);
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
         const userRef = firebase.firestore().doc(`users/${member.uid}`);
         
         // confirm modal about accepting
@@ -52,7 +52,7 @@ class Members extends React.Component {
     }
 
     _onReject = async (member) => {
-        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}//${member.id}`);
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
         
         // confirm modal about rejecting
         this.setState({
@@ -70,15 +70,47 @@ class Members extends React.Component {
     // REMARK: what to do with the band when last member leaves?
     _onLeave = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/member/${member.id}`);
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
         const userRef = firebase.firestore().doc(`users/${member.uid}`);
+        let admins = (await bandRef.get()).data().admins;
+        let members = [];
+        await bandRef.collection(`/members`).get().then(docs => {
+            docs.forEach(doc => {
+                members.push(doc.data());
+            });
+        });
 
-        // confirm modal about leaving
+        // confirm modals about leaving
         this.setState({
             title: "Leave band",
-            message: `Are you sure you want to leave ${this.props.band.name}?`,
         });
-        if(!await this.open()) return;
+        if(member.admin && admins.length < 2 && members.length > 1) {
+            this.setState({
+                message: `You are the final admin of ${this.props.band.name}. To leave the band you have to promote someone else to admin first.`,
+            });
+            if(!await this.open()) return;
+            return;
+        } else if(members.length < 2) {
+            this.setState({
+                message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
+            });
+            if(!await this.open()) return;
+        } else {
+            this.setState({
+                message: `Are you sure you want to leave ${this.props.band.name}?`,
+            });
+            if(!await this.open()) return;
+        }
+
+        // remove member from admin list if member was admin
+        if(member.admin) {
+            admins = admins.filter(admin => {
+                return admin !== member.uid;
+            });
+            await bandRef.update({
+                admins: admins,
+            });
+        }
 
         // remove member from bands member list
         await memberRef.delete();
@@ -109,11 +141,21 @@ class Members extends React.Component {
                 bandRefs: firebase.firestore.FieldValue.delete(),
             });
         }
+
+        members = [];
+        await bandRef.collection(`/members`).get().then(docs => {
+            docs.forEach(doc => {
+                members.push(doc.data());
+            });
+        });
+        if(members.length < 1) {
+            await bandRef.delete();
+        }
     }
 
     _onRemove = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/member/${member.id}`);
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
         const userRef = firebase.firestore().doc(`users/${member.uid}`);
 
         // confirm modal about removal
@@ -154,11 +196,12 @@ class Members extends React.Component {
             });
         }
         
-        // needs to update member about removal
+        // TODO: needs to update member about removal
     }
 
     _onMakeAdmin = async (member) => {
         const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
         // confirm modal about promotion to admin
         this.setState({
@@ -167,6 +210,9 @@ class Members extends React.Component {
         });
         if(!await this.open()) return;
 
+        await memberRef.update({
+            admin: true,
+        });
 
         // add member to the admin list
         let admins = (await bandRef.get()).data().admins || [];
@@ -177,27 +223,24 @@ class Members extends React.Component {
     }
 
     _onMakeSupervisor = async (member) => {
-        const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
         // confirm modal about promotion to music supervisor
         this.setState({
             title: "Promotion",
-            message: `Are you sure you want to promote ${member.user.displayName} to music supervisor?`
+            message: `Are you sure you want to promote ${member.user.displayName} to music supervisor of ${this.props.band.name}?`
         });
         if(!await this.open()) {
             return;
         }
-
-        // add member to the supervisor list
-        let supervisors = (await bandRef.get()).data().supervisors || [];
-        supervisors.push(member.uid);
-        await bandRef.update({
-            supervisors: supervisors,
+        
+        await memberRef.update({
+            supervisor: true,
         });
     }
 
     _onDemoteSupervisor = async (member) => {
-        const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
+        const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
         // confirm modal about demoting from music supervisor
         this.setState({
@@ -206,16 +249,8 @@ class Members extends React.Component {
         });
         if(!await this.open()) return;
 
-        // remove member from the supervisor list
-        const supervisors = (await bandRef.get()).data().supervisors || [];
-        const newSupervisors = [];
-        for(let i in supervisors) {
-            if(supervisors[i] !== member.uid) {
-                newSupervisors.push(supervisors[i]);
-            }
-        }
-        await bandRef.update({
-            supervisors: newSupervisors,
+        await memberRef.update({
+            supervisor: false,
         });
     }
 
@@ -224,6 +259,7 @@ class Members extends React.Component {
         this.setState({
             user: currentUser.uid,
         });
+
         firebase.firestore().doc(`bands/${this.props.band.id}`).get().then( snapshot => {
             const admins = snapshot.data().admins;
             for(let i in admins) {
@@ -249,20 +285,20 @@ class Members extends React.Component {
                             <ListItem key={index} dense button disableRipple>
                                 <Avatar src={member.user.photoURL}/>
                                 <ListItemText primary={member.user.displayName}/>
-                                {member.isAdmin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
-                                {!member.isAdmin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                                {member.isSupervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                {!member.isSupervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
+                                {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                {member.supervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                {member.status === 'member' && !member.supervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
                                 {
                                     member.status === 'pending' && 
                                     <div>
-                                        <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done /></IconButton></Tooltip>
-                                        <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear /></IconButton></Tooltip>
+                                        <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{color: 'green'}} /></IconButton></Tooltip>
+                                        <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{color: 'red'}} /></IconButton></Tooltip>
                                     </div>
                                 }
                                 {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
                                 {
-                                    member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>
+                                    !member.admin && member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>
                                 }
                             </ListItem>)
                         }
@@ -278,8 +314,8 @@ class Members extends React.Component {
                                 {member.status === 'member' && <ListItem key={index} dense button disableRipple>
                                     <Avatar src={member.user.photoURL}/>
                                     <ListItemText primary={member.user.displayName}/>
-                                    {member.isAdmin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
-                                    {member.isSupervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
+                                    {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
+                                    {member.supervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
                                     {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
                                 </ListItem>}
                             </div>)
