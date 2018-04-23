@@ -43,10 +43,11 @@ class Members extends React.Component {
 
         // update users band refs
         let userBandRefs = (await userRef.get()).data() || [];
+        userBandRefs.push(bandRef);
         await memberRef.update({status: 'member'});
         await userRef.update({
             defaultBandRef: bandRef,
-            bandRefs: [...userBandRefs, bandRef]
+            bandRefs: userBandRefs,
         });
         // TODO: update user about accepted??
     }
@@ -277,6 +278,7 @@ class Members extends React.Component {
         const {classes, band} = this.props;
 
         return <div style={{display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20}}>
+            {band.code}
             {band.members && band.members.length > 0 && this.state.isAdmin &&
                 <Paper style={{width: 400}}>
                     <List>
