@@ -82,6 +82,8 @@ class Home extends React.Component {
         band: {},
         bands: null,
 
+        userData: {},
+
         pdfSelected: false
     };
 
@@ -361,6 +363,8 @@ class Home extends React.Component {
 
                     const data = snapshot.data();
 
+                    this.setState({userData: data});
+
                     if (!data.bandRefs) {
                         this.setState({bands: []});
                         return;
@@ -368,7 +372,13 @@ class Home extends React.Component {
 
                     this.unsubs.push(
                         data.defaultBandRef.onSnapshot(async snapshot => {
-                            this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                            const data = snapshot.data();
+                            const uid = firebase.auth().currentUser.uid;
+                            const isAdmin = data.admins.includes(uid);
+                            this.setState({
+                                band: {...this.state.band, ...snapshot.data(), id: snapshot.id},
+                                userData: {...this.state.userData, isAdmin: isAdmin}
+                            });
                         })
                     );
 
@@ -490,7 +500,7 @@ class Home extends React.Component {
     };
 
     render() {
-        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData} = this.state;
 
         const user = firebase.auth().currentUser;
 
@@ -710,7 +720,7 @@ class Home extends React.Component {
                 }
                 {
                     page === 'members' &&
-                    <Members band={band}/>
+                    <Members band={band} userData={userData}/>
                 }
                 {
                     page === 'pdfs' &&

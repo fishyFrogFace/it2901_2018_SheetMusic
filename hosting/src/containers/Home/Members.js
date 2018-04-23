@@ -14,7 +14,6 @@ const styles = theme => ({
 
 class Members extends React.Component {
     state = {
-        isAdmin: false,
         user: "none",
         title: "",
         message: "",
