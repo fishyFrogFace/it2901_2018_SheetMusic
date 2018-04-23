@@ -42,7 +42,7 @@ class Members extends React.Component {
         if(!await this.open()) return;
 
         // update users band refs
-        let userBandRefs = (await userRef.get()).data() || [];
+        let userBandRefs = (await userRef.get()).data().bandRefs || [];
         userBandRefs.push(bandRef);
         await memberRef.update({status: 'member'});
         await userRef.update({
@@ -255,23 +255,26 @@ class Members extends React.Component {
         });
     }
 
-    componentWillMount() {
-        const {currentUser} = firebase.auth();
-        this.setState({
-            user: currentUser.uid,
-        });
+    componentDidUpdate(prevProp, prevState) {
+        const {band} = this.props;
+        if(band.id !== prevProp.band.id) {
+            const {currentUser} = firebase.auth();
+            this.setState({
+                user: currentUser.uid,
+            });
 
-        firebase.firestore().doc(`bands/${this.props.band.id}`).get().then( snapshot => {
-            const admins = snapshot.data().admins;
-            for(let i in admins) {
-                if(currentUser.uid === admins[i]) {
-                    this.setState({
-                        isAdmin: true
-                    })
-                    return;
+            firebase.firestore().doc(`bands/${this.props.band.id}`).get().then( snapshot => {
+                const admins = snapshot.data().admins;
+                for(let i in admins) {
+                    if(currentUser.uid === admins[i]) {
+                        this.setState({
+                            isAdmin: true
+                        })
+                        return;
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     render() {
