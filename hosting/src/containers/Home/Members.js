@@ -3,7 +3,7 @@ import React from 'react';
 import firebase from 'firebase';
 
 import {withStyles} from "material-ui/styles";
-import {Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography} from "material-ui";
+import {Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader} from "material-ui";
 import {Done, Clear, Star, RemoveCircle, QueueMusic} from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
@@ -17,6 +17,7 @@ class Members extends React.Component {
         user: "none",
         title: "",
         message: "",
+        isAdmin: false,
     };
 
     open = async () => {
@@ -272,64 +273,75 @@ class Members extends React.Component {
                         return;
                     }
                 }
+                this.setState({
+                    isAdmin: false,
+                })
             });
         }
     }
 
     render() {
         const {classes, band} = this.props;
-
-        return <div style={{display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20}}>
-            {band.code}
-            {band.members && band.members.length > 0 && this.state.isAdmin &&
-                <Paper style={{width: 400}}>
-                    <List>
-                        {
-                            band.members.map((member, index) => 
-                            <ListItem key={index} dense button disableRipple>
-                                <Avatar src={member.user.photoURL}/>
-                                <ListItemText primary={member.user.displayName}/>
-                                {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
-                                {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                                {member.supervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                {member.status === 'member' && !member.supervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                                {
-                                    member.status === 'pending' && 
-                                    <div>
-                                        <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{color: 'green'}} /></IconButton></Tooltip>
-                                        <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{color: 'red'}} /></IconButton></Tooltip>
-                                    </div>
-                                }
-                                {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                                {
-                                    !member.admin && member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>
-                                }
-                            </ListItem>)
-                        }
-                    </List>
-                </Paper>
-            }
-            {band.members && band.members.length > 0 && !this.state.isAdmin &&
-                <Paper style={{width: 400}}>
-                    <List>
-                        {
-                            band.members.map((member, index) => 
-                                {member.status === 'member' && <ListItem key={index} dense button disableRipple>
+        if(this.state.isAdmin) {
+            return <div style={{display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20}}>
+                {band.members && band.members.length > 0 &&
+                    <Paper style={{width: 400}}>
+                        <List>
+                            <ListSubheader>Band code: {band.code}</ListSubheader>
+                            {
+                                band.members.map((member, index) => 
+                                <ListItem key={index} dense button disableRipple>
                                     <Avatar src={member.user.photoURL}/>
                                     <ListItemText primary={member.user.displayName}/>
                                     {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
-                                    {member.supervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
+                                    {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                    {member.supervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                    {member.status === 'member' && !member.supervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                    {
+                                        member.status === 'pending' && 
+                                        <div>
+                                            <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{color: 'green'}} /></IconButton></Tooltip>
+                                            <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{color: 'red'}} /></IconButton></Tooltip>
+                                        </div>
+                                    }
                                     {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                                </ListItem>}
-                            )
-                        }
-                    </List>
-                </Paper>
-            }
-            <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
-                <Typography variant="body1" >{this.state.message}</Typography>
-            </AsyncDialog>
-        </div>
+                                    {
+                                        !member.admin && member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>
+                                    }
+                                </ListItem>)
+                            }
+                        </List>
+                    </Paper>
+                }
+                <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+                    <Typography variant="body1" >{this.state.message}</Typography>
+                </AsyncDialog>
+            </div>
+        } else {
+            return <div style={{display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20}}>
+                {band.members && band.members.length > 0 &&
+                    <Paper style={{width: 400}}>
+                        <List>
+                            <ListSubheader>Band code: {band.code}</ListSubheader>
+                            {
+                                band.members.map((member, index) => 
+                                    <ListItem key={index} dense button disableRipple>
+                                        <Avatar src={member.user.photoURL}/>
+                                        <ListItemText primary={member.user.displayName}/>
+                                        {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
+                                        {member.supervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
+                                        {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                    </ListItem>
+                                )
+                            }
+                        </List>
+                    </Paper>
+                }
+                <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+                    <Typography variant="body1" >{this.state.message}</Typography>
+                </AsyncDialog>
+            </div>
+        }
     }
 }
 
