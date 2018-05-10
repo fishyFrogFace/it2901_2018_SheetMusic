@@ -201,6 +201,16 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
+    _onRemoveScore = async (score) => {
+      const {band} = this.state;
+      this.setState({message: 'Removing Score...'});
+
+      const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+      await fireScore.ref.delete();
+
+      this.setState({message: null});
+    }
+
     _onBandClick = e => {
         this.setState({bandAnchorEl: e.currentTarget})
     };
@@ -704,7 +714,10 @@ class Home extends React.Component {
             >
                 {
                     page === 'scores' &&
-                    <Scores band={band}/>
+                    <Scores
+                        band={band}
+                        onRemoveScore={this._onRemoveScore}
+                      />
                 }
                 {
                     page === 'setlists' &&

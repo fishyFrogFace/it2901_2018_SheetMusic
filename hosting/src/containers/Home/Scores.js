@@ -6,6 +6,7 @@ import {
     Typography
 } from "material-ui";
 import MoreVertIcon from 'material-ui-icons/MoreVert';
+import DeleteIcon from 'material-ui-icons/Delete'
 import {LibraryMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
 
 function InstrumentIcon(props) {
@@ -78,8 +79,8 @@ class Scores extends React.Component {
         this.setState({listView: true});
     };
 
-    _onMoreClick = () => {
-      console.log('I was clicked!!');
+    _onMoreClick = (score) => {
+      this.props.onRemoveScore(score);
     };
 
     render() {
@@ -135,25 +136,29 @@ class Scores extends React.Component {
                     <div style={{display: 'flex', flexWrap: 'wrap'}}>
                         {band.scores.map((score, index) =>
                             <Card key={index} className={classes.card}
-                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                                  // onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                                   elevation={1}>
                                 <CardMedia
                                     className={classes.media}
                                     image={score.thumbnailURL || 'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'}
                                     title=""
+                                    onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                                 />
                                 <CardContent style={{position: 'relative'}}>
-                                    <Typography variant="headline" className={classes.ellipsis}>
+                                    <Typography variant="headline" className={classes.ellipsis}
+                                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         {score.title}
                                     </Typography>
-                                    <Typography variant='body1' className={classes.ellipsis}>
+                                    <Typography variant='body1' className={classes.ellipsis}
+                                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         {score.composer}
                                     </Typography>
-                                    <Typography variant='body1'>
+                                    <Typography variant='body1'
+                                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         {score.partCount} parts
                                     </Typography>
-                                    <IconButton style={{position: 'absolute', top: 63, right: 0}} onClick={() => this._onMoreClick}>
-                                        <MoreVertIcon />
+                                    <IconButton style={{position: 'absolute', top: 63, right: 0}} onClick={(e) => this._onMoreClick(score, e)}>
+                                      <DeleteIcon />
                                     </IconButton>
                                     {/* <Badge style={{position: 'absolute', top: 20, right: 20}} badgeContent={4} color="secondary">*/}
                                     {/*<InstrumentIcon/>*/}
