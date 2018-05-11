@@ -82,6 +82,8 @@ class Home extends React.Component {
         band: {},
         bands: null,
 
+        userData: {},
+
         pdfSelected: false
     };
 
@@ -207,6 +209,15 @@ class Home extends React.Component {
                 name: name,
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`),
                 code: Math.random().toString(36).substring(2, 7),
+                admins: [user.uid],
+            });
+
+            await bandRef.collection('members').add({
+                ref: userRef,
+                uid: user.uid,
+                status: "member",
+                admin: true,
+                supervisor: true,
             });
 
             await firebase.firestore().doc(`users/${user.uid}`).update({
@@ -234,19 +245,14 @@ class Home extends React.Component {
         if (bandSnapshot.docs.length > 0) {
             const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
-            let userBandRefs = (await userRef.get()).data() || [];
+            let userBandRefs = (await userRef.get()).data().bandRefs || [];
 
             if (userBandRefs.some(ref => ref.id === bandRef.id)) {
                 this.setState({message: 'Band already joined!'});
             } else {
-                this.setState({message: 'Joining band...'});
+                this.setState({message: 'Sending request to join band...'});
 
-                await bandRef.collection('members').add({ref: userRef});
-
-                await userRef.update({
-                    defaultBandRef: bandRef,
-                    bandRefs: [...userBandRefs, bandRef]
-                })
+                await bandRef.collection('members').add({ref: userRef, uid: user.uid, status: "pending"});
             }
         } else {
             this.setState({message: 'Band does not exist!'});
@@ -357,6 +363,8 @@ class Home extends React.Component {
 
                     const data = snapshot.data();
 
+                    this.setState({userData: data});
+
                     if (!data.bandRefs) {
                         this.setState({bands: []});
                         return;
@@ -364,7 +372,13 @@ class Home extends React.Component {
 
                     this.unsubs.push(
                         data.defaultBandRef.onSnapshot(async snapshot => {
-                            this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                            const data = snapshot.data();
+                            const uid = firebase.auth().currentUser.uid;
+                            const isAdmin = data.admins.includes(uid);
+                            this.setState({
+                                band: {...this.state.band, ...snapshot.data(), id: snapshot.id},
+                                userData: {...this.state.userData, isAdmin: isAdmin}
+                            });
                         })
                     );
 
@@ -379,6 +393,7 @@ class Home extends React.Component {
                                 const visited = [];
 
                                 for (let item of items) {
+                                    console.log(item);
                                     if (item.pageCount > 10) {
                                         if (item.parts) {
                                             item.parts = await Promise.all(
@@ -428,6 +443,12 @@ class Home extends React.Component {
                                     }))
                                     .sort((a, b) => a.name.localeCompare(b.name));
                             }
+                            if(page === "members") {
+                                for(let item of items) {
+                                    item.user = (await item.ref.get()).data();
+                                }
+                            }
+
 
                             this.setState({band: {...this.state.band, [page]: items}});
                         })
@@ -479,7 +500,7 @@ class Home extends React.Component {
     };
 
     render() {
-        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData} = this.state;
 
         const user = firebase.auth().currentUser;
 
@@ -699,7 +720,7 @@ class Home extends React.Component {
                 }
                 {
                     page === 'members' &&
-                    <Members band={band}/>
+                    <Members band={band} userData={userData}/>
                 }
                 {
                     page === 'pdfs' &&
