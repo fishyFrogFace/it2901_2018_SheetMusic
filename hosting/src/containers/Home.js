@@ -187,6 +187,32 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
+    _onRemoveUnsortedPdf = async (pdf) => {
+        const {band} = this.state;
+        this.setState({message: 'Removing PDF...'});
+
+        if (pdf.type == 'part') {
+            for (let part of pdf.pdfs) {
+              const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
+              await pdfDoc.ref.delete();
+            }
+        } else {
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
+            await pdfDoc.ref.delete();
+        }
+        this.setState({message: null});
+    };
+
+    _onRemoveScore = async (score) => {
+      const {band} = this.state;
+      this.setState({message: 'Removing Score...'});
+
+      const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+      await fireScore.ref.delete();
+
+      this.setState({message: null});
+    }
+
     _onBandClick = e => {
         this.setState({bandAnchorEl: e.currentTarget})
     };
@@ -709,7 +735,10 @@ class Home extends React.Component {
             >
                 {
                     page === 'scores' &&
-                    <Scores band={band}/>
+                    <Scores
+                        band={band}
+                        onRemoveScore={this._onRemoveScore}
+                      />
                 }
                 {
                     page === 'setlists' &&
@@ -729,6 +758,7 @@ class Home extends React.Component {
                         onAddFullScore={this._onAddFullScore}
                         onAddParts={this._onAddParts}
                         onSelect={this._onPDFSelect}
+                        onRemoveUnsortedPdf={this._onRemoveUnsortedPdf}
                     />
                 }
             </div>

@@ -2,9 +2,11 @@ import React from 'react';
 
 import {withStyles} from "material-ui/styles";
 import {
-    Avatar, Badge, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper, SvgIcon,
+    Avatar, Badge, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
     Typography
 } from "material-ui";
+import MoreVertIcon from 'material-ui-icons/MoreVert';
+import DeleteIcon from 'material-ui-icons/Delete'
 import {LibraryMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
 
 function InstrumentIcon(props) {
@@ -77,6 +79,10 @@ class Scores extends React.Component {
         this.setState({listView: true});
     };
 
+    _onMoreClick = (score) => {
+      this.props.onRemoveScore(score);
+    };
+
     render() {
         const {classes, band} = this.props;
         const {listView} = this.state;
@@ -113,8 +119,13 @@ class Scores extends React.Component {
                                 band.scores.map((score, index) =>
                                     <ListItem key={index} dense button
                                               onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                                        <LibraryMusic color='action'/>
-                                        <ListItemText primary={score.title}/>
+                                          <LibraryMusic color='action'/>
+                                          <ListItemText primary={score.title}/>
+                                          <ListItemSecondaryAction onClick={() => this._onMoreClick}>
+                                            <IconButton style={{position: 'absolute', right: 0}} onClick={() => this._onMoreClick}>
+                                              <MoreVertIcon onClick={() => this._onMoreClick}/>
+                                            </IconButton>
+                                          </ListItemSecondaryAction>
                                     </ListItem>)
                             }
                         </List>
@@ -125,26 +136,33 @@ class Scores extends React.Component {
                     <div style={{display: 'flex', flexWrap: 'wrap'}}>
                         {band.scores.map((score, index) =>
                             <Card key={index} className={classes.card}
-                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                                  // onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                                   elevation={1}>
                                 <CardMedia
                                     className={classes.media}
                                     image={score.thumbnailURL || 'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'}
                                     title=""
+                                    onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                                 />
                                 <CardContent style={{position: 'relative'}}>
-                                    <Typography variant="headline" className={classes.ellipsis}>
+                                    <Typography variant="headline" className={classes.ellipsis}
+                                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         {score.title}
                                     </Typography>
-                                    <Typography variant='body1' className={classes.ellipsis}>
+                                    <Typography variant='body1' className={classes.ellipsis}
+                                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         {score.composer}
                                     </Typography>
-                                    <Typography variant='body1'>
+                                    <Typography variant='body1'
+                                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                         {score.partCount} parts
                                     </Typography>
-                                    {/*<Badge style={{position: 'absolute', top: 20, right: 20}} badgeContent={4} color="secondary">*/}
+                                    <IconButton style={{position: 'absolute', top: 63, right: 0}} onClick={(e) => this._onMoreClick(score, e)}>
+                                      <DeleteIcon />
+                                    </IconButton>
+                                    {/* <Badge style={{position: 'absolute', top: 20, right: 20}} badgeContent={4} color="secondary">*/}
                                     {/*<InstrumentIcon/>*/}
-                                    {/*</Badge>*/}
+                                    {/*</Badge> */}
                                 </CardContent>
                             </Card>
                         )}

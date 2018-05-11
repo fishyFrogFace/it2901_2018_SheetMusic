@@ -56,6 +56,10 @@ class UnsortedPDFs extends React.Component {
         this.props.onAddParts(score, parts);
     };
 
+    _onRemoveUnsortedPdf = async pdf => {
+        this.props.onRemoveUnsortedPdf(pdf);
+    };
+
     _onAddFullScore = async pdf => {
         const {type} = await this.pdfTypeDialog.open();
 
@@ -80,6 +84,7 @@ class UnsortedPDFs extends React.Component {
                                         <div style={{flex: 1}}/>
                                         <div style={{position: 'relative'}}>
                                             <Button color='secondary' onClick={() => this._onAddFullScore(group.pdf)} disabled={group.pdf.processing}>Add</Button>
+                                            <Button color='secondary' onClick={() => this._onRemoveUnsortedPdf(group)} disabled={group.pdf.processing}>Remove</Button>
                                             {group.pdf.processing && <CircularProgress color='secondary' style={{position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12}} size={24}/>}
                                         </div>
                                     </div>
@@ -104,6 +109,7 @@ class UnsortedPDFs extends React.Component {
                                         <div style={{flex: 1}}/>
                                         <div style={{position: 'relative'}}>
                                             <Button color='secondary' disabled={group.pdfs.some(pdf => pdf.processing)} onClick={() => this._onAddParts(group.pdfs)}>Add</Button>
+                                            <Button color='secondary' disabled={group.pdfs.some(pdf => pdf.processing)} onClick={() => this._onRemoveUnsortedPdf(group)}>Remove</Button>
                                             {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary' style={{position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12}} size={24}/>}
                                         </div>
                                     </div>
