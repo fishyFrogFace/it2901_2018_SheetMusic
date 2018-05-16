@@ -1,0 +1,71 @@
+[debug] [2018-05-15T22:58:49.773Z] ----------------------------------------------------------------------
+[debug] [2018-05-15T22:58:49.775Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Brage\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve --only functions
+[debug] [2018-05-15T22:58:49.775Z] CLI Version:   3.18.4
+[debug] [2018-05-15T22:58:49.776Z] Platform:      win32
+[debug] [2018-05-15T22:58:49.776Z] Node Version:  v9.4.0
+[debug] [2018-05-15T22:58:49.776Z] Time:          Wed May 16 2018 00:58:49 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:58:49.776Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2018-05-15T22:58:49.788Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-05-15T22:58:49.789Z] > authorizing via signed-in user
+[debug] [2018-05-15T22:58:49.791Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/scores-butler  
+  
+ Wed May 16 2018 00:58:49 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:58:50.635Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-15T22:58:50.635Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/scores-butler/tokens  
+  
+ Wed May 16 2018 00:58:50 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:58:51.290Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-15T22:58:51.290Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scores-butler  
+  
+ Wed May 16 2018 00:58:51 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:58:52.173Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from 'C:\Users\Brage\Documents\GitHub\it2901_2018_SheetMusic'...
+[info] 
+[info] i  functions: Preparing to emulate functions.
+[debug] [2018-05-15T22:58:53.252Z] Fetching environment
+[debug] [2018-05-15T22:58:53.256Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/124262758995:getServerAppConfig  
+  
+ Wed May 16 2018 00:58:53 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:58:53.732Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-15T22:58:53.732Z] Starting @google-cloud/functions-emulator
+[debug] [2018-05-15T22:58:55.768Z] Parsing function triggers
+[info] i  functions: No HTTPS functions found. Use firebase functions:shell if you would like to emulate other types of functions.
+[info] i  functions: No HTTPS functions found. Use firebase functions:shell if you would like to emulate other types of functions.
+[info] i  functions: No HTTPS functions found. Use firebase functions:shell if you would like to emulate other types of functions.
+[info] i  functions: No HTTPS functions found. Use firebase functions:shell if you would like to emulate other types of functions.
+[debug] [2018-05-15T22:59:52.452Z] ----------------------------------------------------------------------
+[debug] [2018-05-15T22:59:52.454Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Brage\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase functions:shell
+[debug] [2018-05-15T22:59:52.454Z] CLI Version:   3.18.4
+[debug] [2018-05-15T22:59:52.454Z] Platform:      win32
+[debug] [2018-05-15T22:59:52.454Z] Node Version:  v9.4.0
+[debug] [2018-05-15T22:59:52.454Z] Time:          Wed May 16 2018 00:59:52 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:59:52.455Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2018-05-15T22:59:52.465Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-05-15T22:59:52.466Z] > authorizing via signed-in user
+[debug] [2018-05-15T22:59:52.468Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/scores-butler  
+  
+ Wed May 16 2018 00:59:52 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:59:53.232Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-15T22:59:53.233Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/scores-butler/tokens  
+  
+ Wed May 16 2018 00:59:53 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:59:53.890Z] <<< HTTP RESPONSE 200
+[info] i  functions: Preparing to emulate functions.
+[debug] [2018-05-15T22:59:54.684Z] Fetching environment
+[debug] [2018-05-15T22:59:54.687Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scores-butler  
+  
+ Wed May 16 2018 00:59:54 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:59:55.583Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-15T22:59:55.583Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/124262758995:getServerAppConfig  
+  
+ Wed May 16 2018 00:59:55 GMT+0200 (W. Europe Daylight Time)
+[debug] [2018-05-15T22:59:56.273Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-15T22:59:56.273Z] Starting @google-cloud/functions-emulator
+[debug] [2018-05-15T22:59:58.317Z] Parsing function triggers
+[debug] [2018-05-15T23:00:00.131Z] Deploying functions locally
+[debug] [2018-05-15T23:00:00.132Z] Deploying functions locally
+[debug] [2018-05-15T23:00:00.134Z] Deploying functions locally
+[debug] [2018-05-15T23:00:00.134Z] Deploying functions locally

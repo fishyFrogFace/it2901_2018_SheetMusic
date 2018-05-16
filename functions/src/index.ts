@@ -12,16 +12,12 @@ import {Dropbox} from 'dropbox';
 import * as cors from 'cors';
 import * as request from 'request-promise-native';
 
-admin.initializeApp(functions.config().firebase);
+admin.initializeApp();
 
 const storage = Storage({keyFilename: 'service-account-key.json'});
 
 // Extracts ZIP with pdfs
-exports.extractZip = functions.storage.object().onChange(async event => {
-    const object = event.data;
-
-    if (object.resourceState === 'not_exists') return null;
-
+exports.extractZip = functions.storage.object().onFinalize(async (object, context) => {
     // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
 
@@ -75,11 +71,7 @@ exports.extractZip = functions.storage.object().onChange(async event => {
 
 
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
-exports.convertPDF = functions.storage.object().onChange(async event => {
-    const object = event.data;
-
-    if (object.resourceState === 'not_exists') return null;
-
+exports.convertPDF = functions.storage.object().onFinalize(async (object, context) => {
     // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
 
@@ -102,13 +94,23 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
         // Delete PDF file
         await inputBucket.file(filePath).delete();
 
+        console.log('Creating directories...');
+
         // Create output directories
         await fs.ensureDir('/tmp/output-original');
         await fs.ensureDir('/tmp/output-cropped');
         await fs.ensureDir('/tmp/output-cropped-compressed');
 
+        await fs.writeFile('/tmp/.xpdfrc', '');
+
+        console.log('Getting PDF info...');
+
+        console.log(await fs.readdir('./'));
+
+        console.log(await fs.readdir('/tmp'));
+
         const pdfInfo = await new Promise<string>(async resolve => {
-            const promise = spawn('xpdf/pdfinfo', [
+            const promise = spawn('./xpdf/pdfinfo', [
                 '-cfg', '/tmp/.xpdfrc',
                 '/tmp/score.pdf',
             ]);
@@ -123,7 +125,9 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
 
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
 
-        // Create document
+        console.log('Creating document...');
+
+
         const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
             name: fileName,
             uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -131,7 +135,8 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             processing: true
         });
 
-        // Generate images
+        console.log('Generating images...');
+
         const gsProcess = await spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
@@ -143,7 +148,7 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
 
         gsProcess.childProcess.kill();
 
-        console.log('PDF conversion complete!');
+        console.log('Cropping images...');
 
         const convertProcess = await spawn('mogrify', [
             '-crop', '4000x666+0+0',
@@ -152,7 +157,6 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
             '*.png'
         ], {cwd: '/tmp/output-original/'});
 
-        console.log('Image crop complete!');
 
         convertProcess.childProcess.kill();
 
@@ -195,7 +199,6 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
         }
 
         // Analyze PDF
-        await fs.writeFile('/tmp/.xpdfrc', '');
 
         const process2 = await spawn('xpdf/pdftotext', [
             '-cfg', '/tmp/.xpdfrc',
@@ -271,15 +274,15 @@ exports.convertPDF = functions.storage.object().onChange(async event => {
                 const detectedInstrNames = [];
 
                 // if (!mExclude) {
-                    for (let pattern of patterns) {
-                        const isMatch = pattern.expr.test(page);
+                for (let pattern of patterns) {
+                    const isMatch = pattern.expr.test(page);
 
-                        if (isMatch &&
-                            /*Simulate negative lookbehind*/
-                            !pattern.expr.exec(page)[1]) {
-                            detectedInstrNames.push(pattern.name);
-                        }
+                    if (isMatch &&
+                        /*Simulate negative lookbehind*/
+                        !pattern.expr.exec(page)[1]) {
+                        detectedInstrNames.push(pattern.name);
                     }
+                }
                 // }
 
                 if (detectedInstrNames.length > 0) {
@@ -385,24 +388,21 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
     });
 });
 
-exports.updatePartCount = functions.firestore
-    .document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite(async event => {
-        const partRef = event.data.ref.parent.parent;
-        const partCount = (await partRef.collection('parts').get()).size;
-        await partRef.update({partCount: partCount});
-    });
+exports.updatePartCount = functions.firestore.document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite(async (change, context) => {
+    const partRef = change.after.ref.parent.parent;
+    const partCount = (await partRef.collection('parts').get()).size;
+    await partRef.update({partCount: partCount});
+});
 
-exports.createThumbnail = functions.firestore
-    .document('bands/{bandId}/scores/{scoreId}').onCreate(async event => {
-        const data = event.data.data();
-        if (data.composer) {
-            const response = await request({
-                uri: `https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=${data.composer}&searchType=image`,
-                json: true
-            });
-            event.data.ref.update({thumbnailURL: response.items[0].link});
-        }
-    });
-
+exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{scoreId}').onCreate(async (snap, context) => {
+    const data = snap.data();
+    if (data.composer) {
+        const response = await request({
+            uri: `https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=${data.composer}&searchType=image`,
+            json: true
+        });
+        await snap.ref.update({thumbnailURL: response.items[0].link});
+    }
+});
 
 
