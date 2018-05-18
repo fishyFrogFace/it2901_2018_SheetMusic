@@ -469,12 +469,12 @@ class Home extends React.Component {
                                     }))
                                     .sort((a, b) => a.name.localeCompare(b.name));
                             }
-                            if(page === "members") {
-                                for(let item of items) {
+
+                            if (page === "members") {
+                                for (let item of items) {
                                     item.user = (await item.ref.get()).data();
                                 }
                             }
-
 
                             this.setState({band: {...this.state.band, [page]: items}});
                         })
@@ -499,6 +499,7 @@ class Home extends React.Component {
 
         if (!prevState.band.pdfs && band.pdfs ||
             !prevState.band.scores && band.scores ||
+            !prevState.band.members && band.members ||
             !prevState.band.setlists && band.setlists) {
 
             await this.contentEl.animate([
@@ -557,6 +558,7 @@ class Home extends React.Component {
                             }
 
                             <Button
+                                id='select-band-button'
                                 onClick={this._onBandClick}
                                 size='small'
                                 classes={{label: classes.button__label}}
@@ -588,7 +590,7 @@ class Home extends React.Component {
                             <SearchBar bandId={band.id}/>
                             <div style={{flex: 1}}/>
 
-                            <IconButton style={{marginLeft: 10}} color="inherit"
+                            <IconButton id='upload-button' style={{marginLeft: 10}} color="inherit"
                                         onClick={this._onFileUploadButtonClick}>
                                 <FileUpload/>
                             </IconButton>
@@ -765,12 +767,12 @@ class Home extends React.Component {
             {
                 bands && bands.length === 0 &&
                 <div className={classes.absoluteCenter} ref={ref => this.wizardEl = ref}>
-                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {user.displayName.split(' ')[0]}! Do
+                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {(user.displayName || '').split(' ')[0]}! Do
                         you want to join or create a band?</Typography>
                     <div style={{display: 'flex', justifyContent: 'center'}}>
-                        <Button onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
+                        <Button id='join-band-button' onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
                             Band</Button>
-                        <Button onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
+                        <Button id='create-band-button' onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
                     </div>
                 </div>
             }
