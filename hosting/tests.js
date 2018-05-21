@@ -18,9 +18,9 @@ admin.initializeApp({
 
 #3
 
-#4 As a band leader I want to be able to accept users before they become a band member
+#4
 
-#5 As a band leader I want to be able to remove band members
+#5
 
 #6 As a band leader I want to upload sheet music PDFs from my computer
 
@@ -76,6 +76,15 @@ async function deleteUser(email) {
 
     // #3 As a band member I want to join a band
     await userStory3(browser, page, bandCode);
+
+    // #4 As a band leader I want to be able to accept users before they become a band member
+    await userStory4();
+
+    // #5 As a band leader I want to be able to remove band members
+    await userStory5(browser, page);
+
+    // #5 As a band leader I want to be able to remove band members
+    await userStory6(browser, page);
 
     console.log('done');
 
@@ -169,4 +178,16 @@ async function userStory3(browser, page, bandCode) {
     });
 
     await newPage.waitForFunction(() => Boolean(document.querySelector('#select-band-button').textContent), {polling: 'mutation'});
+}
+
+async function userStory4(browser, page) {
+
+}
+
+async function userStory5(browser, page) {
+
+}
+
+async function userStory6(browser, page) {
+
 }
