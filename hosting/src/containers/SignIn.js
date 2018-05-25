@@ -136,7 +136,7 @@ class SignIn extends Component {
                         frameborder="0" allowfullscreen/>
                     <div className={classes.overlay}>
                         <div className={classes.overlayContainer}>
-                            <Typography variant='display4' className={classes.title}>ScoreButler</Typography>
+                            <Typography variant='display4' className={classes.title}>ScoresButler</Typography>
                             <Paper elevation={1}>
                                 <div className={classes.button} onClick={() => this._onSignIn()}>
                                     <img className={classes.buttonIcon}

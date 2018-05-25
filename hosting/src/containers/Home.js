@@ -550,7 +550,7 @@ class Home extends React.Component {
                         <Toolbar style={{minHeight: 56}}>
                             {
                                 windowSize === 'desktop' &&
-                                <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
+                                <Typography variant='headline' color='textSecondary'>ScoresButler</Typography>
                             }
                             {
                                 windowSize === 'desktop' &&
