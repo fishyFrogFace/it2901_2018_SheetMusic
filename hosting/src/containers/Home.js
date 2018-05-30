@@ -10,6 +10,7 @@ import {
     Snackbar
 } from "material-ui";
 
+import ExitToApp from 'material-ui-icons/ExitToApp';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
@@ -47,7 +48,8 @@ const styles = {
 
     appBarContainer: {
         gridRow: 1,
-        gridColumn: '1 / -1'
+        gridColumn: '1 / -1',
+        zIndex: 10
     },
 
     content: {
@@ -72,12 +74,15 @@ class Home extends React.Component {
     state = {
         bandAnchorEl: null,
         uploadAnchorEl: null,
+        accountAnchorEl: null,
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null,
 
         band: {},
         bands: null,
+
+        userData: {},
 
         pdfSelected: false
     };
@@ -108,10 +113,6 @@ class Home extends React.Component {
 
         if (scoreData.arranger) {
             data.arranger = scoreData.arranger;
-        }
-
-        if (scoreData.extraInstruments) {
-            data.arranger = scoreData.extraInstruments;
         }
 
         if (scoreData.tempo) {
@@ -151,7 +152,7 @@ class Home extends React.Component {
             parts.map(part => scoreRef.collection('parts').add({
                     pages: part.pages,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
+                    instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
                 })
             ));
 
@@ -172,12 +173,12 @@ class Home extends React.Component {
         }
 
         for (let part of parts) {
-            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdfId}`).get();
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
 
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: scoreRef.parent.parent.collection('instruments').doc(`${part.instrumentId}`),
+                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
             });
 
             await pdfDoc.ref.delete();
@@ -186,6 +187,32 @@ class Home extends React.Component {
         this.setState({message: null});
     };
 
+    _onRemoveUnsortedPdf = async (pdf) => {
+        const {band} = this.state;
+        this.setState({message: 'Removing PDF...'});
+
+        if (pdf.type == 'part') {
+            for (let part of pdf.pdfs) {
+              const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
+              await pdfDoc.ref.delete();
+            }
+        } else {
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
+            await pdfDoc.ref.delete();
+        }
+        this.setState({message: null});
+    };
+
+    _onRemoveScore = async (score) => {
+      const {band} = this.state;
+      this.setState({message: 'Removing Score...'});
+
+      const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+      await fireScore.ref.delete();
+
+      this.setState({message: null});
+    }
+
     _onBandClick = e => {
         this.setState({bandAnchorEl: e.currentTarget})
     };
@@ -193,7 +220,7 @@ class Home extends React.Component {
     _onCreateBand = async () => {
         this.setState({bandAnchorEl: null});
 
-        const {name, instruments} = await this.createDialog.open();
+        const {name} = await this.createDialog.open();
 
         this.setState({message: 'Creating band...'});
 
@@ -208,14 +235,21 @@ class Home extends React.Component {
                 name: name,
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`),
                 code: Math.random().toString(36).substring(2, 7),
+                admins: [user.uid],
+            });
+
+            await bandRef.collection('members').add({
+                ref: userRef,
+                uid: user.uid,
+                status: "member",
+                admin: true,
+                supervisor: true,
             });
 
             await firebase.firestore().doc(`users/${user.uid}`).update({
                 defaultBandRef: bandRef,
                 bandRefs: [...(userDoc.data().bandRefs || []), bandRef],
             });
-
-            await Promise.all(instruments.map(instrument => bandRef.collection('instruments').add({name: instrument})));
         } catch (err) {
             console.log(err);
         }
@@ -237,19 +271,14 @@ class Home extends React.Component {
         if (bandSnapshot.docs.length > 0) {
             const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
-            let userBandRefs = (await userRef.get()).data() || [];
+            let userBandRefs = (await userRef.get()).data().bandRefs || [];
 
             if (userBandRefs.some(ref => ref.id === bandRef.id)) {
                 this.setState({message: 'Band already joined!'});
             } else {
-                this.setState({message: 'Joining band...'});
+                this.setState({message: 'Sending request to join band...'});
 
-                await bandRef.collection('members').add({ref: userRef});
-
-                await userRef.update({
-                    defaultBandRef: bandRef,
-                    bandRefs: [...userBandRefs, bandRef]
-                })
+                await bandRef.collection('members').add({ref: userRef, uid: user.uid, status: "pending"});
             }
         } else {
             this.setState({message: 'Band does not exist!'});
@@ -326,8 +355,16 @@ class Home extends React.Component {
     };
 
     _onMenuClose = () => {
-        this.setState({bandAnchorEl: null, uploadAnchorEl: null});
+        this.setState({bandAnchorEl: null, uploadAnchorEl: null, accountAnchorEl: null});
     };
+
+    _onAccountCircleClick = e => {
+        this.setState({accountAnchorEl: e.currentTarget});
+    };
+
+    signOut() {
+      return firebase.auth().signOut();
+    }
 
     async componentDidUpdate(prevProps, prevState) {
         const user = firebase.auth().currentUser;
@@ -352,6 +389,8 @@ class Home extends React.Component {
 
                     const data = snapshot.data();
 
+                    this.setState({userData: data});
+
                     if (!data.bandRefs) {
                         this.setState({bands: []});
                         return;
@@ -359,7 +398,13 @@ class Home extends React.Component {
 
                     this.unsubs.push(
                         data.defaultBandRef.onSnapshot(async snapshot => {
-                            this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                            const data = snapshot.data();
+                            const uid = firebase.auth().currentUser.uid;
+                            const isAdmin = data.admins.includes(uid);
+                            this.setState({
+                                band: {...this.state.band, ...snapshot.data(), id: snapshot.id},
+                                userData: {...this.state.userData, isAdmin: isAdmin}
+                            });
                         })
                     );
 
@@ -374,14 +419,29 @@ class Home extends React.Component {
                                 const visited = [];
 
                                 for (let item of items) {
-                                    if (item.pages && item.pages.length > 10) {
+                                    console.log(item);
+                                    if (item.pageCount > 10) {
+                                        if (item.parts) {
+                                            item.parts = await Promise.all(
+                                                item.parts.map(async part => ({
+                                                    ...part,
+                                                    instruments: await Promise.all(
+                                                        part.instruments.map(async instr => {
+                                                            const doc = await instr.get();
+                                                            return {...doc.data(), id: doc.id};
+                                                        })
+                                                    )
+                                                }))
+                                            );
+                                        }
+
                                         groups.push({
-                                            name: item.name,
-                                            item: item,
+                                            name: item.name.split('-')[0].trimRight(),
+                                            pdf: item,
                                             type: 'full'
-                                        })
+                                        });
                                     } else {
-                                        const similarItems = [];
+                                        const similarPdfs = [];
 
                                         if (visited.includes(item.id)) continue;
 
@@ -389,35 +449,34 @@ class Home extends React.Component {
                                             if (_item.id !== item.id &&
                                                 !visited.includes(_item.id) &&
                                                 levenshtein.get(item.name, _item.name) < 5) {
-                                                similarItems.push(_item);
+                                                similarPdfs.push(_item);
                                                 visited.push(_item.id);
                                             }
                                         }
 
                                         groups.push({
                                             name: item.name.split('-')[0].trimRight(),
-                                            items: [item, ...similarItems],
+                                            pdfs: [item, ...similarPdfs],
                                             type: 'part'
                                         })
                                     }
                                 }
 
                                 items = groups
-                                    .map(group => ({...group, name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`}))
+                                    .map(group => ({
+                                        ...group,
+                                        name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`
+                                    }))
                                     .sort((a, b) => a.name.localeCompare(b.name));
                             }
 
+                            if (page === "members") {
+                                for (let item of items) {
+                                    item.user = (await item.ref.get()).data();
+                                }
+                            }
+
                             this.setState({band: {...this.state.band, [page]: items}});
-                        })
-                    );
-
-                    this.unsubs.push(
-                        data.defaultBandRef.collection('instruments').onSnapshot(async snapshot => {
-                            let items = await Promise.all(
-                                snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
-                            );
-
-                            this.setState({band: {...this.state.band, instruments: items}});
                         })
                     );
 
@@ -440,6 +499,7 @@ class Home extends React.Component {
 
         if (!prevState.band.pdfs && band.pdfs ||
             !prevState.band.scores && band.scores ||
+            !prevState.band.members && band.members ||
             !prevState.band.setlists && band.setlists) {
 
             await this.contentEl.animate([
@@ -450,8 +510,14 @@ class Home extends React.Component {
 
         if (!loaded) {
             if ((prevState.bands || []).length === 0 && (bands && bands.length > 0)) {
-                await this.navEl.animate([{transform: 'none'}], options).finished;
-                await this.appBarContainerEl.animate([{transform: 'none'}], options).finished;
+                await this.navEl.animate([
+                    {transform: this.navEl.style.transform},
+                    {transform: 'none'},
+                ], options).finished;
+                await this.appBarContainerEl.animate([
+                    {transform: this.appBarContainerEl.style.transform},
+                    {transform: 'none'}
+                ], options).finished;
             }
         }
     }
@@ -461,7 +527,7 @@ class Home extends React.Component {
     };
 
     render() {
-        const {bandAnchorEl, uploadAnchorEl, message, windowSize, band, bands, pdfSelected} = this.state;
+        const {bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData} = this.state;
 
         const user = firebase.auth().currentUser;
 
@@ -484,7 +550,7 @@ class Home extends React.Component {
                         <Toolbar style={{minHeight: 56}}>
                             {
                                 windowSize === 'desktop' &&
-                                <Typography variant='headline' color='textSecondary'>ScoreButler</Typography>
+                                <Typography variant='headline' color='textSecondary'>ScoresButler</Typography>
                             }
                             {
                                 windowSize === 'desktop' &&
@@ -492,6 +558,7 @@ class Home extends React.Component {
                             }
 
                             <Button
+                                id='select-band-button'
                                 onClick={this._onBandClick}
                                 size='small'
                                 classes={{label: classes.button__label}}
@@ -522,7 +589,8 @@ class Home extends React.Component {
                             </Menu>
                             <SearchBar bandId={band.id}/>
                             <div style={{flex: 1}}/>
-                            <IconButton style={{marginLeft: 10}} color="inherit"
+
+                            <IconButton id='upload-button' style={{marginLeft: 10}} color="inherit"
                                         onClick={this._onFileUploadButtonClick}>
                                 <FileUpload/>
                             </IconButton>
@@ -530,11 +598,59 @@ class Home extends React.Component {
                                 anchorEl={uploadAnchorEl}
                                 open={Boolean(uploadAnchorEl)}
                                 onClose={this._onMenuClose}
+                                style={{marginTop: 0}}
                             >
                                 <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
                                     computer</MenuItem>
                                 <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
                                     Dropbox</MenuItem>
+                            </Menu>
+
+                            <IconButton onClick={this._onAccountCircleClick}>
+                                <img src={user.photoURL} style={{
+                                  width: "32px",
+                                  height: "32px",
+                                  borderRadius: '50%',
+                                }}>
+                                </img>
+                            </IconButton>
+                            <Menu
+                                anchorEl={accountAnchorEl}
+                                open={Boolean(accountAnchorEl)}
+                                onClose={this._onMenuClose}
+                                MenuListProps={{style: {paddingTop: 0, paddingBottom: 0}}}
+                            >
+                                <div style={{
+                                  backgroundColor: "#EEEEEE",
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  justifyContent: 'flex-start',
+                                  outline: 'none',
+                                  paddingRight: 50,
+                                  paddingLeft: 10,
+                                }}>
+                                    <img src={user.photoURL} style={{
+                                      width: "46px",
+                                      height: "46px",
+                                      margin: "10px",
+                                      borderRadius: '50%',
+                                    }}>
+                                    </img>
+                                    <div style={{
+                                      display: "flex",
+                                      flexDirection: 'column',
+                                      justifyContent: 'center',
+                                      marginRight: '30px',
+                                    }}>
+                                        <Typography variant="body2" style={{fontSize: "16px", fontWeight: "500"}}>
+                                            {user.displayName}
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            {user.email}
+                                        </Typography>
+                                    </div>
+                                </div>
+                                <MenuItem onClick={() => this.signOut()}><ExitToApp style={{margin: '5px'}}></ExitToApp>Sign out</MenuItem>
                             </Menu>
                         </Toolbar>
                     </AppBar>
@@ -621,7 +737,10 @@ class Home extends React.Component {
             >
                 {
                     page === 'scores' &&
-                    <Scores band={band}/>
+                    <Scores
+                        band={band}
+                        onRemoveScore={this._onRemoveScore}
+                      />
                 }
                 {
                     page === 'setlists' &&
@@ -632,7 +751,7 @@ class Home extends React.Component {
                 }
                 {
                     page === 'members' &&
-                    <Members band={band}/>
+                    <Members band={band} userData={userData}/>
                 }
                 {
                     page === 'pdfs' &&
@@ -641,18 +760,19 @@ class Home extends React.Component {
                         onAddFullScore={this._onAddFullScore}
                         onAddParts={this._onAddParts}
                         onSelect={this._onPDFSelect}
+                        onRemoveUnsortedPdf={this._onRemoveUnsortedPdf}
                     />
                 }
             </div>
             {
                 bands && bands.length === 0 &&
                 <div className={classes.absoluteCenter} ref={ref => this.wizardEl = ref}>
-                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {user.displayName.split(' ')[0]}! Do
+                    <Typography style={{marginBottom: 30}} variant='display1'>Hi {(user.displayName || '').split(' ')[0]}! Do
                         you want to join or create a band?</Typography>
                     <div style={{display: 'flex', justifyContent: 'center'}}>
-                        <Button onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
+                        <Button id='join-band-button' onClick={this._onJoinBand} variant='raised' color='secondary' style={{marginRight: 20}}>Join
                             Band</Button>
-                        <Button onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
+                        <Button id='create-band-button' onClick={this._onCreateBand} variant='raised' color='secondary'>Create Band</Button>
                     </div>
                 </div>
             }

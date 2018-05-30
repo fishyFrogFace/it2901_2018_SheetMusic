@@ -7,6 +7,7 @@ import {
 } from "material-ui";
 import {Add} from "material-ui-icons";
 import CreateScoreStep from "./CreateScoreStep";
+import firebase from "firebase";
 
 const styles = {
     dialog__paper: {
@@ -52,12 +53,21 @@ class AddPartsDialog extends React.Component {
     }
 
     async open(pdfs) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             this.setState({
                 open: true,
                 pdfs: pdfs,
-                pdfData: pdfs.map(_ => ({instrument: 0})),
                 scoreData: {title: pdfs[0].name}
+            });
+
+            const snapshot = await firebase.firestore().collection('instruments').get();
+            const instruments = snapshot.docs
+                .map(doc => ({...doc.data(), id: doc.id}))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            this.setState({
+                instruments: instruments,
+                parts: pdfs.map(pdf => ({pdf: pdf, instrumentId: instruments[0].id})),
             });
 
             this.__resolve = resolve;
@@ -65,10 +75,10 @@ class AddPartsDialog extends React.Component {
         });
     }
 
-    _onSelectChange(type, index, e) {
-        const pdfData = {...this.state.pdfData};
-        pdfData[index][type] = e.target.value;
-        this.setState({pdfData: pdfData})
+    _onSelectChange(index, e) {
+        const parts = [...this.state.parts];
+        parts[index].instrumentId = e.target.value;
+        this.setState({parts})
     }
 
     _onScoreClick(scoreId) {
@@ -80,25 +90,21 @@ class AddPartsDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {pdfData, scoreData, pdfs} = this.state;
-        const {band} = this.props;
+        const {parts, scoreData} = this.state;
 
         if (this.state.activeStep === 1) {
             this.setState({activeStep: 2, scoreCreated: true});
         } else {
             this.__resolve({
                 score: scoreData,
-                parts: Object.keys(pdfData).map(i => ({
-                    pdfId: pdfs[i].id,
-                    instrumentId: band.instruments[pdfData[i].instrument].id,
-                }))
+                parts: parts
             });
 
             this.setState({
                 open: false,
                 activeStep: 0,
                 scoreCreated: false,
-                selectionData: {pdfData: pdfs.map(_ => ({instrument: 0}))},
+                parts: [],
                 scoreData: {}
             });
         }
@@ -106,12 +112,12 @@ class AddPartsDialog extends React.Component {
 
     _onCancelClick = () => {
         this.__reject("Dialog canceled");
-        this.setState({open: false});
+        this.setState({open: false, parts: [], scoreData: {}, activeStep: 0, scoreCreated: false});
     };
 
     _onBackClick = () => {
         const {activeStep, scoreCreated} = this.state;
-        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1});
+        this.setState({activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1, scoreCreated: false});
     };
 
     _onScoreDataChange = data => {
@@ -119,7 +125,7 @@ class AddPartsDialog extends React.Component {
     };
 
     render() {
-        const {pdfData, scoreData, activeStep, scoreCreated, open, pdfs} = this.state;
+        const {parts, scoreData, activeStep, scoreCreated, open, pdfs, instruments} = this.state;
 
         const {band, classes} = this.props;
 
@@ -163,22 +169,22 @@ class AddPartsDialog extends React.Component {
                         activeStep === 2 &&
                         <div>
                             {
-                                pdfs && pdfs.map((pdf, index) =>
+                                parts.map((part, index) =>
                                     <div key={index} style={{display: 'flex', marginBottom: 30}}>
                                         <FormControl style={{marginRight: 20, width: 200}} disabled>
                                             <InputLabel htmlFor="pdf-name">PDF</InputLabel>
-                                            <Input id="pdf-name" value={pdf.name} />
+                                            <Input id="pdf-name" value={part.pdf.name} />
                                         </FormControl>
                                         <FormControl style={{marginRight: 20, width: 150}}>
                                             <InputLabel htmlFor="instrument">Instrument</InputLabel>
                                             <Select
-                                                value={pdfData[index].instrument}
-                                                onChange={e => this._onSelectChange('instrument', index, e)}
+                                                value={part.instrumentId}
+                                                onChange={e => this._onSelectChange(index, e)}
                                                 inputProps={{id: 'instrument'}}
                                             >
                                                 {
-                                                    band.instruments && band.instruments.map((instrument, index) =>
-                                                        <MenuItem key={index} value={index}>{instrument.name}</MenuItem>
+                                                    instruments.map(instrument =>
+                                                        <MenuItem key={instrument.id} value={instrument.id}>{instrument.name}</MenuItem>
                                                     )
                                                 }
                                             </Select>

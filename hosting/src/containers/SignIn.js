@@ -109,7 +109,7 @@ const styles = {
 
 
 class SignIn extends Component {
-    async _onSignIn() {
+    _onSignIn = async () => {
         const provider = new firebase.auth.GoogleAuthProvider();
 
         try {
@@ -117,7 +117,11 @@ class SignIn extends Component {
         } catch (err) {
             console.log(err);
         }
-    }
+    };
+
+    _onTestUserSignin = async id => {
+        await firebase.auth().signInWithEmailAndPassword(`test_user_${id}@gmail.com`, 'password');
+    };
 
     render() {
         const {classes} = this.props;
@@ -132,7 +136,7 @@ class SignIn extends Component {
                         frameborder="0" allowfullscreen/>
                     <div className={classes.overlay}>
                         <div className={classes.overlayContainer}>
-                            <Typography variant='display4' className={classes.title}>ScoreButler</Typography>
+                            <Typography variant='display4' className={classes.title}>ScoresButler</Typography>
                             <Paper elevation={1}>
                                 <div className={classes.button} onClick={() => this._onSignIn()}>
                                     <img className={classes.buttonIcon}
@@ -181,6 +185,8 @@ class SignIn extends Component {
                         </div>
                     </div>
                 </div>
+                <button id='test_user_1_signin' style={{display: 'none'}} onClick={() => this._onTestUserSignin(1)}/>
+                <button id='test_user_2_signin' style={{display: 'none'}} onClick={() => this._onTestUserSignin(2)}/>
             </div>
         );
     }
