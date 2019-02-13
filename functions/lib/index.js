@@ -72,6 +72,7 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         filePath: filePath
     });
     yield ref.delete();
+    console.log("Depeted");
     //
     // let [bandId, fileNameExt] = filePath.split('/');
     //
@@ -342,7 +343,7 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
 }));
 exports.analyzePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
     const { bandId, pdfId } = req.query;
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
     yield bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({ destination: '/tmp/image.png' });
     const client = new vision.ImageAnnotatorClient();
     const response = yield client.textDetection('/tmp/image.png');
@@ -350,7 +351,7 @@ exports.analyzePDF = functions.https.onRequest((req, res) => __awaiter(this, voi
     yield res.json(detections);
 }));
 exports.generatePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
     const doc = new PDFDocument();
     const image = '';
     const file = bucket.file('test/test.pdf');
@@ -368,7 +369,7 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         const { bandId, folderPath, accessToken } = req.query;
         const dropbox = new dropbox_1.Dropbox({ accessToken: accessToken });
         const response = yield dropbox.filesDownloadZip({ path: folderPath });
-        const bucket = storage.bucket('scores-butler.appspot.com');
+        const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
         yield bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
     }));

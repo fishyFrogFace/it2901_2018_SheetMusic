@@ -82,6 +82,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
     });
 
     await ref.delete();
+    
+    console.log("Depeted");
 
     //
     // let [bandId, fileNameExt] = filePath.split('/');
@@ -355,7 +357,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 exports.analyzePDF = functions.https.onRequest(async (req, res) => {
     const {bandId, pdfId} = req.query;
 
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
 
     await bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({destination: '/tmp/image.png'});
 
@@ -368,7 +370,7 @@ exports.analyzePDF = functions.https.onRequest(async (req, res) => {
 });
 
 exports.generatePDF = functions.https.onRequest(async (req, res) => {
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
 
     const doc = new PDFDocument();
 
@@ -393,7 +395,7 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         const {bandId, folderPath, accessToken} = req.query;
         const dropbox = new Dropbox({accessToken: accessToken});
         const response = await dropbox.filesDownloadZip({path: folderPath}) as any;
-        const bucket = storage.bucket('scores-butler.appspot.com');
+        const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
         await bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
     });

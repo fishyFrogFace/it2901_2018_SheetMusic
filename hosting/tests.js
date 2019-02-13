@@ -6,7 +6,7 @@ const serviceAccount = require('./service-account-key');
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: 'https://scores-butler.firebaseio.com',
-    storageBucket: 'scores-butler.appspot.com'
+    storageBucket: 'scoresbutler-9ff30.appspot.com'
 });
 
 /*

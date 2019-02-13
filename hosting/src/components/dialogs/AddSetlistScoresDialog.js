@@ -28,6 +28,8 @@ class AddSetlistScoresDialog extends React.Component {
 
         if (selectedScores.has(index)) {
             selectedScores.delete(index);
+            
+        console.log("Depeted");
         } else {
             selectedScores.add(index);
 

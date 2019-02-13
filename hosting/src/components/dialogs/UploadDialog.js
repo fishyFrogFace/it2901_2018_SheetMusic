@@ -56,6 +56,7 @@ class UploadDialog extends React.Component {
             switch (provider) {
                 case 'computer':
                     this.inputRef.click();
+                    console.log("Vi er her");
                     break;
                 case 'dropbox':
                     const authUrl = new Dropbox.Dropbox({clientId: 'tbg7d2wqxr0ngke'}).getAuthenticationUrl('https://scores-butler.firebaseapp.com/auth');
@@ -65,7 +66,7 @@ class UploadDialog extends React.Component {
                     const url = await new Promise((resolve, reject) => {
                         const pollTimer = setInterval(() => {
                             try {
-                                if (win.document.URL.includes('https://scores-butler.firebaseapp.com/auth')) {
+                                if (win.document.URL.includes('https://scoresbutler-9ff30.firebaseapp.com/auth')) {
                                     clearInterval(pollTimer);
                                     resolve(win.document.URL);
                                     win.close();

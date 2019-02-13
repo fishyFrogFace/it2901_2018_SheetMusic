@@ -35,17 +35,30 @@ class App extends React.Component {
     constructor() {
         super();
 
-        firebase.initializeApp({
-            apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
-            authDomain: "scores-butler.firebaseapp.com",
-            databaseURL: "https://scores-butler.firebaseio.com",
-            projectId: "scores-butler",
-            storageBucket: "scores-butler.appspot.com",
-            messagingSenderId: "124262758995"
-        });
+        // firebase.initializeApp({
+        //     apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
+        //     authDomain: "scores-butler.firebaseapp.com",
+        //     databaseURL: "https://scores-butler.firebaseio.com",
+        //     projectId: "scores-butler",
+        //     storageBucket: "scoresbutler-9ff30.appspot.com",
+        //     messagingSenderId: "124262758995"
+        // });
+        
+
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyB5ofZU4-5tj0vT-KPShQ6QhZCP6TeAQvQ",
+            authDomain: "scoresbutler-9ff30.firebaseapp.com",
+            databaseURL: "https://scoresbutler-9ff30.firebaseio.com",
+            projectId: "scoresbutler-9ff30",
+            storageBucket: "scoresbutler-9ff30.appspot.com",
+            messagingSenderId: "60488644815"
+        };
+        firebase.initializeApp(config);
 
         firebase.auth().onAuthStateChanged(user => this._onUserStateChanged(user));
         window.addEventListener('hashchange', () => this._onHashChange());
+
     }
 
     async _onUserStateChanged(user) {

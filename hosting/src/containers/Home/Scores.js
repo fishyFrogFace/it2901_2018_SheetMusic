@@ -88,6 +88,7 @@ class Scores extends React.Component {
         const {listView} = this.state;
 
         const hasScores = band.scores && band.scores.length > 0;
+        
 
         return <div>
             <div style={{display: 'flex', alignItems: 'center', padding: '0 24px', height: 56}}>

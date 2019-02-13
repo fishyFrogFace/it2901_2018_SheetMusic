@@ -147,6 +147,8 @@ class Home extends React.Component {
 
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
+        
+        console.log("Depeted");
 
         await Promise.all(
             parts.map(part => scoreRef.collection('parts').add({
@@ -157,6 +159,8 @@ class Home extends React.Component {
             ));
 
         await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
+        
+        console.log("Depeted");
         this.setState({message: null});
     };
 
@@ -182,6 +186,8 @@ class Home extends React.Component {
             });
 
             await pdfDoc.ref.delete();
+            
+        console.log("Depeted");
         }
 
         this.setState({message: null});
@@ -195,10 +201,14 @@ class Home extends React.Component {
             for (let part of pdf.pdfs) {
               const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
               await pdfDoc.ref.delete();
+              
+        console.log("Depeted");
             }
         } else {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
             await pdfDoc.ref.delete();
+            
+        console.log("Depeted");
         }
         this.setState({message: null});
     };
@@ -209,6 +219,8 @@ class Home extends React.Component {
 
       const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
       await fireScore.ref.delete();
+      
+      console.log("Depeted");
 
       this.setState({message: null});
     }

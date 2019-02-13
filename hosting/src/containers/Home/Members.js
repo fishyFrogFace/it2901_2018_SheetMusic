@@ -103,6 +103,7 @@ class Members extends React.Component {
             if(!await this.open()) return;
         }
 
+
         // remove member from admin list if member was admin
         if(member.admin) {
             admins = admins.filter(admin => {
@@ -281,9 +282,20 @@ class Members extends React.Component {
     }
 
     render() {
+        
+        const url = require('url');
+        var ur = "";
+        var storage = firebase.storage();
+        var pathRef = storage.ref('folder1/img1.jpg');
+        pathRef.getDownloadURL().then(function(url) {
+            ur = url;
+        });
+        const myUrl = url.parse(ur);
+
         const {classes, band} = this.props;
         if(this.state.isAdmin) {
             return <div style={{display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20}}>
+                <img src={myUrl} alt="Flowers in Chania" id="123"/>
                 {band.members && band.members.length > 0 &&
                     <Paper style={{width: 400}}>
                         <List>

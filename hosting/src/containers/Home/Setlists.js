@@ -107,7 +107,7 @@ class Setlists extends React.Component {
                                         {setlist.title}
                                     </Typography>
                                     <Typography component="p">
-                                        {setlist.date.toLocaleDateString()}
+                                        {/* {setlist.date.toLocaleDateString()} */}
                                     </Typography>
                                 </CardContent>
                             </Card>
