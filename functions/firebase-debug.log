@@ -1,0 +1,316 @@
+[debug] [2019-02-06T11:27:25.496Z] ----------------------------------------------------------------------
+[debug] [2019-02-06T11:27:25.499Z] Command:       D:\documents\Node.js\node.exe C:\Users\Even_\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2019-02-06T11:27:25.500Z] CLI Version:   6.3.0
+[debug] [2019-02-06T11:27:25.500Z] Platform:      win32
+[debug] [2019-02-06T11:27:25.500Z] Node Version:  v6.11.3
+[debug] [2019-02-06T11:27:25.500Z] Time:          Wed Feb 06 2019 12:27:25 GMT+0100 (Vest-Europa (normaltid))
+[debug] [2019-02-06T11:27:25.501Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-02-06T11:27:25.519Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-02-06T11:27:25.519Z] > authorizing via signed-in user
+[debug] [2019-02-06T11:27:25.519Z] [iam] checking project scoresbutler-9ff30 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasedatabase.instances.update","firebasehosting.sites.update","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2019-02-06T11:27:25.522Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2019-02-06T11:27:25.522Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2019-02-06T11:27:25.746Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:27:25.762Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/scoresbutler-9ff30:testIamPermissions  
+
+[debug] [2019-02-06T11:27:26.775Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:27:26.776Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/scoresbutler-9ff30  
+ 
+[debug] [2019-02-06T11:27:27.084Z] <<< HTTP RESPONSE 200
+[warn] !  functions: package.json indicates an outdated version of firebase-functions.
+ Please upgrade using npm install --save firebase-functions@latest in your functions directory.
+[info] 
+[info] === Deploying to 'scoresbutler-9ff30'...
+[info] 
+[info] i  deploying database, storage, firestore, functions, hosting
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build
+[info] +  functions: Finished running predeploy script.
+[info] i  database: checking rules syntax...
+[debug] [2019-02-06T11:27:50.773Z] >>> HTTP REQUEST PUT https://scoresbutler-9ff30.firebaseio.com/.settings/rules.json?dryRun=true  
+ {
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null"
+  }
+}
+[debug] [2019-02-06T11:27:51.538Z] <<< HTTP RESPONSE 200
+[info] +  database: rules syntax for database scoresbutler-9ff30 is valid
+[debug] [2019-02-06T11:27:51.542Z] >>> HTTP REQUEST GET https://appengine.googleapis.com/v1/apps/scoresbutler-9ff30  
+ 
+[debug] [2019-02-06T11:27:52.737Z] <<< HTTP RESPONSE 200
+[info] i  storage: checking storage.rules for compilation errors...
+[debug] [2019-02-06T11:27:52.741Z] >>> HTTP REQUEST POST https://firebaserules.googleapis.com/v1/projects/scoresbutler-9ff30:test  
+
+[debug] [2019-02-06T11:27:53.799Z] <<< HTTP RESPONSE 200
+[info] +  storage: rules file storage.rules compiled successfully
+[info] i  firestore: checking firestore.rules for compilation errors...
+[info] i  firestore: reading indexes from firestore.indexes.json...
+[debug] [2019-02-06T11:27:53.809Z] >>> HTTP REQUEST POST https://firebaserules.googleapis.com/v1/projects/scoresbutler-9ff30:test  
+
+[debug] [2019-02-06T11:27:54.788Z] <<< HTTP RESPONSE 200
+[info] +  firestore: rules file firestore.rules compiled successfully
+[debug] [2019-02-06T11:27:54.796Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "lint": "./node_modules/.bin/tslint -p tslint.json",
+    "build": "./node_modules/.bin/tsc",
+    "serve": "npm run build && firebase serve --only functions",
+    "shell": "npm run build && firebase experimental:functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "@google-cloud/storage": "^1.5.2",
+    "@google-cloud/vision": "^0.19.0",
+    "child-process-promise": "^2.2.1",
+    "cors": "^2.8.4",
+    "dropbox": "^4.0.1",
+    "fast-levenshtein": "^2.0.6",
+    "firebase-admin": "~5.12.0",
+    "firebase-functions": "^1.0.2",
+    "fs-extra": "^6.0.1",
+    "gs": "git+https://github.com/sina-masnadi/node-gs.git",
+    "install": "^0.11.0",
+    "isomorphic-fetch": "^2.2.1",
+    "npm": "^6.0.1",
+    "pdfkit": "^0.8.3",
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5",
+    "unzipper": "^0.8.11"
+  },
+  "devDependencies": {
+    "tslint": "^5.8.0",
+    "typescript": "^2.5.3"
+  },
+  "private": true
+}
+[info] i  functions: ensuring necessary APIs are enabled...
+[debug] [2019-02-06T11:27:54.800Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/cloudfunctions.googleapis.com/projectSettings/scoresbutler-9ff30?view=CONSUMER_VIEW  
+ 
+[debug] [2019-02-06T11:27:54.801Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/runtimeconfig.googleapis.com/projectSettings/scoresbutler-9ff30?view=CONSUMER_VIEW  
+ 
+[debug] [2019-02-06T11:27:56.537Z] <<< HTTP RESPONSE 200
+[info] +  functions: all necessary APIs are enabled
+[debug] [2019-02-06T11:27:56.555Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:27:56.556Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scoresbutler-9ff30  
+ 
+[debug] [2019-02-06T11:27:57.474Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:27:57.475Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/60488644815:getServerAppConfig  
+ 
+[debug] [2019-02-06T11:27:58.003Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:27:58.007Z] >>> HTTP REQUEST POST https://firebasehosting.googleapis.com/v1beta1/sites/scoresbutler-9ff30/versions  
+
+[debug] [2019-02-06T11:27:59.162Z] <<< HTTP RESPONSE 500
+[debug] [2019-02-06T11:27:59.162Z] <<< HTTP RESPONSE BODY
+[error] 
+[error] Error: HTTP Error: 500, Internal error encountered.
+[debug] [2019-02-06T11:27:59.183Z] Error Context: {
+  "body": {
+    "error": {
+      "code": 500,
+      "message": "Internal error encountered.",
+      "status": "INTERNAL"
+    }
+  },
+  "response": {
+    "statusCode": 500,
+    "body": {
+      "error": {
+        "code": 500,
+        "message": "Internal error encountered.",
+        "status": "INTERNAL"
+      }
+    },
+    "headers": {
+      "vary": "X-Origin, Referer, Origin,Accept-Encoding",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Wed, 06 Feb 2019 11:27:56 GMT",
+      "server": "ESF",
+      "cache-control": "private",
+      "x-xss-protection": "1; mode=block",
+      "x-frame-options": "SAMEORIGIN",
+      "x-content-type-options": "nosniff",
+      "alt-svc": "quic=\":443\"; ma=2592000; v=\"44,43,39\"",
+      "accept-ranges": "none",
+      "transfer-encoding": "chunked"
+    },
+    "request": {
+      "uri": {
+        "protocol": "https:",
+        "slashes": true,
+        "auth": null,
+        "host": "firebasehosting.googleapis.com",
+        "port": 443,
+        "hostname": "firebasehosting.googleapis.com",
+        "hash": null,
+        "search": null,
+        "query": null,
+        "pathname": "/v1beta1/sites/scoresbutler-9ff30/versions",
+        "path": "/v1beta1/sites/scoresbutler-9ff30/versions",
+        "href": "https://firebasehosting.googleapis.com/v1beta1/sites/scoresbutler-9ff30/versions"
+      },
+      "method": "POST"
+    }
+  }
+}
+[debug] [2019-02-06T11:28:27.470Z] ----------------------------------------------------------------------
+[debug] [2019-02-06T11:28:27.472Z] Command:       D:\documents\Node.js\node.exe C:\Users\Even_\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2019-02-06T11:28:27.472Z] CLI Version:   6.3.0
+[debug] [2019-02-06T11:28:27.472Z] Platform:      win32
+[debug] [2019-02-06T11:28:27.472Z] Node Version:  v6.11.3
+[debug] [2019-02-06T11:28:27.473Z] Time:          Wed Feb 06 2019 12:28:27 GMT+0100 (Vest-Europa (normaltid))
+[debug] [2019-02-06T11:28:27.473Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-02-06T11:28:27.485Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-02-06T11:28:27.485Z] > authorizing via signed-in user
+[debug] [2019-02-06T11:28:27.485Z] [iam] checking project scoresbutler-9ff30 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasedatabase.instances.update","firebasehosting.sites.update","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2019-02-06T11:28:27.487Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/scoresbutler-9ff30:testIamPermissions  
+
+[debug] [2019-02-06T11:28:28.576Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:28:28.581Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/scoresbutler-9ff30  
+ 
+[debug] [2019-02-06T11:28:28.926Z] <<< HTTP RESPONSE 200
+[warn] !  functions: package.json indicates an outdated version of firebase-functions.
+ Please upgrade using npm install --save firebase-functions@latest in your functions directory.
+[info] 
+[info] === Deploying to 'scoresbutler-9ff30'...
+[info] 
+[info] i  deploying database, storage, firestore, functions, hosting
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build
+[info] +  functions: Finished running predeploy script.
+[info] i  database: checking rules syntax...
+[debug] [2019-02-06T11:28:42.917Z] >>> HTTP REQUEST PUT https://scoresbutler-9ff30.firebaseio.com/.settings/rules.json?dryRun=true  
+ {
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null"
+  }
+}
+[debug] [2019-02-06T11:28:43.668Z] <<< HTTP RESPONSE 200
+[info] +  database: rules syntax for database scoresbutler-9ff30 is valid
+[debug] [2019-02-06T11:28:43.676Z] >>> HTTP REQUEST GET https://appengine.googleapis.com/v1/apps/scoresbutler-9ff30  
+ 
+[debug] [2019-02-06T11:28:44.818Z] <<< HTTP RESPONSE 200
+[info] i  storage: checking storage.rules for compilation errors...
+[debug] [2019-02-06T11:28:44.825Z] >>> HTTP REQUEST POST https://firebaserules.googleapis.com/v1/projects/scoresbutler-9ff30:test  
+
+[debug] [2019-02-06T11:28:45.887Z] <<< HTTP RESPONSE 200
+[info] +  storage: rules file storage.rules compiled successfully
+[info] i  firestore: checking firestore.rules for compilation errors...
+[info] i  firestore: reading indexes from firestore.indexes.json...
+[debug] [2019-02-06T11:28:45.898Z] >>> HTTP REQUEST POST https://firebaserules.googleapis.com/v1/projects/scoresbutler-9ff30:test  
+
+[debug] [2019-02-06T11:28:46.882Z] <<< HTTP RESPONSE 200
+[info] +  firestore: rules file firestore.rules compiled successfully
+[debug] [2019-02-06T11:28:46.887Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "lint": "./node_modules/.bin/tslint -p tslint.json",
+    "build": "./node_modules/.bin/tsc",
+    "serve": "npm run build && firebase serve --only functions",
+    "shell": "npm run build && firebase experimental:functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "@google-cloud/storage": "^1.5.2",
+    "@google-cloud/vision": "^0.19.0",
+    "child-process-promise": "^2.2.1",
+    "cors": "^2.8.4",
+    "dropbox": "^4.0.1",
+    "fast-levenshtein": "^2.0.6",
+    "firebase-admin": "~5.12.0",
+    "firebase-functions": "^1.0.2",
+    "fs-extra": "^6.0.1",
+    "gs": "git+https://github.com/sina-masnadi/node-gs.git",
+    "install": "^0.11.0",
+    "isomorphic-fetch": "^2.2.1",
+    "npm": "^6.0.1",
+    "pdfkit": "^0.8.3",
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5",
+    "unzipper": "^0.8.11"
+  },
+  "devDependencies": {
+    "tslint": "^5.8.0",
+    "typescript": "^2.5.3"
+  },
+  "private": true
+}
+[info] i  functions: ensuring necessary APIs are enabled...
+[debug] [2019-02-06T11:28:46.889Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/cloudfunctions.googleapis.com/projectSettings/scoresbutler-9ff30?view=CONSUMER_VIEW  
+ 
+[debug] [2019-02-06T11:28:46.891Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/runtimeconfig.googleapis.com/projectSettings/scoresbutler-9ff30?view=CONSUMER_VIEW  
+ 
+[debug] [2019-02-06T11:28:48.551Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:28:48.605Z] <<< HTTP RESPONSE 200
+[info] +  functions: all necessary APIs are enabled
+[debug] [2019-02-06T11:28:48.613Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scoresbutler-9ff30  
+ 
+[debug] [2019-02-06T11:28:49.547Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:28:49.548Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/60488644815:getServerAppConfig  
+ 
+[debug] [2019-02-06T11:28:50.012Z] <<< HTTP RESPONSE 200
+[debug] [2019-02-06T11:28:50.017Z] >>> HTTP REQUEST POST https://firebasehosting.googleapis.com/v1beta1/sites/scoresbutler-9ff30/versions  
+
+[debug] [2019-02-06T11:28:51.126Z] <<< HTTP RESPONSE 500
+[debug] [2019-02-06T11:28:51.127Z] <<< HTTP RESPONSE BODY
+[error] 
+[error] Error: HTTP Error: 500, Internal error encountered.
+[debug] [2019-02-06T11:28:51.145Z] Error Context: {
+  "body": {
+    "error": {
+      "code": 500,
+      "message": "Internal error encountered.",
+      "status": "INTERNAL"
+    }
+  },
+  "response": {
+    "statusCode": 500,
+    "body": {
+      "error": {
+        "code": 500,
+        "message": "Internal error encountered.",
+        "status": "INTERNAL"
+      }
+    },
+    "headers": {
+      "vary": "X-Origin, Referer, Origin,Accept-Encoding",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Wed, 06 Feb 2019 11:28:48 GMT",
+      "server": "ESF",
+      "cache-control": "private",
+      "x-xss-protection": "1; mode=block",
+      "x-frame-options": "SAMEORIGIN",
+      "x-content-type-options": "nosniff",
+      "alt-svc": "quic=\":443\"; ma=2592000; v=\"44,43,39\"",
+      "accept-ranges": "none",
+      "transfer-encoding": "chunked"
+    },
+    "request": {
+      "uri": {
+        "protocol": "https:",
+        "slashes": true,
+        "auth": null,
+        "host": "firebasehosting.googleapis.com",
+        "port": 443,
+        "hostname": "firebasehosting.googleapis.com",
+        "hash": null,
+        "search": null,
+        "query": null,
+        "pathname": "/v1beta1/sites/scoresbutler-9ff30/versions",
+        "path": "/v1beta1/sites/scoresbutler-9ff30/versions",
+        "href": "https://firebasehosting.googleapis.com/v1beta1/sites/scoresbutler-9ff30/versions"
+      },
+      "method": "POST"
+    }
+  }
+}
