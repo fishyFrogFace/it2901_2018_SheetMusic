@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
-import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
+import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
 import MuiPickersUtilsProvider from 'material-ui-pickers/utils/MuiPickersUtilsProvider';
 import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
 
@@ -32,8 +32,8 @@ class App extends React.Component {
         signin: 'SignIn'
     };
 
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
 
         // firebase.initializeApp({
         //     apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
@@ -43,7 +43,7 @@ class App extends React.Component {
         //     storageBucket: "scoresbutler-9ff30.appspot.com",
         //     messagingSenderId: "124262758995"
         // });
-        
+
 
         // Initialize Firebase
         var config = {
@@ -56,10 +56,25 @@ class App extends React.Component {
         };
         firebase.initializeApp(config);
 
+
         firebase.auth().onAuthStateChanged(user => this._onUserStateChanged(user));
         window.addEventListener('hashchange', () => this._onHashChange());
 
+        //     let ref = firebase.ref('instruments');
+        //     ref.on('value', gotData, errdata);
+        // }
+
+        // gotData = (data) => {
+        //     console.log(data)
     }
+
+    readUserData() {
+        firebase.database().ref('instruments/').once('value', function (snapshot) {
+            console.log(snapshot.val())
+        });
+    }
+
+
 
     async _onUserStateChanged(user) {
         let hash = (() => {
@@ -87,8 +102,8 @@ class App extends React.Component {
         try {
             const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
-            this.setState({Component: component}, () => {
-                this.setState({page: page, detail: detail, componentLoaded: this._componentLoaded}, () => {
+            this.setState({ Component: component }, () => {
+                this.setState({ page: page, detail: detail, componentLoaded: this._componentLoaded }, () => {
                     this._componentLoaded[this.page2Component[page]] = true;
                 });
             });
@@ -99,11 +114,11 @@ class App extends React.Component {
     }
 
     render() {
-        const {page, detail, Component, componentLoaded} = this.state;
+        const { page, detail, Component, componentLoaded } = this.state;
 
         if (!Component) return null;
 
-        return <Component {...this.props} page={page} detail={detail} loaded={componentLoaded[this.page2Component[page]]}/>
+        return <Component {...this.props} page={page} detail={detail} loaded={componentLoaded[this.page2Component[page]]} />
     }
 }
 
@@ -144,7 +159,7 @@ const theme = createMuiTheme({
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
         <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <App/>
+            <App />
         </MuiPickersUtilsProvider>
     </MuiThemeProvider>,
     document.getElementById('root')
