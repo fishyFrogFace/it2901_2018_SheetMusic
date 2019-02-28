@@ -71,6 +71,11 @@ const styles = {
     padding: '8px',
     margin: '5px',
     cursor: 'pointer',
+    minWidth: '80px',
+    textAlign: 'center',
+    '&:first-child': {
+      paddingLeft: '8px',
+    }
   },
 
   cardContent: {
@@ -86,7 +91,7 @@ const styles = {
 
   expandedPanel: {
     padding: '0px',
-    cursor: 'auto',
+    cursor: 'default',
   },
 
   expandButton: {
@@ -101,7 +106,13 @@ const styles = {
   },
 
   metadata: {
+  },
+
+  cardHeader: {
+    cursor: 'default'
   }
+
+
 
 };
 
@@ -220,6 +231,7 @@ class Scores extends React.Component {
                 elevation={1}
               >
                 <CardHeader
+                  className={classes.cardHeader}
                   avatar={
                     <Avatar aria-label="Note" className={classes.avatar}>
                       <NoteIcon />
