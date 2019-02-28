@@ -196,6 +196,33 @@ class Home extends React.Component {
         this.setState({ message: null });
     };
 
+    onFindInstrument = async (scoreData, parts) => {
+        const { band } = this.state;
+
+        this.setState({ message: ' getting part' });
+
+        let scoreRef;
+        if (scoreData.id) {
+            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
+        } else {
+            console.log('scoreRef: ', scoreRef)
+        }
+
+        for (let part of parts) {
+            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
+
+            await scoreRef.collection('parts').get({
+                pages: pdfDoc.data().pages,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+            });
+
+            console.log("onFindInstrument()");
+        }
+
+        this.setState({ message: null });
+    }
+
     _onRemoveUnsortedPdf = async (pdf) => {
         const { band } = this.state;
         this.setState({ message: 'Removing PDF...' });
@@ -760,7 +787,7 @@ class Home extends React.Component {
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
-                        findFinstrument={this.onFindInstrument}
+                        onFindInstrument={this.onFindInstrument}
 
                     />
                 }

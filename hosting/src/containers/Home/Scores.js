@@ -16,6 +16,9 @@ import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import FavoriteIcon from 'material-ui-icons/Favorite';
 
 import firebase from 'firebase';
+import { async } from '@firebase/util';
+
+
 
 
 function InstrumentIcon(props) {
@@ -120,8 +123,9 @@ class Scores extends React.Component {
   state = {
     listView: false,
     expanded: false,
-    score: {},
-    instruments: [],
+
+    instrumentList: [],
+    testList: [],
   };
 
 
@@ -161,15 +165,44 @@ class Scores extends React.Component {
     console.log('state.expanded: ', this.state.expanded)
   }
 
+  _onGetParts = (band, score) => {
+    firebase.firestore().collection(`bands/${band.id}/scores/${score.id}/parts/`).get()
+      .then(function (querySnapshot) {
+        querySnapshot.forEach(function (doc) {
+          // doc.data() is never undefined for query doc snapshots
+          let instrumentList = []
+          let testList = []
+          const instRef = doc.data().instrumentRef.id;
+
+
+          //console.log(doc.id, " => ", doc.data());
+          instrumentList.push(doc.data().instrumentRef.path)
+          // instrumentList.map((part, index) =>
+          //   testList.push(part, index)
+          // )
+          instrumentList.push(instRef)
+          instrumentList.map((inst) =>
+            testList.push(inst))
+          // console.log('instrumentList', instrumentList)
+          // console.log('TestList', testList)
+          console.log('instRef', instRef)
+        });
+      });
+  }
+
   render() {
     const { classes, band } = this.props;
-    const { listView, score } = this.state;
+    const { listView } = this.state;
     const dateString = new Date().toLocaleDateString();
     const hasScores = band.scores && band.scores.length > 0;
-    const hasParts = Boolean(score.parts && score.parts.length);
+    //const hasParts = Boolean(score.parts && score.parts.length);
     const snapshot = firebase.firestore().collection('instruments/').get(); // må hente ut path til instrument-navn
-    console.log('snap: ', snapshot)
+    // const snapshottos = firebase.firestore().collection('instruments').get();
+    // const instrumentos = snapshottos
+    // console.log('instr: ', instrumentos)
+    //console.log('snap: ', snapshot)
     let instruments = ['Trumpet', 'Trombone', 'Drum', 'Sax']; // midlertidig deklarasjon av instrumenter
+    //console.log('findInstrument: ', this.props.onFindInstrument())
 
 
     return <div>
@@ -195,6 +228,7 @@ class Scores extends React.Component {
           </IconButton>
         }
       </div>
+
       <div
       // style={{ padding: '0 24px' }}
       >
@@ -243,6 +277,7 @@ class Scores extends React.Component {
                     </IconButton>
                   }
                   title={score.title}
+                  onClick={() => this._onGetParts(band, score)}
                 />
                 <Divider />
                 <div
@@ -263,6 +298,17 @@ class Scores extends React.Component {
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       Parts: {score.partCount}
                     </Typography>
+                    {/* {
+                      hasParts &&
+                      <div>
+
+                        {
+                          score.parts.map((part, index) =>
+                            <Typography>
+                              {console.log(part.instrumentRef)}
+                            </Typography>
+                          )}
+                      </div>} */}
 
                     <div className={classes.actions}>
 
