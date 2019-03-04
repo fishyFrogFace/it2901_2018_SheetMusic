@@ -17,6 +17,7 @@ import FavoriteIcon from 'material-ui-icons/Favorite';
 
 import firebase from 'firebase';
 import { async } from '@firebase/util';
+import InstrumentScores from '../../components/InstrumentScores';
 
 
 
@@ -123,12 +124,13 @@ class Scores extends React.Component {
   state = {
     listView: false,
     expanded: false,
-
+    parts: {},
+    score: {},
     instrumentList: [],
     testList: [],
   };
 
-
+  unsubs = []
   // componentDidMount() {
   //     axios.get("https://scoresbutler-9ff30.firebaseio.com")
   //         .then(res => console.log('axios: ', res.pdfs))
@@ -159,51 +161,59 @@ class Scores extends React.Component {
     let currentState = this.state.expanded;
     this.setState({
       activeKey: e,
-      expanded: this.state.expanded === e ? currentState : !currentState
+      //expanded: this.state.expanded === e ? currentState : !currentState
     });
     console.log('clicked: ', e);
-    console.log('state.expanded: ', this.state.expanded)
+    //console.log('state.expanded: ', this.state.expanded)
   }
 
   _onGetParts = (band, score) => {
-    firebase.firestore().collection(`bands/${band.id}/scores/${score.id}/parts/`).get()
-      .then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-          // doc.data() is never undefined for query doc snapshots
-          let instrumentList = []
-          let testList = []
-          const instRef = doc.data().instrumentRef.id;
+    const bandRef = firebase.firestore().doc(`bands/${band.id}`);
+    const scoreDoc = bandRef.collection('scores').doc(score.id);
+    let testList = []
+    this.unsubs.forEach(unsub => unsub());
+    this.unsubs.push(
+      scoreDoc.collection('parts').onSnapshot(async snapshot => {
+        const parts = await Promise.all(
+          snapshot.docs.map(async doc => ({
+            ...doc.data(),
+            id: doc.id,
+            instrument: (await doc.data().instrumentRef.get()).data()
+          }))
+        );
+        const partsSorted = parts
+          .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
+        this.setState({ score: { ...this.state.score, parts: partsSorted } });
 
 
-          //console.log(doc.id, " => ", doc.data());
-          instrumentList.push(doc.data().instrumentRef.path)
-          // instrumentList.map((part, index) =>
-          //   testList.push(part, index)
-          // )
-          instrumentList.push(instRef)
-          instrumentList.map((inst) =>
-            testList.push(inst))
-          // console.log('instrumentList', instrumentList)
-          // console.log('TestList', testList)
-          console.log('instRef', instRef)
-        });
-      });
+        parts.forEach(element => {
+
+          // console.log(element.instrument.name)
+          testList.push(element.instrument.name)
+          //console.log('testList', testList) 
+          this.setState({ testList: testList })
+        })
+
+      })
+    );
+    return testList
+
+
   }
+
 
   render() {
     const { classes, band } = this.props;
-    const { listView } = this.state;
+    const { listView, testList } = this.state;
     const dateString = new Date().toLocaleDateString();
     const hasScores = band.scores && band.scores.length > 0;
-    //const hasParts = Boolean(score.parts && score.parts.length);
-    const snapshot = firebase.firestore().collection('instruments/').get(); // må hente ut path til instrument-navn
-    // const snapshottos = firebase.firestore().collection('instruments').get();
-    // const instrumentos = snapshottos
-    // console.log('instr: ', instrumentos)
-    //console.log('snap: ', snapshot)
-    let instruments = ['Trumpet', 'Trombone', 'Drum', 'Sax']; // midlertidig deklarasjon av instrumenter
-    //console.log('findInstrument: ', this.props.onFindInstrument())
 
+    let test = {
+      liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4'] // midlertidig deklarasjon av toner
+    }
+    console.log('testList', testList)
+
+    let instruments = ['Trumpet', 'Trombone', 'Drum', 'Sax']; // midlertidig deklarasjon av instrumenter
 
     return <div>
       <div
@@ -277,12 +287,13 @@ class Scores extends React.Component {
                     </IconButton>
                   }
                   title={score.title}
-                  onClick={() => this._onGetParts(band, score)}
+
                 />
                 <Divider />
                 <div
                   className={classes.cardContent}
                 >
+
                   <CardMedia
                     className={classes.media}
                     image='http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
@@ -297,19 +308,8 @@ class Scores extends React.Component {
                     <Typography variant='subheading'
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       Parts: {score.partCount}
+
                     </Typography>
-                    {/* {
-                      hasParts &&
-                      <div>
-
-                        {
-                          score.parts.map((part, index) =>
-                            <Typography>
-                              {console.log(part.instrumentRef)}
-                            </Typography>
-                          )}
-                      </div>} */}
-
                     <div className={classes.actions}>
 
                       <CardActions disableActionSpacing >
@@ -324,7 +324,10 @@ class Scores extends React.Component {
                   </CardContent>
                 </div>
 
-                <ExpansionPanel >
+
+                <ExpansionPanel
+                  onClick={() => this._onGetParts(band, score)}
+                >
                   <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}>
                     <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
                   </ExpansionPanelSummary>
@@ -335,19 +338,31 @@ class Scores extends React.Component {
                     >
                       <List>
                         {
-                          instruments.map((instruments, index) =>
+                          testList.map((instruments, index) =>
                             <ListItem key={index} className={classes.expandedListItems}>
 
                               <LibraryMusic color='action' />
                               <ListItemText primary={`${instruments}: `} />
                               <List>
+                                {/* map over parts/tone */}
+
+                                <InstrumentScores
+                                  test={test}
+                                  testList={this.state.testList}
+                                  _onGetParts={this._onGetParts.bind(this)}
+
+                                />
                                 {
-                                  // map over parts/tone
-                                  <ListItem>
-                                    <ListItemText primary='instrument-tone1' className={classes.instrumentstyle} />
+
+
+                                  <ListItem
+                                  >
+
+
+                                    {/* <ListItemText primary='instrument-tone1' className={classes.instrumentstyle} />
                                     <ListItemText primary='instrument-tone2' className={classes.instrumentstyle} />
                                     <ListItemText primary='instrument-tone3' className={classes.instrumentstyle} />
-                                    <ListItemText primary='instrument-tone4' className={classes.instrumentstyle} />
+                                    <ListItemText primary='instrument-tone4' className={classes.instrumentstyle} /> */}
 
                                   </ListItem>
                                 }
