@@ -25,23 +25,23 @@ const styles = {
 class InstrumentScores extends React.Component {
     constructor(props) {
         super(props)
-        this.state = {
-            testList: props.testList
-        }
 
     }
+
+    // componentWillMount() {
+    //     this.props._onGetParts(this.state.testList)
+    // }
+
 
     onChangeTest() {
-        this.props._onGetParts(this.state.testList)
+        this.props._onGetParts(this.state.testList);
     }
-
 
     render() {
         const { classes, band, instruments, index } = this.props;
         //console.log('this.props', this.props)
         //console.log('this.state.testList', this.props.testList)
         return <div>
-
             {
                 // map over parts/tone
                 <ListItem>
@@ -52,7 +52,16 @@ class InstrumentScores extends React.Component {
                         <ListItemText primary='instrument-tone3' className={classes.instrumentstyle} />
                         <ListItemText primary='instrument-tone4' className={classes.instrumentstyle} />  */}
                 </ListItem>
-            }
+            }<div>
+                {/* {Object.keys(this.props.testList).map((key, index) => {
+                    return (
+                        <div key={index}>
+                            {index}: {this.props.testList[index]}
+                        </div>
+                    )
+                }
+                )} */}
+            </div>
         </div>
     }
 }

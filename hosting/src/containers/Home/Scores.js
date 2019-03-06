@@ -121,14 +121,19 @@ const styles = {
 };
 
 class Scores extends React.Component {
-  state = {
-    listView: false,
-    expanded: false,
-    parts: {},
-    score: {},
-    instrumentList: [],
-    testList: [],
-  };
+  constructor() {
+    super()
+    this.state = {
+      listView: false,
+      expanded: false,
+      parts: {},
+      score: {},
+      instrumentList: [],
+      testList: [],
+      data: [],
+
+    };
+  }
 
   unsubs = []
   // componentDidMount() {
@@ -185,33 +190,91 @@ class Scores extends React.Component {
           .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
         this.setState({ score: { ...this.state.score, parts: partsSorted } });
 
-
+        //console.log('score', score)
         parts.forEach(element => {
-
           // console.log(element.instrument.name)
           testList.push(element.instrument.name)
           //console.log('testList', testList) 
-          this.setState({ testList: testList })
+        })
+        this.setState({
+          testList: testList,
         })
 
       })
     );
-    return testList
 
+    return testList
 
   }
 
+  _onGetScores = async (band) => {
+    let scoreList = [];
+    let partList = [];
+    // let partList = [ {"score": {"scoreId": "JAFSASF", "parts": {"instrument1": "trumpet", "instrument2": "bass"} } } ];
+    const test = ['ABC', 'DEF'];
+    const bandRef = firebase.firestore().doc(`bands/${band.id}`);
+    const scoreRef = bandRef.collection('scores');
+    const scores = scoreRef.get()
+      .then(snapshot => {
+        snapshot.forEach(doc => {
+          //scoreList.push({ score: { id: doc.id } });
+          scoreList.push(doc)
+          const scoreDoc = bandRef.collection('scores').doc(doc.id);
+          const partsRef = scoreDoc.collection('parts');
+          const parts = partsRef.get()
+            .then(async snapshot => {
+              // snapshot.forEach(doc => {
+              //   partList.push(doc.data().instrumentRef.id);
+
+              // })
+              const parts = await Promise.all(
+                snapshot.docs.map(async doc => ({
+                  //partList.push(doc.data().instrumentRef.id))
+                  ...doc.data(),
+                  id: doc.id,
+                  instrument: (await doc.data().instrumentRef.get()).data()
+                }
+                )
+                )
+              )
+
+              parts.forEach(element => {
+
+                partList.push(element.instrument.name)
+              })
+              // .catch(err => {
+              //   console.log('Error getting documents', err);
+              // });
+              //console.log('parts', parts)
+
+            });
+        })
+        // .catch(err => {
+        //   console.log('Error getting documents', err);
+        // });
+
+      })
+
+    console.log('partList', partList)
+
+    return partList;
+  }
 
   render() {
+
     const { classes, band } = this.props;
     const { listView, testList } = this.state;
-    const dateString = new Date().toLocaleDateString();
+    //const dateString = new Date().toLocaleDateString();
     const hasScores = band.scores && band.scores.length > 0;
 
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4'] // midlertidig deklarasjon av toner
     }
-    console.log('testList', testList)
+
+
+    const scoreList = this._onGetScores(band)
+
+    //console.log('scoreList', scoreList)
 
     let instruments = ['Trumpet', 'Trombone', 'Drum', 'Sax']; // midlertidig deklarasjon av instrumenter
 
@@ -308,6 +371,9 @@ class Scores extends React.Component {
                     <Typography variant='subheading'
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       Parts: {score.partCount}
+                      {/* {this.state.testList} */}
+                      {/* {this._onGetParts.bind(this)} */}
+
 
                     </Typography>
                     <div className={classes.actions}>
@@ -324,10 +390,12 @@ class Scores extends React.Component {
                   </CardContent>
                 </div>
 
-
                 <ExpansionPanel
+
                   onClick={() => this._onGetParts(band, score)}
+
                 >
+
                   <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}>
                     <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
                   </ExpansionPanelSummary>
@@ -336,6 +404,7 @@ class Scores extends React.Component {
                     //onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
 
                     >
+
                       <List>
                         {
                           testList.map((instruments, index) =>
@@ -344,6 +413,7 @@ class Scores extends React.Component {
                               <LibraryMusic color='action' />
                               <ListItemText primary={`${instruments}: `} />
                               <List>
+
                                 {/* map over parts/tone */}
 
                                 <InstrumentScores
