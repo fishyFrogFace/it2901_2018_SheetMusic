@@ -41,6 +41,7 @@ class InstrumentScores extends React.Component {
         const { classes, band, instruments, index } = this.props;
         //console.log('this.props', this.props)
         //console.log('this.state.testList', this.props.testList)
+        //console.log('this.props.allscoresList', this.props.allscoresList)
         return <div>
             {
                 // map over parts/tone

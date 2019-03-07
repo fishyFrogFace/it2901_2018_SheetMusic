@@ -196,32 +196,7 @@ class Home extends React.Component {
         this.setState({ message: null });
     };
 
-    onFindInstrument = async (scoreData, parts) => {
-        const { band } = this.state;
 
-        this.setState({ message: ' getting part' });
-
-        let scoreRef;
-        if (scoreData.id) {
-            scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
-        } else {
-            console.log('scoreRef: ', scoreRef)
-        }
-
-        for (let part of parts) {
-            const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
-
-            await scoreRef.collection('parts').get({
-                pages: pdfDoc.data().pages,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-            });
-
-            console.log("onFindInstrument()");
-        }
-
-        this.setState({ message: null });
-    }
 
     _onRemoveUnsortedPdf = async (pdf) => {
         const { band } = this.state;
@@ -243,17 +218,17 @@ class Home extends React.Component {
         this.setState({ message: null });
     };
 
-    _onRemoveScore = async (score) => {
-        const { band } = this.state;
-        this.setState({ message: 'Removing Score...' });
+    // _onRemoveScore = async (score) => {
+    //     const { band } = this.state;
+    //     this.setState({ message: 'Removing Score...' });
 
-        const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
-        await fireScore.ref.delete();
+    //     const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+    //     await fireScore.ref.delete();
 
-        console.log("Depeted");
+    //     console.log("Depeted");
 
-        this.setState({ message: null });
-    }
+    //     this.setState({ message: null });
+    // }
 
 
 
@@ -787,7 +762,6 @@ class Home extends React.Component {
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
-                        onFindInstrument={this.onFindInstrument}
 
                     />
                 }

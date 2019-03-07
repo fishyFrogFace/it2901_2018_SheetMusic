@@ -18,6 +18,7 @@ import FavoriteIcon from 'material-ui-icons/Favorite';
 import firebase from 'firebase';
 import { async } from '@firebase/util';
 import InstrumentScores from '../../components/InstrumentScores';
+import { resolve } from 'dns';
 
 
 
@@ -131,6 +132,8 @@ class Scores extends React.Component {
       instrumentList: [],
       testList: [],
       data: [],
+      partListState: [],
+      allscoresList: [],
 
     };
   }
@@ -142,11 +145,11 @@ class Scores extends React.Component {
   // }
 
 
-  componentWillMount() {
-    if (window.localStorage.getItem('scoresListView')) {
-      this.setState({ listView: true });
-    }
-  }
+  // componentWillMount() {
+  //   if (window.localStorage.getItem('scoresListView')) {
+  //     this.setState({ listView: true });
+  //   }
+  // }
 
   _onViewModuleClick = () => {
     window.localStorage.removeItem('scoresListView');
@@ -203,45 +206,93 @@ class Scores extends React.Component {
       })
     );
 
+    console.log('testList', testList)
+
+
     return testList
 
   }
 
-  _onGetScores = async (band) => {
+
+  _onGetAllScores = async (band) => {
+    let allscoresList = [];
+    let tList = [];
+    var bandRef = firebase.firestore().doc(`bands/${band.id}`);
+    var citiesRef = bandRef.collection('scores');
+    citiesRef.get()
+      .then(async snapshot => {
+        snapshot.forEach(async doc => {
+          tList.push(doc.data())
+
+          const scoreDoc = await bandRef.collection('scores').doc(doc.id);
+          const partsRef = scoreDoc.collection('parts');
+          var allScores = partsRef.get()
+            .then(snapshot => {
+              snapshot.forEach(doc => {
+                allscoresList.push(doc.data().instrumentRef.id);
+                //console.log('allscoresList', allscoresList)
+                // this.setState((prevallscoreList, allscoresList) => {
+                //   allscoresList: prevallscoreList.allscoresList + allscoresList.allscoresList
+                // })
+                return allscoresList
+              });
+            })
+            .catch(err => {
+              console.log('Error getting documents', err);
+            });
+        })
+      });
+    setTimeout(() => {
+      console.log('allscoresList', allscoresList)
+      return allscoresList
+    }, 3000);
+    //console.log('allscoresList', allscoresList)
+    //console.log('tList', tList)
+  }
+
+
+
+  componentDidMount() {
+
+
+  }
+
+
+  _onGetScores = (band) => {
     let scoreList = [];
     let partList = [];
     // let partList = [ {"score": {"scoreId": "JAFSASF", "parts": {"instrument1": "trumpet", "instrument2": "bass"} } } ];
     const test = ['ABC', 'DEF'];
+
     const bandRef = firebase.firestore().doc(`bands/${band.id}`);
     const scoreRef = bandRef.collection('scores');
     const scores = scoreRef.get()
       .then(snapshot => {
         snapshot.forEach(doc => {
-          //scoreList.push({ score: { id: doc.id } });
+
           scoreList.push(doc)
           const scoreDoc = bandRef.collection('scores').doc(doc.id);
           const partsRef = scoreDoc.collection('parts');
-          const parts = partsRef.get()
+          let parts = partsRef.get()
             .then(async snapshot => {
-              // snapshot.forEach(doc => {
-              //   partList.push(doc.data().instrumentRef.id);
-
-              // })
+              const nextUser = { ...doc.data() };
               const parts = await Promise.all(
                 snapshot.docs.map(async doc => ({
                   //partList.push(doc.data().instrumentRef.id))
                   ...doc.data(),
                   id: doc.id,
-                  instrument: (await doc.data().instrumentRef.get()).data()
+                  instrument: (await doc.data().instrumentRef.get()).data(),
                 }
                 )
                 )
-              )
+              );
 
               parts.forEach(element => {
 
                 partList.push(element.instrument.name)
               })
+
+
               // .catch(err => {
               //   console.log('Error getting documents', err);
               // });
@@ -255,30 +306,42 @@ class Scores extends React.Component {
 
       })
 
-    console.log('partList', partList)
+    // this.$bindAsObject(partList, db.ref('lists').child(someUID).child(someListUID), null, this.callbackFn);
+    //console.log('partList', partList)
+    setTimeout(() => {
+      console.log('partList', partList)
+      // this.setState({
+      //   partListState: partList
+      // })
+    }, 3000);
 
-    return partList;
   }
 
   render() {
 
     const { classes, band } = this.props;
-    const { listView, testList } = this.state;
+    const { listView, testList, partListState, allscoresList } = this.state;
     //const dateString = new Date().toLocaleDateString();
     const hasScores = band.scores && band.scores.length > 0;
-
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4'] // midlertidig deklarasjon av toner
     }
 
-
     const scoreList = this._onGetScores(band)
+    //const allscores = this._onGetAllScores(band)
+    //console.log('allscoresListRender', allscoresList)
 
-    //console.log('scoreList', scoreList)
 
     let instruments = ['Trumpet', 'Trombone', 'Drum', 'Sax']; // midlertidig deklarasjon av instrumenter
 
+    //console.log('this', this.state.allscoresList)
     return <div>
+      {/* <ul>
+        {this.state.partListState.map(item => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul> */}
+
       <div
       // style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}
       >
@@ -350,6 +413,10 @@ class Scores extends React.Component {
                     </IconButton>
                   }
                   title={score.title}
+                //title={this.state.allscoresList}
+
+
+
 
                 />
                 <Divider />
@@ -373,7 +440,6 @@ class Scores extends React.Component {
                       Parts: {score.partCount}
                       {/* {this.state.testList} */}
                       {/* {this._onGetParts.bind(this)} */}
-
 
                     </Typography>
                     <div className={classes.actions}>
@@ -420,6 +486,8 @@ class Scores extends React.Component {
                                   test={test}
                                   testList={this.state.testList}
                                   _onGetParts={this._onGetParts.bind(this)}
+                                  _onGetAllScores={this._onGetAllScores.bind(this)}
+                                  allscoresList={this.state.allscoresList}
 
                                 />
                                 {
