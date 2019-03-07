@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const path = require("path");
-const Storage = require("@google-cloud/storage");
+const child_process_promise_1 = require("child-process-promise");
 const fs = require("fs-extra");
 const admin = require("firebase-admin");
 const unzipper = require("unzipper");
@@ -20,8 +20,10 @@ require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
 const cors = require("cors");
 const request = require("request-promise-native");
+const pdfUtil = require('pdf-to-text');
+const { Storage } = require('@google-cloud/storage');
 admin.initializeApp();
-const storage = Storage({ keyFilename: 'service-account-key.json' });
+const storage = new Storage({ keyFilename: 'service-account-key.json' });
 // Extracts ZIP with pdfs
 exports.extractZip = functions.storage.object().onFinalize((object, context) => __awaiter(this, void 0, void 0, function* () {
     // Full file path (<bandId>/<fileName>.pdf)
@@ -72,277 +74,216 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         filePath: filePath
     });
     yield ref.delete();
-    //
-    // let [bandId, fileNameExt] = filePath.split('/');
-    //
-    // // File name without extension
-    // const fileName = path.basename(fileNameExt, '.pdf');
-    //
-    //
-    //
-    // // Create storage bucket
-    // const inputBucket = storage.bucket(object.bucket);
-    //
-    // const pdfBucket = storage.bucket('scores-butler-pdfs');
-    //
-    //
-    //
-    // try {
-    //     // Download to local directory
-    //     await inputBucket.file(filePath).download({destination: '/tmp/score.pdf'});
-    //
-    //     // Delete PDF file
-    //     await inputBucket.file(filePath).delete();
-    //
-    //     console.log('Creating directories...');
-    //
-    //     // Create output directories
-    //     await fs.ensureDir('/tmp/output-original');
-    //     await fs.ensureDir('/tmp/output-cropped');
-    //     await fs.ensureDir('/tmp/output-cropped-compressed');
-    //
-    //     await fs.writeFile('/tmp/.xpdfrc', '');
-    //
-    //     console.log('Getting PDF info...');
-    //
-    //     console.log(await fs.readdir('./'));
-    //
-    //     console.log(await fs.readdir('/tmp'));
-    //
-    //     const pdfInfo = await new Promise<string>(async resolve => {
-    //         const promise = spawn('./xpdf/pdfinfo', [
-    //             '-cfg', '/tmp/.xpdfrc',
-    //             '/tmp/score.pdf',
-    //         ]);
-    //
-    //         promise.childProcess.stdout.on('data', _data => {
-    //             promise.childProcess.kill();
-    //             resolve(_data.toString());
-    //         });
-    //
-    //         await promise;
-    //     });
-    //
-    //     const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
-    //
-    //     console.log('Creating document...');
-    //
-    //
-    //     const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
-    //         name: fileName,
-    //         uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
-    //         pageCount: parseInt(match[1]),
-    //         processing: true
-    //     });
-    //
-    //     console.log('Generating images...');
-    //
-    //     const gsProcess = await spawn('ghostscript/bin/./gs', [
-    //         '-dBATCH',
-    //         '-dNOPAUSE',
-    //         '-sDEVICE=pngmonod',
-    //         `-sOutputFile=/tmp/output-original/score-%03d.png`,
-    //         '-r300',
-    //         `/tmp/score.pdf`
-    //     ]);
-    //
-    //     gsProcess.childProcess.kill();
-    //
-    //     console.log('Cropping images...');
-    //
-    //     const convertProcess = await spawn('mogrify', [
-    //         '-crop', '4000x666+0+0',
-    //         '-resize', '40%',
-    //         '-path', '../output-cropped',
-    //         '*.png'
-    //     ], {cwd: '/tmp/output-original/'});
-    //
-    //
-    //     convertProcess.childProcess.kill();
-    //
-    //     const upload = async outputType => {
-    //         // Read files
-    //         const fileNames = await fs.readdir(`/tmp/output-${outputType}`);
-    //
-    //         // Upload files
-    //         const uploadResponses = await Promise.all(
-    //             fileNames.map((name, index) =>
-    //                 pdfBucket.upload(`/tmp/output-${outputType}/${name}`, {
-    //                     destination: `${bandId}/${pdfRef.id}/${outputType}/${index}.png`,
-    //                     metadata: {
-    //                         contentType: 'image/png'
-    //                     }
-    //                 })
-    //             ));
-    //
-    //         // Generate urls
-    //         return await Promise.all(
-    //             uploadResponses.map(([file]) =>
-    //                 file.getSignedUrl({
-    //                     action: 'read',
-    //                     expires: '03-09-2491'
-    //                 })
-    //             )
-    //         );
-    //     };
-    //
-    //     const croppedPageUrls = (await upload('cropped')).map(([url]) => url);
-    //     const originalPageUrls = (await upload('original')).map(([url]) => url);
-    //
-    //     // Add page documents
-    //     const pages = [];
-    //     for (let i = 0; i < croppedPageUrls.length; i++) {
-    //         pages.push({
-    //             croppedURL: croppedPageUrls[i],
-    //             originalURL: originalPageUrls[i]
-    //         })
-    //     }
-    //
-    //     // Analyze PDF
-    //
-    //     const process2 = await spawn('xpdf/pdftotext', [
-    //         '-cfg', '/tmp/.xpdfrc',
-    //         '/tmp/score.pdf',
-    //     ]);
-    //
-    //     process2.childProcess.kill();
-    //
-    //     const data = {
-    //         processing: admin.firestore.FieldValue.delete(),
-    //         thumbnailURL: croppedPageUrls[0],
-    //         pages: pages,
-    //     };
-    //
-    //     const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
-    //
-    //     if (pdfText.includes('jazzbandcharts')) {
-    //         // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
-    //
-    //         const patterns = [{
-    //             name: 'Score',
-    //             expr: /(: )?score/i
-    //         }, {
-    //             name: 'Vocal',
-    //             expr: /(\w )?vocal/i
-    //         }, {
-    //             name: 'Alto Sax',
-    //             expr: /(\w )?alto sax\. \d/i
-    //         }, {
-    //             name: 'Tenor Sax',
-    //             expr: /(\w )?tenor sax\. \d/i
-    //         }, {
-    //             name: 'Baritone Sax',
-    //             expr: /(\w )?baritone sax\./i
-    //         }, {
-    //             name: 'Trumpet',
-    //             expr: /(\w )?trumpet .{0,6}\d/i
-    //         }, {
-    //             name: 'Trombone',
-    //             expr: /(\w )?trombone \d/i
-    //         }, {
-    //             name: 'Guitar',
-    //             expr: /(\w )?guitar/i
-    //         }, {
-    //             name: 'Piano',
-    //             expr: /(\w )?piano/i
-    //         }, {
-    //             name: 'Bass',
-    //             expr: /(\w )?bass/i
-    //         }, {
-    //             name: 'Drum Set',
-    //             expr: /(\w )?drum set/i
-    //         }];
-    //
-    //         const _pages = pdfText.split('\f');
-    //
-    //         const snapshot = await admin.firestore().collection('instruments').get();
-    //
-    //         const instruments = snapshot.docs.map(doc => ({...doc.data(), ref: doc.ref}));
-    //
-    //         const parts = [{
-    //             page: 2,
-    //             instruments: [admin.firestore().doc('instruments/YFNsZF5GxxpkfBqtbouy')]
-    //         }];
-    //
-    //         const nameCount = {};
-    //
-    //         for (let i = 3; i < _pages.length; i++) {
-    //             const page = _pages[i];
-    //
-    //             // const mExclude = excludePattern.test(page);
-    //
-    //             const detectedInstrNames = [];
-    //
-    //             // if (!mExclude) {
-    //             for (let pattern of patterns) {
-    //                 const isMatch = pattern.expr.test(page);
-    //
-    //                 if (isMatch &&
-    //                     /*Simulate negative lookbehind*/
-    //                     !pattern.expr.exec(page)[1]) {
-    //                     detectedInstrNames.push(pattern.name);
-    //                 }
-    //             }
-    //             // }
-    //
-    //             if (detectedInstrNames.length > 0) {
-    //                 if (detectedInstrNames.length === 1) {
-    //                     const [name] = detectedInstrNames;
-    //
-    //                     if (['Alto Sax', 'Tenor Sax', 'Trumpet', 'Trombone'].indexOf(name) > -1) {
-    //                         if (!nameCount[name]) {
-    //                             nameCount[name] = 0;
-    //                         }
-    //
-    //                         const instrRef = instruments.find(instr =>
-    //                             instr['name'] === `${name} ${nameCount[name] + 1}`).ref;
-    //
-    //                         parts.push({
-    //                             page: i,
-    //                             instruments: [instrRef]
-    //                         });
-    //
-    //                         nameCount[name] += 1;
-    //                     } else {
-    //                         const instrRef = instruments.find(instr => instr['name'] === name).ref;
-    //
-    //                         parts.push({
-    //                             page: i,
-    //                             instruments: [instrRef]
-    //                         });
-    //                     }
-    //                 } else {
-    //                     const instrRefs = detectedInstrNames.map(name =>
-    //                         instruments.find(instr => instr['name'] === name).ref
-    //                     );
-    //
-    //                     parts.push({
-    //                         page: i,
-    //                         instruments: instrRefs
-    //                     });
-    //                 }
-    //             }
-    //         }
-    //
-    //         data['parts'] = parts;
-    //     }
-    //
-    //     await pdfRef.update(data);
-    //
-    //     // Clean up
-    //     await Promise.all([
-    //         fs.remove('/tmp/score.txt'),
-    //         fs.remove('/tmp/score.pdf'),
-    //         fs.remove('/tmp/output-original'),
-    //         fs.remove('/tmp/output-cropped'),
-    //     ]);
-    // } catch (err) {
-    //     console.log(err);
-    // }
+    let [bandId, fileNameExt] = filePath.split('/');
+    // File name without extension
+    const fileName = path.basename(fileNameExt, '.pdf');
+    // Create storage bucket
+    const inputBucket = storage.bucket(object.bucket);
+    const pdfBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+    try {
+        pdfUtil.info(filePath, function (err, info) {
+            if (err)
+                throw (err);
+            console.log(info);
+        });
+        console.log('Test...');
+        console.log('Object ', object);
+        console.log('Bucket ', object.bucket);
+        // Download to local directory
+        yield inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
+        // Delete PDF file
+        yield inputBucket.file(filePath).delete();
+        console.log('Creating directories...');
+        // Create output directories
+        yield fs.ensureDir('/tmp/output-original');
+        yield fs.ensureDir('/tmp/output-cropped');
+        yield fs.ensureDir('/tmp/output-cropped-compressed');
+        yield fs.writeFile('/tmp/.xpdfrc', '');
+        console.log('Getting PDF info...');
+        console.log(yield fs.readdir('./'));
+        console.log(yield fs.readdir('/tmp'));
+        const pdfInfo = yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+            const promise = child_process_promise_1.spawn('./xpdf/pdfinfo', [
+                '-cfg', '/tmp/.xpdfrc',
+                '/tmp/score.pdf',
+            ]);
+            promise.childProcess.stdout.on('data', _data => {
+                promise.childProcess.kill();
+                resolve(_data.toString());
+            });
+            yield promise;
+        }));
+        const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
+        console.log('Creating document...');
+        const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
+            name: fileName,
+            uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+            pageCount: parseInt(match[1]),
+            processing: true
+        });
+        console.log('Generating images...');
+        const gsProcess = yield child_process_promise_1.spawn('ghostscript/bin/./gs', [
+            '-dBATCH',
+            '-dNOPAUSE',
+            '-sDEVICE=pngmonod',
+            `-sOutputFile=/tmp/output-original/score-%03d.png`,
+            '-r300',
+            `/tmp/score.pdf`
+        ]);
+        gsProcess.childProcess.kill();
+        console.log('Cropping images...');
+        const convertProcess = yield child_process_promise_1.spawn('mogrify', [
+            '-crop', '4000x666+0+0',
+            '-resize', '40%',
+            '-path', '../output-cropped',
+            '*.png'
+        ], { cwd: '/tmp/output-original/' });
+        convertProcess.childProcess.kill();
+        const upload = (outputType) => __awaiter(this, void 0, void 0, function* () {
+            // Read files
+            const fileNames = yield fs.readdir(`/tmp/output-${outputType}`);
+            // Upload files
+            const uploadResponses = yield Promise.all(fileNames.map((name, index) => pdfBucket.upload(`/tmp/output-${outputType}/${name}`, {
+                destination: `${bandId}/${pdfRef.id}/${outputType}/${index}.png`,
+                metadata: {
+                    contentType: 'image/png'
+                }
+            })));
+            // Generate urls
+            return yield Promise.all(uploadResponses.map(([file]) => file.getSignedUrl({
+                action: 'read',
+                expires: '03-09-2491'
+            })));
+        });
+        const croppedPageUrls = (yield upload('cropped')).map(([url]) => url);
+        const originalPageUrls = (yield upload('original')).map(([url]) => url);
+        // Add page documents
+        const pages = [];
+        for (let i = 0; i < croppedPageUrls.length; i++) {
+            pages.push({
+                croppedURL: croppedPageUrls[i],
+                originalURL: originalPageUrls[i]
+            });
+        }
+        // Analyze PDF
+        const process2 = yield child_process_promise_1.spawn('xpdf/pdftotext', [
+            '-cfg', '/tmp/.xpdfrc',
+            '/tmp/score.pdf',
+        ]);
+        process2.childProcess.kill();
+        const data = {
+            processing: admin.firestore.FieldValue.delete(),
+            thumbnailURL: croppedPageUrls[0],
+            pages: pages,
+        };
+        const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
+        if (pdfText.includes('jazzbandcharts')) {
+            // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
+            const patterns = [{
+                    name: 'Score',
+                    expr: /(: )?score/i
+                }, {
+                    name: 'Vocal',
+                    expr: /(\w )?vocal/i
+                }, {
+                    name: 'Alto Sax',
+                    expr: /(\w )?alto sax\. \d/i
+                }, {
+                    name: 'Tenor Sax',
+                    expr: /(\w )?tenor sax\. \d/i
+                }, {
+                    name: 'Baritone Sax',
+                    expr: /(\w )?baritone sax\./i
+                }, {
+                    name: 'Trumpet',
+                    expr: /(\w )?trumpet .{0,6}\d/i
+                }, {
+                    name: 'Trombone',
+                    expr: /(\w )?trombone \d/i
+                }, {
+                    name: 'Guitar',
+                    expr: /(\w )?guitar/i
+                }, {
+                    name: 'Piano',
+                    expr: /(\w )?piano/i
+                }, {
+                    name: 'Bass',
+                    expr: /(\w )?bass/i
+                }, {
+                    name: 'Drum Set',
+                    expr: /(\w )?drum set/i
+                }];
+            const _pages = pdfText.split('\f');
+            const snapshot = yield admin.firestore().collection('instruments').get();
+            const instruments = snapshot.docs.map(doc => (Object.assign({}, doc.data(), { ref: doc.ref })));
+            const parts = [{
+                    page: 2,
+                    instruments: [admin.firestore().doc('instruments/YFNsZF5GxxpkfBqtbouy')]
+                }];
+            const nameCount = {};
+            for (let i = 3; i < _pages.length; i++) {
+                const page = _pages[i];
+                // const mExclude = excludePattern.test(page);
+                const detectedInstrNames = [];
+                // if (!mExclude) {
+                for (let pattern of patterns) {
+                    const isMatch = pattern.expr.test(page);
+                    if (isMatch &&
+                        /*Simulate negative lookbehind*/
+                        !pattern.expr.exec(page)[1]) {
+                        detectedInstrNames.push(pattern.name);
+                    }
+                }
+                // }
+                if (detectedInstrNames.length > 0) {
+                    if (detectedInstrNames.length === 1) {
+                        const [name] = detectedInstrNames;
+                        if (['Alto Sax', 'Tenor Sax', 'Trumpet', 'Trombone'].indexOf(name) > -1) {
+                            if (!nameCount[name]) {
+                                nameCount[name] = 0;
+                            }
+                            const instrRef = instruments.find(instr => instr['name'] === `${name} ${nameCount[name] + 1}`).ref;
+                            parts.push({
+                                page: i,
+                                instruments: [instrRef]
+                            });
+                            nameCount[name] += 1;
+                        }
+                        else {
+                            const instrRef = instruments.find(instr => instr['name'] === name).ref;
+                            parts.push({
+                                page: i,
+                                instruments: [instrRef]
+                            });
+                        }
+                    }
+                    else {
+                        const instrRefs = detectedInstrNames.map(name => instruments.find(instr => instr['name'] === name).ref);
+                        parts.push({
+                            page: i,
+                            instruments: instrRefs
+                        });
+                    }
+                }
+            }
+            data['parts'] = parts;
+        }
+        yield pdfRef.update(data);
+        // Clean up
+        yield Promise.all([
+            fs.remove('/tmp/score.txt'),
+            fs.remove('/tmp/score.pdf'),
+            fs.remove('/tmp/output-original'),
+            fs.remove('/tmp/output-cropped'),
+        ]);
+    }
+    catch (err) {
+        console.log(err);
+    }
 }));
 exports.analyzePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
     const { bandId, pdfId } = req.query;
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
     yield bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({ destination: '/tmp/image.png' });
     const client = new vision.ImageAnnotatorClient();
     const response = yield client.textDetection('/tmp/image.png');
@@ -350,7 +291,7 @@ exports.analyzePDF = functions.https.onRequest((req, res) => __awaiter(this, voi
     yield res.json(detections);
 }));
 exports.generatePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
-    const bucket = storage.bucket('scores-butler.appspot.com');
+    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
     const doc = new PDFDocument();
     const image = '';
     const file = bucket.file('test/test.pdf');
@@ -368,7 +309,7 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         const { bandId, folderPath, accessToken } = req.query;
         const dropbox = new dropbox_1.Dropbox({ accessToken: accessToken });
         const response = yield dropbox.filesDownloadZip({ path: folderPath });
-        const bucket = storage.bucket('scores-butler.appspot.com');
+        const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
         yield bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
     }));

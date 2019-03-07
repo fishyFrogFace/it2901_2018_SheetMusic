@@ -5,8 +5,8 @@ const serviceAccount = require('./service-account-key');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://scores-butler.firebaseio.com',
-    storageBucket: 'scores-butler.appspot.com'
+    databaseURL: 'https://scoresbutler-9ff30.firebaseio.com',
+    storageBucket: 'scoresbutler-9ff30.appspot.com'
 });
 
 /*
@@ -66,7 +66,7 @@ async function deleteUser(email) {
     const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
 
-    await page.goto('http://scores-butler.firebaseapp.com', {waitUntil: 'networkidle0'});
+    await page.goto('http://scoresbutler-9ff30.firebaseapp.com', {waitUntil: 'networkidle0'});
 
     // #1 As a band member I want to sign in with my Google account.
     await userStory1(browser, page);
@@ -159,7 +159,7 @@ async function userStory2(browser, page) {
 async function userStory3(browser, page, bandCode) {
     const context = await browser.createIncognitoBrowserContext();
     const newPage = await context.newPage();
-    await newPage.goto('http://scores-butler.firebaseapp.com', {waitUntil: 'networkidle0'});
+    await newPage.goto('http://scoresbutler-9ff30.firebaseapp.com', {waitUntil: 'networkidle0'});
 
     newPage.evaluate(() => document.querySelector('#test_user_2_signin').click());
 

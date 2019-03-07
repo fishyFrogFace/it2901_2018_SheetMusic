@@ -26,6 +26,7 @@ import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
 
 
+
 const styles = {
     root: {
         height: '100%',
@@ -147,6 +148,8 @@ class Home extends React.Component {
 
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
+        
+        console.log("Depeted");
 
         await Promise.all(
             parts.map(part => scoreRef.collection('parts').add({
@@ -157,6 +160,8 @@ class Home extends React.Component {
             ));
 
         await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
+        
+        console.log("Depeted");
         this.setState({message: null});
     };
 
@@ -182,11 +187,14 @@ class Home extends React.Component {
             });
 
             await pdfDoc.ref.delete();
+            
+        console.log("Depeted");
         }
 
         this.setState({message: null});
     };
 
+    // REMOVING UPLOADED PDF FROM UNSORTED PDFS
     _onRemoveUnsortedPdf = async (pdf) => {
         const {band} = this.state;
         this.setState({message: 'Removing PDF...'});
@@ -195,10 +203,14 @@ class Home extends React.Component {
             for (let part of pdf.pdfs) {
               const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
               await pdfDoc.ref.delete();
+              
+        console.log("Depeted");
             }
         } else {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
             await pdfDoc.ref.delete();
+            
+        console.log("Depeted");
         }
         this.setState({message: null});
     };
@@ -209,6 +221,8 @@ class Home extends React.Component {
 
       const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
       await fireScore.ref.delete();
+      
+      console.log("Depeted");
 
       this.setState({message: null});
     }
@@ -244,6 +258,7 @@ class Home extends React.Component {
                 status: "member",
                 admin: true,
                 supervisor: true,
+                leader: true,
             });
 
             await firebase.firestore().doc(`users/${user.uid}`).update({
@@ -329,6 +344,8 @@ class Home extends React.Component {
         this.setState({uploadAnchorEl: e.currentTarget});
     };
 
+
+    // UPLOADING PDF 
     _onUploadMenuClick = async type => {
         const {files, path, accessToken} = await this.uploadDialog.open(type);
 
@@ -338,21 +355,50 @@ class Home extends React.Component {
 
         switch (type) {
             case 'computer':
+
+                let fileNames = []; 
+
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     this.setState({message: `Uploading file ${i + 1}/${files.length}...`});
+                    fileNames.push(file.name.replace(/\.[^/.]+$/, ""));
                     await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
-                }
-                this.setState({message: null});
-                break;
+                    console.log(`File ${file.name} uploaded`);
+                };
+
+                // firebase.firestore().collection(`bands/${band.id}/pdfs/`).onSnapshot(async snap => {
+                //     let items = await Promise.all(
+                //         snap.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                //     );
+
+                //     this.setState({message: `Preparing files...`});
+                //     // setTimeout(this.setState({ message: `Preparing files...` }), 30000)
+                //     setTimeout(this.setState({ message: `Uploading files failed...` }), 30000)
+                //     // this.setState({message: `Uploading files failed...`});
+
+
+                //     for (let item of items) {
+                //         console.log(fileNames.includes(item.name));
+                //         if (fileNames.includes(item.name)) {
+                //             setTimeout(this.setState({ message: `Files successfully uploaded` }), 2000)
+                //             this.setState({ message: null });
+                //         };
+                //     };
+                // });
+
+            this.setState({ message: null });
+            break;
+
             case 'dropbox':
                 const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
                 console.log(response.status);
                 break;
+                
             case 'drive':
                 break;
         }
     };
+
 
     _onMenuClose = () => {
         this.setState({bandAnchorEl: null, uploadAnchorEl: null, accountAnchorEl: null});
@@ -419,7 +465,6 @@ class Home extends React.Component {
                                 const visited = [];
 
                                 for (let item of items) {
-                                    console.log(item);
                                     if (item.pageCount > 10) {
                                         if (item.parts) {
                                             item.parts = await Promise.all(

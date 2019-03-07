@@ -1,5 +1,5 @@
 const path = require('path');
-const Storage = require('@google-cloud/storage');
+const {Storage} = require('@google-cloud/storage');
 const {spawn} = require('child-process-promise');
 const fs = require('fs-extra');
 const admin = require('firebase-admin');
@@ -10,8 +10,8 @@ const storage = Storage({keyFilename: 'service-account-key.json'});
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://scores-butler.firebaseio.com',
-    storageBucket: 'scores-butler.appspot.com'
+    databaseURL: 'https://scoresbutler-9ff30.firebaseio.com',
+    storageBucket: 'scoresbutler-9ff30.appspot.com'
 });
 
 admin.firestore().collection('__pdfs').onSnapshot(snap => {
@@ -24,8 +24,8 @@ admin.firestore().collection('__pdfs').onSnapshot(snap => {
             // File name without extension
             const fileName = path.basename(fileNameExt, '.pdf');
 
-            const inputBucket = storage.bucket('scores-butler.appspot.com');
-            const pdfBucket = storage.bucket('scores-butler-pdfs');
+            const inputBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+            const pdfBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
 
             const rand = Math.random().toString().substring(2, 10);
 
@@ -137,7 +137,6 @@ admin.firestore().collection('__pdfs').onSnapshot(snap => {
             }
 
             // Analyze PDF
-
             console.log('Analyzing...');
 
             const process2 = await spawn('xpdf/pdftotext', [

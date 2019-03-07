@@ -194,7 +194,7 @@ class Setlist extends Component {
                                     {setlist.title}
                                 </Typography>
                                 <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                    {setlist.date && setlist.date.toLocaleDateString()}
+                                    {/*setlist.date && setlist.date.toLocaleDateString()*/}
                                 </Typography>
                             </div>
                             <div className={classes.flex}/>
