@@ -18,10 +18,8 @@ import FavoriteIcon from 'material-ui-icons/Favorite';
 import firebase from 'firebase';
 import { async } from '@firebase/util';
 import InstrumentScores from '../../components/InstrumentScores';
+import SelectArrangement from '../../components/SelectArrangement';
 import { resolve } from 'dns';
-
-
-
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -86,7 +84,6 @@ const styles = {
   cardContent: {
     display: 'flex',
     flexDirection: 'row-reverse',
-
   },
 
   actions: {
@@ -108,6 +105,7 @@ const styles = {
   expandedListItems: {
     paddingBottom: '0px',
     paddingTop: '0px',
+    marginBottom: '-30px'
   },
 
   metadata: {
@@ -115,41 +113,35 @@ const styles = {
 
   cardHeader: {
     cursor: 'default'
+  },
+
+  ListItemTingTang: {
+    padding: '0px'
   }
-
-
 
 };
 
 class Scores extends React.Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
     this.state = {
       listView: false,
       expanded: false,
       parts: {},
       score: {},
-      instrumentList: [],
-      testList: [],
-      data: [],
-      partListState: [],
-      allscoresList: [],
-
+      vocal: '',
+      ensemble: ['Default', 'Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
+      value: '',
     };
   }
 
   unsubs = []
-  // componentDidMount() {
-  //     axios.get("https://scoresbutler-9ff30.firebaseio.com")
-  //         .then(res => console.log('axios: ', res.pdfs))
-  // }
 
-
-  // componentWillMount() {
-  //   if (window.localStorage.getItem('scoresListView')) {
-  //     this.setState({ listView: true });
-  //   }
-  // }
+  componentWillMount() {
+    if (window.localStorage.getItem('scoresListView')) {
+      this.setState({ listView: true });
+    }
+  }
 
   _onViewModuleClick = () => {
     window.localStorage.removeItem('scoresListView');
@@ -172,7 +164,6 @@ class Scores extends React.Component {
       //expanded: this.state.expanded === e ? currentState : !currentState
     });
     console.log('clicked: ', e);
-    //console.log('state.expanded: ', this.state.expanded)
   }
 
   _onGetParts = (band, score) => {
@@ -192,12 +183,8 @@ class Scores extends React.Component {
         const partsSorted = parts
           .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
         this.setState({ score: { ...this.state.score, parts: partsSorted } });
-
-        //console.log('score', score)
         parts.forEach(element => {
-          // console.log(element.instrument.name)
           testList.push(element.instrument.name)
-          //console.log('testList', testList) 
         })
         this.setState({
           testList: testList,
@@ -205,14 +192,8 @@ class Scores extends React.Component {
 
       })
     );
-
-    console.log('testList', testList)
-
-
     return testList
-
   }
-
 
   _onGetAllScores = async (band) => {
     let allscoresList = [];
@@ -223,14 +204,12 @@ class Scores extends React.Component {
       .then(async snapshot => {
         snapshot.forEach(async doc => {
           tList.push(doc.data())
-
           const scoreDoc = await bandRef.collection('scores').doc(doc.id);
           const partsRef = scoreDoc.collection('parts');
           var allScores = partsRef.get()
             .then(snapshot => {
               snapshot.forEach(doc => {
                 allscoresList.push(doc.data().instrumentRef.id);
-                //console.log('allscoresList', allscoresList)
                 // this.setState((prevallscoreList, allscoresList) => {
                 //   allscoresList: prevallscoreList.allscoresList + allscoresList.allscoresList
                 // })
@@ -246,30 +225,19 @@ class Scores extends React.Component {
       console.log('allscoresList', allscoresList)
       return allscoresList
     }, 3000);
-    //console.log('allscoresList', allscoresList)
-    //console.log('tList', tList)
   }
 
-
-
-  componentDidMount() {
-
-
-  }
 
 
   _onGetScores = (band) => {
     let scoreList = [];
     let partList = [];
     // let partList = [ {"score": {"scoreId": "JAFSASF", "parts": {"instrument1": "trumpet", "instrument2": "bass"} } } ];
-    const test = ['ABC', 'DEF'];
-
     const bandRef = firebase.firestore().doc(`bands/${band.id}`);
     const scoreRef = bandRef.collection('scores');
     const scores = scoreRef.get()
       .then(snapshot => {
         snapshot.forEach(doc => {
-
           scoreList.push(doc)
           const scoreDoc = bandRef.collection('scores').doc(doc.id);
           const partsRef = scoreDoc.collection('parts');
@@ -291,23 +259,16 @@ class Scores extends React.Component {
 
                 partList.push(element.instrument.name)
               })
-
-
               // .catch(err => {
               //   console.log('Error getting documents', err);
               // });
-              //console.log('parts', parts)
-
             });
         })
         // .catch(err => {
         //   console.log('Error getting documents', err);
         // });
-
       })
 
-    // this.$bindAsObject(partList, db.ref('lists').child(someUID).child(someListUID), null, this.callbackFn);
-    //console.log('partList', partList)
     setTimeout(() => {
       console.log('partList', partList)
       // this.setState({
@@ -317,33 +278,31 @@ class Scores extends React.Component {
 
   }
 
+  handleChangeEnsemble = childEsembleValue => {
+    this.setState({ ensemble: childEsembleValue });
+  };
+
+
   render() {
 
     const { classes, band } = this.props;
-    const { listView, testList, partListState, allscoresList } = this.state;
-    //const dateString = new Date().toLocaleDateString();
+    const { listView, ensemble } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
     let test = {
-      liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4'] // midlertidig deklarasjon av toner
+      liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
     }
+    let jazz = ['Jazz', 'Banjo', 'Bass', 'Drums', 'Guitar', 'Piano', 'Clarinet', 'Sax', 'Trombone', 'Trumpet', 'Tuba', 'Violin', 'Cello'];
+    let chamberOrchestra = ['Chamber Orchestra', 'Flute', 'Cello'];
+    let symphonyOrchestra = ['Symphony Orchestra', 'Trombone', 'Trumpet']
+    let allInstruments = ['Default', 'Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum']
 
-    const scoreList = this._onGetScores(band)
-    //const allscores = this._onGetAllScores(band)
-    //console.log('allscoresListRender', allscoresList)
+    console.log('this.state.esemble', this.state.ensemble)
 
 
-    let instruments = ['Trumpet', 'Trombone', 'Drum', 'Sax']; // midlertidig deklarasjon av instrumenter
-
-    //console.log('this', this.state.allscoresList)
     return <div>
-      {/* <ul>
-        {this.state.partListState.map(item => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul> */}
+
 
       <div
-      // style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}
       >
         <div className={classes.flex} />
 
@@ -458,7 +417,7 @@ class Scores extends React.Component {
 
                 <ExpansionPanel
 
-                  onClick={() => this._onGetParts(band, score)}
+                //onClick={() => this._onGetParts(band, score)}
 
                 >
 
@@ -468,12 +427,23 @@ class Scores extends React.Component {
                   <ExpansionPanelDetails className={classes.expandedPanel}>
                     <Typography variant='subheading'
                     //onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-
                     >
 
-                      <List>
+                      <SelectArrangement
+                        allInstruments={allInstruments}
+                        jazz={jazz}
+                        chamberOrchestra={chamberOrchestra}
+                        symphonyOrchestra={symphonyOrchestra}
+                        vocalValue={this.state.vocal}
+                        ensemble={this.state.ensemble}
+                        selecter={this.handleChangeEnsemble}
+
+                      />
+
+                      <List className={classes.listContentTingTang}>
+
                         {
-                          testList.map((instruments, index) =>
+                          ensemble.slice(1).map((instruments, index) =>
                             <ListItem key={index} className={classes.expandedListItems}>
 
                               <LibraryMusic color='action' />
@@ -488,24 +458,15 @@ class Scores extends React.Component {
                                   _onGetParts={this._onGetParts.bind(this)}
                                   _onGetAllScores={this._onGetAllScores.bind(this)}
                                   allscoresList={this.state.allscoresList}
-
                                 />
                                 {
-
-
                                   <ListItem
                                   >
-
-
-                                    {/* <ListItemText primary='instrument-tone1' className={classes.instrumentstyle} />
-                                    <ListItemText primary='instrument-tone2' className={classes.instrumentstyle} />
-                                    <ListItemText primary='instrument-tone3' className={classes.instrumentstyle} />
-                                    <ListItemText primary='instrument-tone4' className={classes.instrumentstyle} /> */}
-
                                   </ListItem>
                                 }
                               </List>
                             </ListItem>)
+
                         }
                       </List>
                     </Typography>
