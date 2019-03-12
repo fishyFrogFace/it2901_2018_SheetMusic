@@ -309,7 +309,6 @@ class Scores extends React.Component {
 
         return (
             <div>
-                hallo
                 <div style={{ padding: '0 24px' }}>
                     {
                         <Paper>
@@ -371,10 +370,6 @@ class Scores extends React.Component {
                         <ViewList />
                     </IconButton>
                 }
-            </div>
-
-            <div>
-                {this._onGetScores(band)}
             </div>
 
             <div style={{ padding: '0 24px' }}>

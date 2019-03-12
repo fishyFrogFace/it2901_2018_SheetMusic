@@ -7,6 +7,7 @@ import { Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, Li
 import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
+import { red } from 'material-ui/colors';
 
 const styles = theme => ({
    root: {}
@@ -19,6 +20,7 @@ class Members extends React.Component {
       message: "",
       isAdmin: false,
       isLeader: false,
+
    };
 
    open = async () => {
@@ -33,7 +35,7 @@ class Members extends React.Component {
    // Accepting a new band member
    _onAccept = async (member) => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-      const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
+      const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/pending/${member.id}`);
       const userRef = firebase.firestore().doc(`users/${member.uid}`);
 
       // Confirm modal about accepting
@@ -43,19 +45,31 @@ class Members extends React.Component {
       });
       if (!await this.open()) return;
 
+      // Add member to members collection
+      await bandRef.collection('members').add({
+         ref: userRef,
+         uid: member.uid,
+         status: "member",
+      });
+
+      // Remove member from pending collection
+      await memberRef.delete();
+
       // Update users band refs
+      const newMemberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
       let userBandRefs = (await userRef.get()).data().bandRefs || [];
       userBandRefs.push(bandRef);
-      await memberRef.update({ status: 'member' });
+      await newMemberRef.update({ status: 'member' });
       await userRef.update({
          defaultBandRef: bandRef,
          bandRefs: userBandRefs,
       });
    }
 
+
    // Rejecting request from new band member
    _onReject = async (member) => {
-      const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
+      const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/pending/${member.id}`);
 
       // Confirm modal about rejecting
       this.setState({
@@ -227,14 +241,14 @@ class Members extends React.Component {
       });
    }
 
-   // Setting member as music supervisor
+   // Setting member as note manager
    _onMakeSupervisor = async (member) => {
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
       // Confirm modal about promotion to music supervisor
       this.setState({
          title: "Promotion",
-         message: `Are you sure you want to promote ${member.user.displayName} to music supervisor of ${this.props.band.name}?`
+         message: `Are you sure you want to promote ${member.user.displayName} to note manager of ${this.props.band.name}?`
       });
       if (!await this.open()) {
          return;
@@ -245,14 +259,14 @@ class Members extends React.Component {
       });
    }
 
-   // Demoting member from music supervisor
+   // Demoting member from note manager
    _onDemoteSupervisor = async (member) => {
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
       // Confirm modal about demoting from music supervisor
       this.setState({
-         title: "Demote music supervisor",
-         message: `Are you sure you want to demote ${member.user.displayName} from music supervisor of ${this.props.band.name}?`,
+         title: "Demote note manager",
+         message: `Are you sure you want to demote ${member.user.displayName} from note manager of ${this.props.band.name}?`,
       });
       if (!await this.open()) return;
 
@@ -312,10 +326,130 @@ class Members extends React.Component {
       }
    }
 
+   componentDidMount() {
+      const { band } = this.props;
+
+      const { currentUser } = firebase.auth();
+      this.setState({
+         user: currentUser.uid,
+      });
+
+      firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+         const admins = snapshot.data().admins;
+         const leader = snapshot.data().creatorRef.id;
+
+         for (let i in admins) {
+            if (currentUser.uid === admins[i]) {
+               this.setState({
+                  isAdmin: true
+               });
+            };
+         };
+
+         if (currentUser.uid === leader) {
+            this.setState({
+               isLeader: true
+            });
+            return;
+         };
+
+         this.setState({
+            isAdmin: false,
+            isLeader: false,
+         });
+      });
+   };
+
+
+
    render() {
       const { classes, band } = this.props;
 
       if (this.state.isLeader) {
+         return <div style={{ display: 'flex', justifyContent: 'space-between', width: 1100, paddingTop: 20, paddingLeft: 20 }}>
+            {band.members && band.members.length > 0 &&
+               <Paper style={{ width: 500 }}>
+
+                  <List>
+                     <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
+                        {band.name}
+                     </h2>
+                     <h5 style={{ marginLeft: 20, fontFamily: "Roboto", color: "grey", fontWeight: 500 }}>
+                        Bandcode: {band.code}
+                     </h5>
+                  </List>
+
+                  <hr size="1" />
+
+                  <List>
+                     <ListSubheader>Band leader</ListSubheader>
+                     {
+                        band.leader.map((member, index) =>
+                           <ListItem key={index} dense >
+                              <Avatar src={member.user.photoURL} />
+                              <ListItemText primary={member.user.displayName} />
+                              {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                              {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                              {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                              {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                           </ListItem>)
+                     }
+                  </List>
+
+                  <hr size="1" />
+
+                  <List>
+                     <ListSubheader>Members</ListSubheader>
+                     {
+                        band.members.map((member, index) =>
+                           <ListItem key={index} dense >
+                              <Avatar src={member.user.photoURL} />
+                              <ListItemText primary={member.user.displayName} />
+                              {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                              {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                              {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                              {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                           </ListItem>)
+                     }
+                  </List>
+
+                  {band.pending.length > 0 &&
+                     <hr size="1" />
+                  }
+
+                  <List>
+                     {band.pending.length > 0 &&
+                        <ListSubheader> Pending </ListSubheader>
+                     }
+                     {band.pending.map((member, index) =>
+                        <ListItem key={index} dense >
+                           <Avatar src={member.user.photoURL} />
+                           <ListItemText primary={member.user.displayName} />
+                           {
+                              member.status === 'pending' &&
+                              <div>
+                                 <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
+                                 <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
+                              </div>
+                           }
+                        </ListItem>)
+                     }
+                  </List>
+
+
+               </Paper>
+            }
+            <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+               <Typography variant="body1" >{this.state.message}</Typography>
+            </AsyncDialog>
+         </div>
+      }
+
+      else if (this.state.isAdmin) {
          return <div style={{ display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20 }}>
             {band.members && band.members.length > 0 &&
                <Paper style={{ width: 500 }}>
@@ -329,48 +463,10 @@ class Members extends React.Component {
                            <ListItem key={index} dense >
                               <Avatar src={member.user.photoURL} />
                               <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin. Click to demote"><Star onClick={() => this._onDemoteAdmin(member)} color="secondary" /></Tooltip>}
+                              {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
                               {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                              {member.supervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                              {
-                                 member.status === 'pending' &&
-                                 <div>
-                                    <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
-                                    <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
-                                 </div>
-                              }
-                              {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                              {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
-                           </ListItem>)
-                     }
-
-                  </List>
-               </Paper>
-            }
-            <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
-               <Typography variant="body1" >{this.state.message}</Typography>
-            </AsyncDialog>
-         </div>
-      }
-      else if (this.state.isAdmin) {
-         return <div style={{ display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20 }}>
-            {band.members && band.members.length > 0 &&
-               <Paper style={{ width: 400 }}>
-                  <List>
-                     <ListSubheader>
-                        Band code: {band.code}
-                     </ListSubheader>
-
-                     {
-                        band.members.map((member, index) =>
-                           <ListItem key={index} dense >
-                              <Avatar src={member.user.photoURL} />
-                              <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin. Click to demote"><Star color="secondary" /></Tooltip>}
-                              {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                              {member.supervisor && <Tooltip title="Music supervisor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make music supervisor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
                               {
                                  member.status === 'pending' &&
                                  <div>
@@ -386,6 +482,14 @@ class Members extends React.Component {
                      }
 
                   </List>
+
+                  <hr size="1" />
+
+                  <List>
+                     <ListSubheader> Pending </ListSubheader>
+
+                  </List>
+
                </Paper>
             }
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
@@ -393,24 +497,42 @@ class Members extends React.Component {
             </AsyncDialog>
          </div>
 
-      } else {
+      }
+
+      else {
          return <div style={{ display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20 }}>
             {band.members && band.members.length > 0 &&
-               <Paper style={{ width: 400 }}>
+               <Paper style={{ width: 500 }}>
                   <List>
-                     <ListSubheader>Band code: {band.code}</ListSubheader>
+                     <ListSubheader>Band leader </ListSubheader>
+                     {
+                        band.leader.map((member, index) =>
+                           <ListItem key={index} dense >
+                              <Avatar src={band.leader[0].user.photoURL} />
+                              <ListItemText primary={member.user.displayName} />
+                              {member.admin && <Tooltip title="Admin. Click to demote"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                           </ListItem>)
+                     }
+                  </List>
+
+                  <hr size="1" />
+
+                  <List>
+                     <ListSubheader>Members</ListSubheader>
                      {
                         band.members.map((member, index) =>
-                           <ListItem key={index} dense button disableRipple>
+                           <ListItem key={index} dense >
                               <Avatar src={member.user.photoURL} />
                               <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
-                              {member.supervisor && <Tooltip title="Music supervisor"><QueueMusic color="secondary" /></Tooltip>}
+                              {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
                               {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
                            </ListItem>
                         )
                      }
                   </List>
+
                </Paper>
             }
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
