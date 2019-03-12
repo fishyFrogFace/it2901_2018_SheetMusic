@@ -276,6 +276,38 @@ class Home extends React.Component {
         this.setState({ message: null })
     };
 
+    // _onJoinBand = async () => {
+    //     this.setState({ bandAnchorEl: null });
+
+    //     const { code } = await this.joinDialog.open();
+
+    //     const user = firebase.auth().currentUser;
+
+    //     const userRef = firebase.firestore().doc(`users/${user.uid}`);
+
+    //     let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
+
+    //     if (bandSnapshot.docs.length > 0) {
+    //         const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+
+    //         let userBandRefs = (await userRef.get()).data().bandRefs || [];
+
+    //         if (userBandRefs.some(ref => ref.id === bandRef.id)) {
+    //             this.setState({ message: 'Band already joined!' });
+    //         } else {
+    //             this.setState({ message: 'Sending request to join band...' });
+
+    //             await bandRef.collection('members').add({ ref: userRef, uid: user.uid, status: "pending" });
+    //         }
+    //     } else {
+    //         this.setState({ message: 'Band does not exist!' });
+    //         await new Promise(resolve => setTimeout(resolve, 2000));
+    //         this.setState({ message: null });
+    //     }
+
+    //     this.setState({ message: null });
+    // };
+
     _onJoinBand = async () => {
         this.setState({ bandAnchorEl: null });
 
@@ -288,7 +320,7 @@ class Home extends React.Component {
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
-            const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
+            const bandRef = firebase.firestore().doc(`bands / ${bandSnapshot.docs[0].id}`);
 
             let userBandRefs = (await userRef.get()).data().bandRefs || [];
 
@@ -297,7 +329,11 @@ class Home extends React.Component {
             } else {
                 this.setState({ message: 'Sending request to join band...' });
 
-                await bandRef.collection('members').add({ ref: userRef, uid: user.uid, status: "pending" });
+                await bandRef.collection('pending').add({
+                    ref: userRef,
+                    uid: user.uid,
+                    status: "pending"
+                });
             }
         } else {
             this.setState({ message: 'Band does not exist!' });
@@ -307,6 +343,8 @@ class Home extends React.Component {
 
         this.setState({ message: null });
     };
+
+
 
     _onBandSelect = async bandId => {
         this.setState({ bandAnchorEl: null });

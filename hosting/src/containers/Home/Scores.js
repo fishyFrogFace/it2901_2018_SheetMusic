@@ -1,25 +1,18 @@
 import React from 'react';
-
 import { withStyles } from "material-ui/styles";
 import {
-  Avatar, Badge, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Collapse, Select, Divider, ExpansionPanel, ExpansionPanelActions, ExpansionPanelDetails, ExpansionPanelSummary
+  Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary
 } from "material-ui";
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule } from "material-ui-icons";
-
 import NoteIcon from 'material-ui-icons/MusicNote';
-
-//import ScoresCards from './ScoresCards';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import FavoriteIcon from 'material-ui-icons/Favorite';
-
 import firebase from 'firebase';
-import { async } from '@firebase/util';
 import InstrumentScores from '../../components/InstrumentScores';
 import SelectArrangement from '../../components/SelectArrangement';
-import { resolve } from 'dns';
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -40,18 +33,15 @@ function InstrumentIcon(props) {
 
   </SvgIcon>;
 }
-
 const styles = {
   root: {},
   card: {
     width: '100%',
-    // height: 260,
     marginRight: 20,
     marginBottom: 20,
     cursor: 'pointer'
   },
   media: {
-    //height: 150,
     flex: 2
   },
 
@@ -114,11 +104,6 @@ const styles = {
   cardHeader: {
     cursor: 'default'
   },
-
-  ListItemTingTang: {
-    padding: '0px'
-  }
-
 };
 
 class Scores extends React.Component {
@@ -130,8 +115,14 @@ class Scores extends React.Component {
       parts: {},
       score: {},
       vocal: '',
-      ensemble: ['Default', 'Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
-      value: '',
+      activeInstrument: 'Default',
+      activeInstrumentList: ['Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
+      optionsdata: [
+        { key: '101', value: 'Default', instruments: ['Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'] },
+        { key: '102', value: 'Jazz Orchestra', instruments: ['Banjo', 'Bass', 'Drums', 'Guitar', 'Piano', 'Clarinet', 'Sax', 'Trombone', 'Trumpet', 'Tuba', 'Violin', 'Cello'] },
+        { key: '103', value: 'Chamber Orchestra', instruments: ['Trombone', 'Trumpet'] },
+        { key: '104', value: 'Symphony Orchestra', instruments: ['Piano', 'Clarinet', 'Sax'] },
+      ]
     };
   }
 
@@ -157,14 +148,6 @@ class Scores extends React.Component {
     this.props.onRemoveScore(score);
   };
 
-  handleToggle = (e) => {
-    let currentState = this.state.expanded;
-    this.setState({
-      activeKey: e,
-      //expanded: this.state.expanded === e ? currentState : !currentState
-    });
-    console.log('clicked: ', e);
-  }
 
   _onGetParts = (band, score) => {
     const bandRef = firebase.firestore().doc(`bands/${band.id}`);
@@ -227,14 +210,13 @@ class Scores extends React.Component {
     }, 3000);
   }
 
-
-
   _onGetScores = (band) => {
     let scoreList = [];
     let partList = [];
     // let partList = [ {"score": {"scoreId": "JAFSASF", "parts": {"instrument1": "trumpet", "instrument2": "bass"} } } ];
     const bandRef = firebase.firestore().doc(`bands/${band.id}`);
     const scoreRef = bandRef.collection('scores');
+    console.log('scoreRef', scoreRef)
     const scores = scoreRef.get()
       .then(snapshot => {
         snapshot.forEach(doc => {
@@ -274,42 +256,32 @@ class Scores extends React.Component {
       // this.setState({
       //   partListState: partList
       // })
+      return partList
     }, 3000);
 
   }
 
-  handleChangeEnsemble = childEsembleValue => {
-    this.setState({ ensemble: childEsembleValue });
-  };
-
+  // handlechange the value of the onChange in <select /> in selectArrangement.js
+  handleChange = (e) => {
+    var value = this.state.optionsdata.filter(function (item) {
+      return item.key == e.target.value
+    })
+    this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments })
+  }
 
   render() {
-
     const { classes, band } = this.props;
-    const { listView, ensemble } = this.state;
+    const { listView } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
     }
-    let jazz = ['Jazz', 'Banjo', 'Bass', 'Drums', 'Guitar', 'Piano', 'Clarinet', 'Sax', 'Trombone', 'Trumpet', 'Tuba', 'Violin', 'Cello'];
-    let chamberOrchestra = ['Chamber Orchestra', 'Flute', 'Cello'];
-    let symphonyOrchestra = ['Symphony Orchestra', 'Trombone', 'Trumpet']
-    let allInstruments = ['Default', 'Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum']
-
-    console.log('this.state.esemble', this.state.ensemble)
-
-
     return <div>
-
-
-      <div
-      >
+      <div>
         <div className={classes.flex} />
-
         <IconButton>
           <SortByAlpha />
         </IconButton>
-
         {
           listView &&
           <IconButton onClick={this._onViewModuleClick}>
@@ -324,9 +296,8 @@ class Scores extends React.Component {
         }
       </div>
 
-      <div
-      // style={{ padding: '0 24px' }}
-      >
+      <div>
+        {/* the simple list view */}
         {
           listView && hasScores &&
           <Paper>
@@ -347,134 +318,106 @@ class Scores extends React.Component {
             </List>
           </Paper>
         }
+
+        {/* The detailed list view */}
         {
           !listView && hasScores &&
           <div style={{
             display: 'flex', flexWrap: 'wrap'
-          }
-          }
-          >
-            {band.scores.map((score, index) =>
-
-              <Card className={classes.card} key={index}
-                elevation={1}
-              >
-                <CardHeader
-                  className={classes.cardHeader}
-                  avatar={
-                    <Avatar aria-label="Note" className={classes.avatar}>
-                      <NoteIcon />
-                    </Avatar>
-                  }
-                  action={
-                    <IconButton>
-                      <MoreVertIcon />
-                    </IconButton>
-                  }
-                  title={score.title}
-                //title={this.state.allscoresList}
-
-
-
-
-                />
-                <Divider />
-                <div
-                  className={classes.cardContent}
-                >
-
-                  <CardMedia
-                    className={classes.media}
-                    image='http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
-                    title="default-image"
-                    onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+          }}>
+            {/* map over the scores in the band to get correct database-information */}
+            {
+              band.scores.map((score, index) =>
+                <Card className={classes.card} key={index}
+                  elevation={1}>
+                  <CardHeader
+                    className={classes.cardHeader}
+                    avatar={
+                      <Avatar aria-label="Note" className={classes.avatar}>
+                        <NoteIcon />
+                      </Avatar>
+                    }
+                    action={
+                      <IconButton>
+                        <MoreVertIcon />
+                      </IconButton>
+                    }
+                    title={score.title}
                   />
-                  <CardContent className={classes.ellipsis}>
-                    <Typography variant='subheading' className={classes.metadata}
-                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                      Composer:  {score.composer}
-                    </Typography>
-                    <Typography variant='subheading'
-                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                      Parts: {score.partCount}
-                      {/* {this.state.testList} */}
-                      {/* {this._onGetParts.bind(this)} */}
+                  <Divider />
+                  <div className={classes.cardContent}>
+                    <CardMedia
+                      className={classes.media}
+                      image='http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
+                      title="default-image"
+                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`} />
+                    <CardContent className={classes.ellipsis}>
+                      <Typography variant='subheading' className={classes.metadata}
+                        onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                        Composer:  {score.composer}
+                      </Typography>
+                      <Typography variant='subheading'
+                        onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                        Parts: {score.partCount}
+                      </Typography>
+                      <div className={classes.actions}>
+                        <CardActions disableActionSpacing >
+                          <IconButton onClick={(e) => this._onMoreClick(score, e)}>
+                            <DeleteIcon />
+                          </IconButton>
+                          <IconButton aria-label="Add to favorites">
+                            <FavoriteIcon />
+                          </IconButton>
+                        </CardActions>
+                      </div>
+                    </CardContent>
+                  </div>
 
-                    </Typography>
-                    <div className={classes.actions}>
+                  {/* The toggle panel and content */}
+                  <ExpansionPanel>
+                    <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}>
+                      <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails className={classes.expandedPanel}>
+                      <Typography variant='subheading'>
+                        <SelectArrangement
+                          vocalValue={this.state.vocal}
+                          ensemble={this.state.ensemble}
+                          scoresID={score.id}
+                          onChange={this.handleChange}
+                          optionsdata={this.state.optionsdata}
+                          activeInstrument={this.state.activeInstrument} />
 
-                      <CardActions disableActionSpacing >
-                        <IconButton onClick={(e) => this._onMoreClick(score, e)}>
-                          <DeleteIcon />
-                        </IconButton>
-                        <IconButton aria-label="Add to favorites">
-                          <FavoriteIcon />
-                        </IconButton>
-                      </CardActions>
-                    </div>
-                  </CardContent>
-                </div>
-
-                <ExpansionPanel
-
-                //onClick={() => this._onGetParts(band, score)}
-
-                >
-
-                  <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}>
-                    <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
-                  </ExpansionPanelSummary>
-                  <ExpansionPanelDetails className={classes.expandedPanel}>
-                    <Typography variant='subheading'
-                    //onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-                    >
-
-                      <SelectArrangement
-                        allInstruments={allInstruments}
-                        jazz={jazz}
-                        chamberOrchestra={chamberOrchestra}
-                        symphonyOrchestra={symphonyOrchestra}
-                        vocalValue={this.state.vocal}
-                        ensemble={this.state.ensemble}
-                        selecter={this.handleChangeEnsemble}
-
-                      />
-
-                      <List className={classes.listContentTingTang}>
-
-                        {
-                          ensemble.slice(1).map((instruments, index) =>
-                            <ListItem key={index} className={classes.expandedListItems}>
-
-                              <LibraryMusic color='action' />
-                              <ListItemText primary={`${instruments}: `} />
-                              <List>
-
-                                {/* map over parts/tone */}
-
-                                <InstrumentScores
-                                  test={test}
-                                  testList={this.state.testList}
-                                  _onGetParts={this._onGetParts.bind(this)}
-                                  _onGetAllScores={this._onGetAllScores.bind(this)}
-                                  allscoresList={this.state.allscoresList}
-                                />
-                                {
-                                  <ListItem
-                                  >
-                                  </ListItem>
-                                }
-                              </List>
-                            </ListItem>)
-
-                        }
-                      </List>
-                    </Typography>
-                  </ExpansionPanelDetails>
-                </ExpansionPanel>
-              </Card>
-            )}
-          </div>}
+                        <List>
+                          {/* map over the instruments handled by stated set in the handleChange method, 
+                          to display correct instruments for the arrangement selected */}
+                          {
+                            this.state.activeInstrumentList.map((instruments, index) =>
+                              <ListItem key={index} className={classes.expandedListItems}>
+                                <LibraryMusic color='action' />
+                                <ListItemText primary={`${instruments}: `} />
+                                <List>
+                                  <InstrumentScores
+                                    test={test}
+                                    testList={this.state.testList}
+                                    _onGetParts={this._onGetParts.bind(this)}
+                                    _onGetAllScores={this._onGetAllScores.bind(this)}
+                                    allscoresList={this.state.allscoresList} />
+                                  {
+                                    <ListItem>
+                                    </ListItem>
+                                  }
+                                </List>
+                              </ListItem>
+                            )}
+                        </List>
+                      </Typography>
+                    </ExpansionPanelDetails>
+                  </ExpansionPanel>
+                </Card>
+              )}
+          </div>
+        }
       </div>
     </div>
   }
