@@ -26,6 +26,42 @@ const styles = theme => ({
       fontSize: theme.typography.pxToRem(15),
       color: theme.palette.text.secondary,
    },
+   expansionPanel: {
+      margin: '0',
+      border: '0.1px solid',
+      boxShadow: 'none',
+      '&:not(:last-child)': {
+         borderBottom: 0,
+      },
+      '&:before': {
+         display: 'none',
+      },
+      expanded: {
+         margin: '0 0 0 0',
+      },
+   },
+   expansionPanelSummary: {
+      borderBottom: '0px solid rgba(0,0,0,.125)',
+      margin: '0px 16px -1px 0px',
+      minHeight: 64,
+      '&$expanded': {
+         minHeight: 64,
+         margin: '12px 0',
+      },
+      content: {
+         '&$expanded': {
+            margin: '12px 0',
+         },
+      }, 
+      expanded: {
+         minHeight: 64
+      }
+   },
+   expansionPanelDetails: {
+      padding: 0,
+      display: 'block', 
+   },
+   
 });
 
 
@@ -428,13 +464,12 @@ class Members extends React.Component {
 
                   {band.members.length > 0 &&
                      <div>
-                        <Divider />
-
-                        <ExpansionPanel expanded={expanded === 'membersPanel'} onChange={this.handleChange('membersPanel')}>
-                           <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                        <Divider/>
+                        <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleChange(!this.state.expanded)}>
+                           <ExpansionPanelSummary className= {classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
                               <Typography> Members </Typography>
                            </ExpansionPanelSummary>
-                           <ExpansionPanelDetails>
+                           <ExpansionPanelDetails className={classes.expansionPanelDetails}>
                               <List>
                                  {band.members.map((member, index) =>
                                     <ListItem key={index} dense >

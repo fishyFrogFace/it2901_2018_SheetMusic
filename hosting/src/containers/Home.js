@@ -509,6 +509,15 @@ class Home extends React.Component {
                         })
                     );
 
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('setlists').onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            this.setState({ band: { ...this.state.band, setlists: items } });
+                        })
+                    );
+
 
                     this.unsubs.push(
                         data.defaultBandRef.collection('pdfs').onSnapshot(async snapshot => {
