@@ -3,15 +3,31 @@ import React from 'react';
 import firebase from 'firebase';
 
 import { withStyles } from "material-ui/styles";
-import { Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader } from "material-ui";
+import {
+   Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader, ExpansionPanel, ExpansionPanelSummary,
+   ExpansionPanelDetails, Divider
+} from "material-ui";
+import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
-import { red } from 'material-ui/colors';
+
 
 const styles = theme => ({
-   root: {}
+   root: {
+      width: '100%',
+   },
+   heading: {
+      fontSize: theme.typography.pxToRem(15),
+      flexBasis: '33.33%',
+      flexShrink: 0,
+   },
+   secondaryHeading: {
+      fontSize: theme.typography.pxToRem(15),
+      color: theme.palette.text.secondary,
+   },
 });
+
 
 class Members extends React.Component {
    state = {
@@ -20,7 +36,7 @@ class Members extends React.Component {
       message: "",
       isAdmin: false,
       isLeader: false,
-
+      expanded: true,
    };
 
    open = async () => {
@@ -32,10 +48,17 @@ class Members extends React.Component {
       }
    }
 
+   // Handling expansion panel change
+   handleChange = panel => (event, expanded) => {
+      this.setState({
+         expanded: expanded ? panel : false,
+      });
+   };
+
    // Accepting a new band member
    _onAccept = async (member) => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-      const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/pending/${member.id}`);
+      const pendingRef = firebase.firestore().doc(`bands/${this.props.band.id}/pending/${member.id}`);
       const userRef = firebase.firestore().doc(`users/${member.uid}`);
 
       // Confirm modal about accepting
@@ -52,18 +75,17 @@ class Members extends React.Component {
          status: "member",
       });
 
-      // Remove member from pending collection
-      await memberRef.delete();
-
       // Update users band refs
-      const newMemberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
       let userBandRefs = (await userRef.get()).data().bandRefs || [];
-      userBandRefs.push(bandRef);
-      await newMemberRef.update({ status: 'member' });
+      await userBandRefs.push(bandRef);
+
       await userRef.update({
-         defaultBandRef: bandRef,
          bandRefs: userBandRefs,
+         defaultBandRef: bandRef,
       });
+
+      // Remove member from pending collection
+      await pendingRef.delete();
    }
 
 
@@ -362,13 +384,18 @@ class Members extends React.Component {
 
 
 
+
+
    render() {
       const { classes, band } = this.props;
+      const { expanded } = this.state;
+
+      console.log(band);
 
       if (this.state.isLeader) {
          return <div style={{ display: 'flex', justifyContent: 'space-between', width: 1100, paddingTop: 20, paddingLeft: 20 }}>
-            {band.members && band.members.length > 0 &&
-               <Paper style={{ width: 500 }}>
+            {band.leader && band.leader.length > 0 &&
+               <Paper style={{ width: 520 }}>
 
                   <List>
                      <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
@@ -379,7 +406,7 @@ class Members extends React.Component {
                      </h5>
                   </List>
 
-                  <hr size="1" />
+                  <Divider />
 
                   <List>
                      <ListSubheader>Band leader</ListSubheader>
@@ -398,24 +425,35 @@ class Members extends React.Component {
                      }
                   </List>
 
-                  <hr size="1" />
 
-                  <List>
-                     <ListSubheader>Members</ListSubheader>
-                     {
-                        band.members.map((member, index) =>
-                           <ListItem key={index} dense >
-                              <Avatar src={member.user.photoURL} />
-                              <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
-                              {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                              {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                              {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
-                           </ListItem>)
-                     }
-                  </List>
+                  {band.members.length > 0 &&
+                     <div>
+                        <Divider />
+
+                        <ExpansionPanel expanded={expanded === 'membersPanel'} onChange={this.handleChange('membersPanel')}>
+                           <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography> Members </Typography>
+                           </ExpansionPanelSummary>
+                           <ExpansionPanelDetails>
+                              <List>
+                                 {band.members.map((member, index) =>
+                                    <ListItem key={index} dense >
+                                       <Avatar src={member.user.photoURL} />
+                                       <ListItemText primary={member.user.displayName} />
+                                       {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                       {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                       {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                       {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                       {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                       {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                    </ListItem>)
+                                 }
+                              </List>
+                           </ExpansionPanelDetails>
+                        </ExpansionPanel>
+                     </div>
+                  }
+
 
                   {band.pending.length > 0 &&
                      <hr size="1" />
@@ -454,9 +492,17 @@ class Members extends React.Component {
             {band.members && band.members.length > 0 &&
                <Paper style={{ width: 500 }}>
                   <List>
-                     <ListSubheader>
-                        Band code: {band.code}
-                     </ListSubheader>
+
+                     <List>
+                        <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
+                           {band.name}
+                        </h2>
+                        <h5 style={{ marginLeft: 20, fontFamily: "Roboto", color: "grey", fontWeight: 500 }}>
+                           Bandcode: {band.code}
+                        </h5>
+                     </List>
+
+                     <hr size="1" />
 
                      {
                         band.members.map((member, index) =>
@@ -467,27 +513,34 @@ class Members extends React.Component {
                               {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
                               {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
                               {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                              {
-                                 member.status === 'pending' &&
-                                 <div>
-                                    <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
-                                    <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
-                                 </div>
-                              }
                               {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                              {
-                                 !member.admin && member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>
-                              }
+                              {!member.admin && member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
                            </ListItem>)
                      }
 
                   </List>
 
-                  <hr size="1" />
+                  {band.pending.length > 0 &&
+                     <hr size="1" />
+                  }
 
                   <List>
-                     <ListSubheader> Pending </ListSubheader>
-
+                     {band.pending.length > 0 &&
+                        <ListSubheader> Pending </ListSubheader>
+                     }
+                     {band.pending.map((member, index) =>
+                        <ListItem key={index} dense >
+                           <Avatar src={member.user.photoURL} />
+                           <ListItemText primary={member.user.displayName} />
+                           {
+                              member.status === 'pending' &&
+                              <div>
+                                 <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
+                                 <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
+                              </div>
+                           }
+                        </ListItem>)
+                     }
                   </List>
 
                </Paper>
@@ -503,6 +556,12 @@ class Members extends React.Component {
          return <div style={{ display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20 }}>
             {band.members && band.members.length > 0 &&
                <Paper style={{ width: 500 }}>
+                  <List>
+                     <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
+                        {band.name}
+                     </h2>
+                  </List>
+
                   <List>
                      <ListSubheader>Band leader </ListSubheader>
                      {

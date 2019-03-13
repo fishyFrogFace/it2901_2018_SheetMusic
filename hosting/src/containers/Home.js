@@ -231,7 +231,7 @@ class Home extends React.Component {
         this.setState({ bandAnchorEl: e.currentTarget })
     };
 
-    // CREATING BAND
+    // Creating a band
     _onCreateBand = async () => {
         this.setState({ bandAnchorEl: null });
 
@@ -262,15 +262,6 @@ class Home extends React.Component {
                 leader: true,
             });
 
-            await bandRef.collection('members').add({
-                ref: userRef,
-                uid: user.uid,
-                status: "member",
-                admin: true,
-                supervisor: true,
-                leader: true,
-            });
-
             await firebase.firestore().doc(`users/${user.uid}`).update({
                 defaultBandRef: bandRef,
                 bandRefs: [...(userDoc.data().bandRefs || []), bandRef],
@@ -282,6 +273,7 @@ class Home extends React.Component {
         this.setState({ message: null })
     };
 
+    // Joining a band
     _onJoinBand = async () => {
         this.setState({ bandAnchorEl: null });
 
@@ -319,7 +311,7 @@ class Home extends React.Component {
     };
 
     _onDeleteBand = async () => {
-        
+
     }
 
     _onBandSelect = async bandId => {
@@ -480,7 +472,6 @@ class Home extends React.Component {
                             for (let item of bandLeader) {
                                 item.user = (await item.ref.get()).data();
                             }
-
                             this.setState({ band: { ...this.state.band, leader: bandLeader } });
                         })
                     );
@@ -493,79 +484,93 @@ class Home extends React.Component {
                             for (let item of pendings) {
                                 item.user = (await item.ref.get()).data();
                             }
-
                             this.setState({ band: { ...this.state.band, pending: pendings } });
                         })
                     );
 
                     this.unsubs.push(
-                        data.defaultBandRef.collection(page).onSnapshot(async snapshot => {
+                        data.defaultBandRef.collection('members').onSnapshot(async snapshot => {
+                            let member = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of member) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, members: member } });
+                        })
+                    );
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('score').onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            this.setState({ band: { ...this.state.band, score: items } });
+                        })
+                    );
+
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('pdfs').onSnapshot(async snapshot => {
                             let items = await Promise.all(
                                 snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                             );
 
-                            if (page === 'pdfs') {
-                                const groups = [];
-                                const visited = [];
+                            const groups = [];
+                            const visited = [];
 
-                                for (let item of items) {
-                                    if (item.pageCount > 10) {
-                                        if (item.parts) {
-                                            item.parts = await Promise.all(
-                                                item.parts.map(async part => ({
-                                                    ...part,
-                                                    instruments: await Promise.all(
-                                                        part.instruments.map(async instr => {
-                                                            const doc = await instr.get();
-                                                            return { ...doc.data(), id: doc.id };
-                                                        })
-                                                    )
-                                                }))
-                                            );
-                                        }
-
-                                        groups.push({
-                                            name: item.name.split('-')[0].trimRight(),
-                                            pdf: item,
-                                            type: 'full'
-                                        });
-                                    } else {
-                                        const similarPdfs = [];
-
-                                        if (visited.includes(item.id)) continue;
-
-                                        for (let _item of items) {
-                                            if (_item.id !== item.id &&
-                                                !visited.includes(_item.id) &&
-                                                levenshtein.get(item.name, _item.name) < 5) {
-                                                similarPdfs.push(_item);
-                                                visited.push(_item.id);
-                                            }
-                                        }
-
-                                        groups.push({
-                                            name: item.name.split('-')[0].trimRight(),
-                                            pdfs: [item, ...similarPdfs],
-                                            type: 'part'
-                                        })
+                            for (let item of items) {
+                                if (item.pageCount > 10) {
+                                    if (item.parts) {
+                                        item.parts = await Promise.all(
+                                            item.parts.map(async part => ({
+                                                ...part,
+                                                instruments: await Promise.all(
+                                                    part.instruments.map(async instr => {
+                                                        const doc = await instr.get();
+                                                        return { ...doc.data(), id: doc.id };
+                                                    })
+                                                )
+                                            }))
+                                        );
                                     }
-                                }
 
-                                items = groups
-                                    .map(group => ({
-                                        ...group,
-                                        name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`
-                                    }))
-                                    .sort((a, b) => a.name.localeCompare(b.name));
+                                    groups.push({
+                                        name: item.name.split('-')[0].trimRight(),
+                                        pdf: item,
+                                        type: 'full'
+                                    });
+                                } else {
+                                    const similarPdfs = [];
+
+                                    if (visited.includes(item.id)) continue;
+
+                                    for (let _item of items) {
+                                        if (_item.id !== item.id &&
+                                            !visited.includes(_item.id) &&
+                                            levenshtein.get(item.name, _item.name) < 5) {
+                                            similarPdfs.push(_item);
+                                            visited.push(_item.id);
+                                        }
+                                    }
+
+                                    groups.push({
+                                        name: item.name.split('-')[0].trimRight(),
+                                        pdfs: [item, ...similarPdfs],
+                                        type: 'part'
+                                    })
+                                }
                             }
 
-                            if (page === "members") {
-                                for (let item of items) {
-                                    item.user = (await item.ref.get()).data();
-                                }
-                            }
+                            items = groups
+                                .map(group => ({
+                                    ...group,
+                                    name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`
+                                }))
+                                .sort((a, b) => a.name.localeCompare(b.name));
 
-                            this.setState({ band: { ...this.state.band, [page]: items } });
+
+                            this.setState({ band: { ...this.state.band, pdfs: items } });
                         })
                     );
 
