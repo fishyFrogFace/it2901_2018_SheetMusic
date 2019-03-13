@@ -1,3 +1,7 @@
+/**
+ * This dialog is displayed when the user clicks on add an event within a setlist
+ */
+
 import React from 'react';
 
 import {TextField, InputLabel, Input, InputAdornment, FormControl} from "material-ui";

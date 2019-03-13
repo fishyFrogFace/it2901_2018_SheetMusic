@@ -1,3 +1,7 @@
+/**
+ * This dialog is displayed when the user clicks on add score within a setlist
+ */
+
 import React from 'react';
 import {withStyles} from 'material-ui/styles';
 

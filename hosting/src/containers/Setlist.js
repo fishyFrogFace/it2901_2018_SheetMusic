@@ -40,9 +40,9 @@ class Setlist extends Component {
         band: {}
     };
 
-    addScoreDialog;
-    addEventDialog;
-    editSetlistDialog;
+    //addScoreDialog;
+    //addEventDialog;
+    //editSetlistDialog;
 
     unsubs = [];
 

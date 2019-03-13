@@ -5,8 +5,17 @@ import {DatePicker} from "material-ui-pickers"
 
 import AsyncDialog from "./AsyncDialog";
 
-const styles = {
-};
+const styles = theme => ({
+    container: {
+        display: 'flex',
+        flexWrap: 'wrap',
+    },
+    textField: {
+        marginLeft: theme.spacing.unit,
+        marginRight: theme.spacing.unit,
+        width: 200,
+    },
+});
 
 class CreateSetlistDialog extends React.Component {
     state = {
@@ -32,7 +41,7 @@ class CreateSetlistDialog extends React.Component {
     };
 
     _onDateChange = date => {
-        this.setState({date: date});
+        this.setState({date: this.state.date});
     };
 
     render() {
@@ -40,14 +49,33 @@ class CreateSetlistDialog extends React.Component {
         const {title, date} = this.state;
 
         console.log(date);
+        
+        return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
+            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} required/>
+            <form className={classes.container} noValidate>
+                <TextField
+                    id="date"
+                    label="Date"
+                    type="date"
+                    defaultValue={this.date}
+                    className={classes.textField}
+                    InputLabelProps={{
+                    shrink: true,
+                    }}
+                />
+            </form>
+        </AsyncDialog>
 
+        {/*
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
             <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}}/>
             <DatePicker
-                value={date}
+                margin="normal"
+                label="Date"
+                value={this.state.date}
                 onChange={this._onDateChange}
             />
-        </AsyncDialog>
+        </AsyncDialog>*/}
     }
 }
 
