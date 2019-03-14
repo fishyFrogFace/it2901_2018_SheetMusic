@@ -479,26 +479,20 @@ class Members extends React.Component {
       const { classes, band } = this.props;
       let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
 
-      console.log(band);
-
       if (this.state.isLeader) {
          return <div style={{ display: 'flex', justifyContent: 'space-between', width: 1100, paddingTop: 20, paddingLeft: 20 }}>
             {band.leader && band.leader.length > 0 &&
                <Paper style={{ width: 520 }}>
-
                   <ExpansionPanel className={classes.expansionPanel}>
                      <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
                         <Typography className={classes.headerPanel}> {band.name} </Typography>
                      </ExpansionPanelSummary>
                      <ExpansionPanelDetails className={classes.expansionPanelDetails}>
-
                         <Typography className={classes.secondaryHeading}>
                            Bandcode: {band.code}
                            <Tooltip title="Delete band"><IconButton className={classes.deleteButton} onClick={() => this._onDeleteBand()}><Delete /></IconButton></Tooltip>
                         </Typography>
-
                         <Typography className={classes.secondaryHeading}> Click boxes to filter the members list </Typography>
-
                         <FormGroup row className={classes.checkboxRow}>
                            <FormControlLabel
                               className={classes.checkBox}
@@ -511,7 +505,6 @@ class Members extends React.Component {
                                  />}
                               label="Admin"
                            />
-
                            <FormControlLabel
                               className={classes.checkBox}
                               control={
@@ -523,7 +516,6 @@ class Members extends React.Component {
                                  />}
                               label="Supervisor"
                            />
-
                            <FormControlLabel
                               className={classes.checkBox}
                               control={
@@ -536,8 +528,6 @@ class Members extends React.Component {
                               label="No roles"
                            />
                         </FormGroup>
-
-
                      </ExpansionPanelDetails>
                   </ExpansionPanel>
 
@@ -636,7 +626,7 @@ class Members extends React.Component {
                                  </List>
                               }
 
-                              {this.state.checkedMembers && 
+                              {this.state.checkedMembers && band.onlymembers.length > 0 &&
                                  <List>
                                     {band.onlymembers.map((member, index) =>
                                        <ListItem key={index} dense >
@@ -652,9 +642,6 @@ class Members extends React.Component {
                                     }
                                  </List>
                               }
-
-
-
                            </ExpansionPanelDetails>
                         </ExpansionPanel>
                      </div>
@@ -680,7 +667,6 @@ class Members extends React.Component {
                         </List>
                      </div>
                   }
-
                </Paper>
             }
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
@@ -690,113 +676,340 @@ class Members extends React.Component {
       }
 
       else if (this.state.isAdmin) {
-         return <div style={{ display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20 }}>
-            {band.members && band.members.length > 0 &&
-               <Paper style={{ width: 500 }}>
+         return <div style={{ display: 'flex', justifyContent: 'space-between', width: 1100, paddingTop: 20, paddingLeft: 20 }}>
+            {band.member && band.member.length > 0 &&
+               <Paper style={{ width: 520 }}>
+                  <ExpansionPanel className={classes.expansionPanel}>
+                     <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                        <Typography className={classes.headerPanel}> {band.name} </Typography>
+                     </ExpansionPanelSummary>
+                     <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+                        <Typography className={classes.secondaryHeading}> Click boxes to filter the members list </Typography>
+                        <FormGroup row className={classes.checkboxRow}>
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedAdmin}
+                                    onChange={this.handleCheckChange('checkedAdmin')}
+                                    value="checkedAdmin"
+                                 />}
+                              label="Admin"
+                           />
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedSupervisor}
+                                    onChange={this.handleCheckChange('checkedSupervisor')}
+                                    value="checkedSupervisor"
+                                 />}
+                              label="Supervisor"
+                           />
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedMembers}
+                                    onChange={this.handleCheckChange('checkedMembers')}
+                                    value="checkedMembers"
+                                 />}
+                              label="No roles"
+                           />
+                        </FormGroup>
+                     </ExpansionPanelDetails>
+                  </ExpansionPanel>
+
+                  <Divider />
+
                   <List>
-
-                     <List>
-                        <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
-                           {band.name}
-                        </h2>
-                        <h5 style={{ marginLeft: 20, fontFamily: "Roboto", color: "grey", fontWeight: 500 }}>
-                           Bandcode: {band.code}
-                        </h5>
-                     </List>
-
-                     <hr size="1" />
-
+                     <ListSubheader className={classes.heading}> Band leader </ListSubheader>
                      {
-                        band.members.map((member, index) =>
+                        band.leader.map((member, index) =>
                            <ListItem key={index} dense >
                               <Avatar src={member.user.photoURL} />
                               <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin"><Star color="secondary" /></Tooltip>}
-                              {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                              {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                              {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                              {!member.admin && member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                              {member.admin && <Tooltip title="Admin"><IconButton><Star color="secondary" /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Note manager"><IconButton><QueueMusic color="secondary" /></IconButton></Tooltip>}
                            </ListItem>)
                      }
-
                   </List>
 
-                  {band.pending.length > 0 &&
-                     <hr size="1" />
+                  {band.members.length > 0 &&
+                     <div>
+                        <Divider />
+                        <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
+                           <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                              <Typography className={classes.heading}> Members </Typography>
+                           </ExpansionPanelSummary>
+                           <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+                              {noneChecked &&
+                                 <List>
+                                    {band.members.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && !member.admin && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedAdmin && this.state.checkedSupervisor &&
+                                 <List>
+                                    {band.allroles.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && !member.admin && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedAdmin && !this.state.checkedSupervisor &&
+                                 <List>
+                                    {band.admins.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && !member.admin && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedSupervisor && !this.state.checkedAdmin &&
+                                 <List>
+                                    {band.supervisors.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && !member.admin && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedMembers && band.onlymembers.length > 0 &&
+                                 <List>
+                                    {band.onlymembers.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && !member.admin && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+                           </ExpansionPanelDetails>
+                        </ExpansionPanel>
+                     </div>
                   }
 
-                  <List>
-                     {band.pending.length > 0 &&
-                        <ListSubheader> Pending </ListSubheader>
-                     }
-                     {band.pending.map((member, index) =>
-                        <ListItem key={index} dense >
-                           <Avatar src={member.user.photoURL} />
-                           <ListItemText primary={member.user.displayName} />
-                           {
-                              member.status === 'pending' &&
-                              <div>
-                                 <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
-                                 <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
-                              </div>
+                  {band.pending.length > 0 &&
+                     <div>
+                        <Divider />
+                        <List>
+                           <ListSubheader className={classes.heading}> Pending </ListSubheader>
+                           {band.pending.map((member, index) =>
+                              <ListItem key={index} dense >
+                                 <Avatar src={member.user.photoURL} />
+                                 <ListItemText primary={member.user.displayName} />
+                                 {member.status === 'pending' &&
+                                    <div>
+                                       <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
+                                       <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
+                                    </div>
+                                 }
+                              </ListItem>)
                            }
-                        </ListItem>)
-                     }
-                  </List>
-
+                        </List>
+                     </div>
+                  }
                </Paper>
             }
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
                <Typography variant="body1" >{this.state.message}</Typography>
             </AsyncDialog>
          </div>
-
       }
 
       else {
          return <div style={{ display: 'flex', justifyContent: 'space-between', width: 600, paddingTop: 20, paddingLeft: 20 }}>
             {band.members && band.members.length > 0 &&
                <Paper style={{ width: 500 }}>
-                  <List>
-                     <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
-                        {band.name}
-                     </h2>
-                  </List>
+
+                  <ExpansionPanel className={classes.expansionPanel}>
+                     <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                        <Typography className={classes.headerPanel}> {band.name} </Typography>
+                     </ExpansionPanelSummary>
+                     <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+                        <Typography className={classes.secondaryHeading}> Click boxes to filter the members list </Typography>
+                        <FormGroup row className={classes.checkboxRow}>
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedAdmin}
+                                    onChange={this.handleCheckChange('checkedAdmin')}
+                                    value="checkedAdmin"
+                                 />}
+                              label="Admin"
+                           />
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedSupervisor}
+                                    onChange={this.handleCheckChange('checkedSupervisor')}
+                                    value="checkedSupervisor"
+                                 />}
+                              label="Supervisor"
+                           />
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedMembers}
+                                    onChange={this.handleCheckChange('checkedMembers')}
+                                    value="checkedMembers"
+                                 />}
+                              label="No roles"
+                           />
+                        </FormGroup>
+                     </ExpansionPanelDetails>
+                  </ExpansionPanel>
+
+                  <Divider />
 
                   <List>
-                     <ListSubheader>Band leader </ListSubheader>
+                     <ListSubheader className={classes.heading}> Band leader </ListSubheader>
                      {
                         band.leader.map((member, index) =>
                            <ListItem key={index} dense >
                               <Avatar src={band.leader[0].user.photoURL} />
                               <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin. Click to demote"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
-                              {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                              {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                              {member.supervisor && <Tooltip title="Note manager"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
                            </ListItem>)
                      }
                   </List>
 
                   <Divider />
-                  <ExpansionPanel className={classes.expansionPanel} expanded={true}>
-                     <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
-                        <Typography> Members </Typography>
-                     </ExpansionPanelSummary>
-                     <ExpansionPanelDetails className={classes.expansionPanelDetails}>
-                        <List>
-                           {band.members.map((member, index) =>
-                              <ListItem key={index} dense >
-                                 <Avatar src={member.user.photoURL} />
-                                 <ListItemText primary={member.user.displayName} />
-                                 {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
-                                 {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                 {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                              </ListItem>)
-                           }
-                        </List>
-                     </ExpansionPanelDetails>
-                  </ExpansionPanel>
 
+                  {band.members.length > 0 &&
+                     <div>
+                        <Divider />
+                        <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
+                           <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                              <Typography className={classes.heading}> Members </Typography>
+                           </ExpansionPanelSummary>
+                           <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+                              {noneChecked &&
+                                 <List>
+                                    {band.members.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedAdmin && this.state.checkedSupervisor &&
+                                 <List>
+                                    {band.allroles.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedAdmin && !this.state.checkedSupervisor &&
+                                 <List>
+                                    {band.admins.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedSupervisor && !this.state.checkedAdmin &&
+                                 <List>
+                                    {band.supervisors.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedMembers && band.onlymembers.length > 0 &&
+                                 <List>
+                                    {band.onlymembers.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+                           </ExpansionPanelDetails>
+                        </ExpansionPanel>
+                     </div>
+                  }
                </Paper>
             }
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
