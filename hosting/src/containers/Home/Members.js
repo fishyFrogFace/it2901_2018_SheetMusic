@@ -479,7 +479,6 @@ class Members extends React.Component {
       const { classes, band } = this.props;
       let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
 
-      console.log(noneChecked)
       console.log(band);
 
       if (this.state.isLeader) {
@@ -586,7 +585,24 @@ class Members extends React.Component {
                                  </List>
                               }
 
-                              {this.state.checkedAdmin &&
+                              {this.state.checkedAdmin && this.state.checkedSupervisor &&
+                                 <List>
+                                    {band.allroles.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedAdmin && !this.state.checkedSupervisor &&
                                  <List>
                                     {band.admins.map((member, index) =>
                                        <ListItem key={index} dense >
@@ -603,7 +619,7 @@ class Members extends React.Component {
                                  </List>
                               }
 
-                              {this.state.checkedSupervisor &&
+                              {this.state.checkedSupervisor && !this.state.checkedAdmin &&
                                  <List>
                                     {band.supervisors.map((member, index) =>
                                        <ListItem key={index} dense >
@@ -620,7 +636,7 @@ class Members extends React.Component {
                                  </List>
                               }
 
-                              {this.state.checkedMembers &&
+                              {this.state.checkedMembers && 
                                  <List>
                                     {band.onlymembers.map((member, index) =>
                                        <ListItem key={index} dense >
@@ -637,6 +653,8 @@ class Members extends React.Component {
                                  </List>
                               }
 
+
+
                            </ExpansionPanelDetails>
                         </ExpansionPanel>
                      </div>
@@ -647,7 +665,6 @@ class Members extends React.Component {
                         <Divider />
                         <List>
                            <ListSubheader className={classes.heading}> Pending </ListSubheader>
-
                            {band.pending.map((member, index) =>
                               <ListItem key={index} dense >
                                  <Avatar src={member.user.photoURL} />

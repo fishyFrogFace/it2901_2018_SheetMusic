@@ -542,6 +542,19 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating list with members with all roles
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("supervisor", "==", true).where("admin", "==", true).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, allroles: items } });
+                        })
+                    );
+
                     // Creating list with scores
                     this.unsubs.push(
                         data.defaultBandRef.collection('score').onSnapshot(async snapshot => {
