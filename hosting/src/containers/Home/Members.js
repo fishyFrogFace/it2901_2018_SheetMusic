@@ -1,14 +1,13 @@
 import React from 'react';
-
 import firebase from 'firebase';
 
 import { withStyles } from "material-ui/styles";
 import {
    Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader, ExpansionPanel, ExpansionPanelSummary,
-   ExpansionPanelDetails, Divider
+   ExpansionPanelDetails, Divider, Checkbox, FormGroup, FormControlLabel
 } from "material-ui";
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
-import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
+import { Done, Clear, Star, RemoveCircle, QueueMusic, Delete, Copy } from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
 
@@ -18,17 +17,21 @@ const styles = theme => ({
       width: '100%',
    },
    heading: {
+      color: 'rgba(0, 0, 0, 0.87)',
       fontSize: theme.typography.pxToRem(15),
+      fontWeight: 500,
       flexBasis: '33.33%',
       flexShrink: 0,
    },
    secondaryHeading: {
-      fontSize: theme.typography.pxToRem(15),
-      color: theme.palette.text.secondary,
+      fontSize: '13px',
+      fontWeight: 400,
+      color: 'rgba(0, 0, 0, 0.87)',
+      padding: '0px 0px 10px 24px',
    },
    expansionPanel: {
       margin: '0',
-      border: '0.1px solid',
+      border: '0',
       boxShadow: 'none',
       '&:not(:last-child)': {
          borderBottom: 0,
@@ -43,25 +46,39 @@ const styles = theme => ({
    expansionPanelSummary: {
       borderBottom: '0px solid rgba(0,0,0,.125)',
       margin: '0px 16px -1px 0px',
-      minHeight: 64,
+      height: 64,
       '&$expanded': {
-         minHeight: 64,
+         height: 64,
          margin: '12px 0',
+         fontWeight: 500,
       },
       content: {
          '&$expanded': {
             margin: '12px 0',
          },
-      }, 
+      },
       expanded: {
          minHeight: 64
       }
    },
    expansionPanelDetails: {
       padding: 0,
-      display: 'block', 
+      display: 'block',
    },
-   
+   headerPanel: {
+      fontSize: theme.typography.pxToRem(25),
+      fontWeight: 500,
+   },
+   checkBox: {
+      padding: '0px 24px 10px 24px',
+   },
+   checkboxName: {
+      fontSize: '13px',
+   },
+   deleteButton: {
+      margin: '0px 0px 3px 22px',
+   }
+
 });
 
 
@@ -70,9 +87,13 @@ class Members extends React.Component {
       user: "none",
       title: "",
       message: "",
+      expanded: true,
       isAdmin: false,
       isLeader: false,
-      expanded: true,
+      checkedAdmin: false,
+      checkedSupervisor: false,
+      checkedMembers: false,
+      copySuccess: '',
    };
 
    open = async () => {
@@ -83,13 +104,6 @@ class Members extends React.Component {
          return false;
       }
    }
-
-   // Handling expansion panel change
-   handleChange = panel => (event, expanded) => {
-      this.setState({
-         expanded: expanded ? panel : false,
-      });
-   };
 
    // Accepting a new band member
    _onAccept = async (member) => {
@@ -138,7 +152,38 @@ class Members extends React.Component {
 
       // Remove member from bands member list 
       await memberRef.delete();
+   };
+
+
+   // Deleting a band (only possible as band leader)
+   _onDeleteBand = async () => {
+      let band = this.props.band;
+      const bandRef = firebase.firestore().doc(`bands/${band.id}`);
+
+      // Confirm modal about rejecting
+      this.setState({
+         title: "Delete your band",
+         message: `Are you sure you want to delete ${band.name}?`,
+      });
+      if (!await this.open()) return;
+
+      // Checking if user is band leader
+      if (this.state.isLeader && band.creatorRef.id == this.state.user) {
+
+         // Deleting scores from storage
+         if (await band.scores.length > 0) {
+            console.log('Deleting scores')
+         }
+
+         // Deleting unsorted pdfs from storage
+         if (await band.pdfs.length > 0) {
+            console.log('Deleting unsorted pdfs')
+         }
+
+         console.log('Delete band');
+      }
    }
+
 
    // REMARK: what to do with the band when last member leaves?
    _onLeave = async (member) => {
@@ -348,7 +393,18 @@ class Members extends React.Component {
       });
    }
 
+   // Function when clicking checkbox
+   handleCheckChange = name => event => {
+      this.setState({ [name]: event.target.checked });
+   };
 
+   handleExpansionChange = panel => (event, expanded) => {
+      this.setState({
+         expanded: expanded ? panel : false,
+      });
+   };
+
+   // Runs whenever an update happens
    componentDidUpdate(prevProp, prevState) {
       const { band } = this.props;
       if (band.id !== prevProp.band.id) {
@@ -384,6 +440,7 @@ class Members extends React.Component {
       }
    }
 
+   // Runs once when opening the page
    componentDidMount() {
       const { band } = this.props;
 
@@ -418,14 +475,11 @@ class Members extends React.Component {
       });
    };
 
-
-
-
-
    render() {
       const { classes, band } = this.props;
-      const { expanded } = this.state;
+      let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
 
+      console.log(noneChecked)
       console.log(band);
 
       if (this.state.isLeader) {
@@ -433,19 +487,65 @@ class Members extends React.Component {
             {band.leader && band.leader.length > 0 &&
                <Paper style={{ width: 520 }}>
 
-                  <List>
-                     <h2 style={{ marginLeft: 20, fontFamily: "Roboto" }}>
-                        {band.name}
-                     </h2>
-                     <h5 style={{ marginLeft: 20, fontFamily: "Roboto", color: "grey", fontWeight: 500 }}>
-                        Bandcode: {band.code}
-                     </h5>
-                  </List>
+                  <ExpansionPanel className={classes.expansionPanel}>
+                     <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                        <Typography className={classes.headerPanel}> {band.name} </Typography>
+                     </ExpansionPanelSummary>
+                     <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+
+                        <Typography className={classes.secondaryHeading}>
+                           Bandcode: {band.code}
+                           <Tooltip title="Delete band"><IconButton className={classes.deleteButton} onClick={() => this._onDeleteBand()}><Delete /></IconButton></Tooltip>
+                        </Typography>
+
+                        <Typography className={classes.secondaryHeading}> Click boxes to filter the members list </Typography>
+
+                        <FormGroup row className={classes.checkboxRow}>
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedAdmin}
+                                    onChange={this.handleCheckChange('checkedAdmin')}
+                                    value="checkedAdmin"
+                                 />}
+                              label="Admin"
+                           />
+
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedSupervisor}
+                                    onChange={this.handleCheckChange('checkedSupervisor')}
+                                    value="checkedSupervisor"
+                                 />}
+                              label="Supervisor"
+                           />
+
+                           <FormControlLabel
+                              className={classes.checkBox}
+                              control={
+                                 <Checkbox
+                                    className={classes.checkboxName}
+                                    checked={this.state.checkedMembers}
+                                    onChange={this.handleCheckChange('checkedMembers')}
+                                    value="checkedMembers"
+                                 />}
+                              label="No roles"
+                           />
+                        </FormGroup>
+
+
+                     </ExpansionPanelDetails>
+                  </ExpansionPanel>
 
                   <Divider />
 
                   <List>
-                     <ListSubheader>Band leader</ListSubheader>
+                     <ListSubheader className={classes.heading}> Band leader </ListSubheader>
                      {
                         band.leader.map((member, index) =>
                            <ListItem key={index} dense >
@@ -461,58 +561,108 @@ class Members extends React.Component {
                      }
                   </List>
 
-
                   {band.members.length > 0 &&
                      <div>
-                        <Divider/>
-                        <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleChange(!this.state.expanded)}>
-                           <ExpansionPanelSummary className= {classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
-                              <Typography> Members </Typography>
+                        <Divider />
+                        <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
+                           <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                              <Typography className={classes.heading}> Members </Typography>
                            </ExpansionPanelSummary>
                            <ExpansionPanelDetails className={classes.expansionPanelDetails}>
-                              <List>
-                                 {band.members.map((member, index) =>
-                                    <ListItem key={index} dense >
-                                       <Avatar src={member.user.photoURL} />
-                                       <ListItemText primary={member.user.displayName} />
-                                       {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
-                                       {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                                       {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                       {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                                       {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                                       {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
-                                    </ListItem>)
-                                 }
-                              </List>
+                              {noneChecked &&
+                                 <List>
+                                    {band.members.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedAdmin &&
+                                 <List>
+                                    {band.admins.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedSupervisor &&
+                                 <List>
+                                    {band.supervisors.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
+                              {this.state.checkedMembers &&
+                                 <List>
+                                    {band.onlymembers.map((member, index) =>
+                                       <ListItem key={index} dense >
+                                          <Avatar src={member.user.photoURL} />
+                                          <ListItemText primary={member.user.displayName} />
+                                          {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                          {member.supervisor && <Tooltip title="Note manager. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                          {member.status === 'member' && !member.supervisor && <Tooltip title="Make note manager"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                          {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                          {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                       </ListItem>)
+                                    }
+                                 </List>
+                              }
+
                            </ExpansionPanelDetails>
                         </ExpansionPanel>
                      </div>
                   }
 
-
                   {band.pending.length > 0 &&
-                     <hr size="1" />
-                  }
+                     <div>
+                        <Divider />
+                        <List>
+                           <ListSubheader className={classes.heading}> Pending </ListSubheader>
 
-                  <List>
-                     {band.pending.length > 0 &&
-                        <ListSubheader> Pending </ListSubheader>
-                     }
-                     {band.pending.map((member, index) =>
-                        <ListItem key={index} dense >
-                           <Avatar src={member.user.photoURL} />
-                           <ListItemText primary={member.user.displayName} />
-                           {
-                              member.status === 'pending' &&
-                              <div>
-                                 <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
-                                 <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
-                              </div>
+                           {band.pending.map((member, index) =>
+                              <ListItem key={index} dense >
+                                 <Avatar src={member.user.photoURL} />
+                                 <ListItemText primary={member.user.displayName} />
+                                 {member.status === 'pending' &&
+                                    <div>
+                                       <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
+                                       <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
+                                    </div>
+                                 }
+                              </ListItem>)
                            }
-                        </ListItem>)
-                     }
-                  </List>
-
+                        </List>
+                     </div>
+                  }
 
                </Paper>
             }
@@ -610,22 +760,25 @@ class Members extends React.Component {
                      }
                   </List>
 
-                  <hr size="1" />
-
-                  <List>
-                     <ListSubheader>Members</ListSubheader>
-                     {
-                        band.members.map((member, index) =>
-                           <ListItem key={index} dense >
-                              <Avatar src={member.user.photoURL} />
-                              <ListItemText primary={member.user.displayName} />
-                              {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
-                              {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                              {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                           </ListItem>
-                        )
-                     }
-                  </List>
+                  <Divider />
+                  <ExpansionPanel className={classes.expansionPanel} expanded={true}>
+                     <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                        <Typography> Members </Typography>
+                     </ExpansionPanelSummary>
+                     <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+                        <List>
+                           {band.members.map((member, index) =>
+                              <ListItem key={index} dense >
+                                 <Avatar src={member.user.photoURL} />
+                                 <ListItemText primary={member.user.displayName} />
+                                 {member.admin && <Tooltip title="Admin"><IconButton disabled><Star color="secondary" /></IconButton></Tooltip>}
+                                 {member.supervisor && <Tooltip title="Music supervisor"><IconButton disabled><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                 {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                              </ListItem>)
+                           }
+                        </List>
+                     </ExpansionPanelDetails>
+                  </ExpansionPanel>
 
                </Paper>
             }

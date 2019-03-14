@@ -464,6 +464,7 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating list with the band leader
                     this.unsubs.push(
                         data.defaultBandRef.collection('leader').onSnapshot(async snapshot => {
                             let bandLeader = await Promise.all(
@@ -476,6 +477,7 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating list with pending
                     this.unsubs.push(
                         data.defaultBandRef.collection('pending').onSnapshot(async snapshot => {
                             let pendings = await Promise.all(
@@ -488,6 +490,7 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating list with members
                     this.unsubs.push(
                         data.defaultBandRef.collection('members').onSnapshot(async snapshot => {
                             let member = await Promise.all(
@@ -500,6 +503,46 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating list with admins
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("admin", "==", true).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, admins: items } });
+                        })
+                    );
+
+                    // Creating list with admins
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("supervisor", "==", true).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, supervisors: items } });
+                        })
+                    );
+
+                    // Creating list with admins
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("supervisor", "==", false).where("admin", "==", false).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, onlymembers: items } });
+                        })
+                    );
+
+                    // Creating list with scores
                     this.unsubs.push(
                         data.defaultBandRef.collection('score').onSnapshot(async snapshot => {
                             let items = await Promise.all(
