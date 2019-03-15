@@ -40,9 +40,14 @@ class SelectArrangements extends React.Component {
           >
             {/* map over the arrangment and instrument options declared in state in Scores.js */}
             {this.props.optionsdata.map((data, key) =>
-              <MenuItem key={key} value={data.key}>{data.value}</MenuItem>
+              <MenuItem key={key} value={data.key}>{data.value}
+                {console.log('key', key)}
+              </MenuItem>
+
             )}
           </Select>
+
+
         </FormControl>
       </form>
 

@@ -267,6 +267,7 @@ class Scores extends React.Component {
       return item.key == e.target.value
     })
     this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments })
+    console.log('activeInstrumentList:', value[0].instruments)
   }
 
   render() {
@@ -386,7 +387,9 @@ class Scores extends React.Component {
                           scoresID={score.id}
                           onChange={this.handleChange}
                           optionsdata={this.state.optionsdata}
-                          activeInstrument={this.state.activeInstrument} />
+                          activeInstrument={this.state.activeInstrument}
+                          index={index} />
+                        {console.log('index', index)}
 
                         <List>
                           {/* map over the instruments handled by stated set in the handleChange method, 
