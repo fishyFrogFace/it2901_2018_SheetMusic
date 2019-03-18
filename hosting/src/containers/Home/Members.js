@@ -159,6 +159,8 @@ class Members extends React.Component {
    _onDeleteBand = async () => {
       let band = this.props.band;
       const bandRef = firebase.firestore().doc(`bands/${band.id}`);
+      const userRef = firebase.firestore().doc(`users/${this.state.user}`);
+      console.log(band);
 
       // Confirm modal about rejecting
       this.setState({
@@ -171,16 +173,27 @@ class Members extends React.Component {
       if (this.state.isLeader && band.creatorRef.id == this.state.user) {
 
          // Deleting scores from storage
-         if (await band.scores.length > 0) {
-            console.log('Deleting scores')
+         if (await band.score.length > 0) {
+            console.log('Deleting scores not yet implemented')
          }
 
          // Deleting unsorted pdfs from storage
          if (await band.pdfs.length > 0) {
-            console.log('Deleting unsorted pdfs')
+            console.log('Deleting unsorted pdfs not yet implemented')
          }
 
-         console.log('Delete band');
+         // Removing bandRef 
+         let userBandRefs = (await userRef.get()).data().bandRefs || [];
+         let filteredRefs = await userBandRefs.filter(ref => ref.id !== bandRef.id);
+         
+         await userRef.update({
+            bandRefs: filteredRefs,
+            defaultBandRef: filteredRefs[0],
+         });
+
+         // Deleting band
+         await bandRef.delete()
+         console.log('Band deleted');
       }
    }
 

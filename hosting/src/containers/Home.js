@@ -85,7 +85,7 @@ class Home extends React.Component {
 
         userData: {},
 
-        pdfSelected: false
+        pdfSelected: false, 
     };
 
     unsubs = [];
@@ -692,7 +692,7 @@ class Home extends React.Component {
 
         const { classes, page, loaded } = this.props;
 
-        const pages = [['Scores', 'scores'], ['Setlists', 'setlists'], ['Your band', 'members'], ['Unsorted PDFs', 'pdfs']];
+        const pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
 
         return <div className={classes.root}>
             {
