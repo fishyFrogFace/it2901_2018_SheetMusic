@@ -93,7 +93,6 @@ class Members extends React.Component {
       checkedAdmin: false,
       checkedSupervisor: false,
       checkedMembers: false,
-      copySuccess: '',
    };
 
    open = async () => {
@@ -160,7 +159,6 @@ class Members extends React.Component {
       let band = this.props.band;
       const bandRef = firebase.firestore().doc(`bands/${band.id}`);
       const userRef = firebase.firestore().doc(`users/${this.state.user}`);
-      console.log(band);
 
       // Confirm modal about rejecting
       this.setState({
@@ -185,7 +183,7 @@ class Members extends React.Component {
          // Removing bandRef 
          let userBandRefs = (await userRef.get()).data().bandRefs || [];
          let filteredRefs = await userBandRefs.filter(ref => ref.id !== bandRef.id);
-         
+
          await userRef.update({
             bandRefs: filteredRefs,
             defaultBandRef: filteredRefs[0],
@@ -460,11 +458,12 @@ class Members extends React.Component {
       const { currentUser } = firebase.auth();
       this.setState({
          user: currentUser.uid,
+         band: band,
       });
 
       firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-         const admins = snapshot.data().admins;
-         const leader = snapshot.data().creatorRef.id;
+         const admins = (snapshot.data() == undefined) ? [] : snapshot.data().admins;
+         const leader = (snapshot.data() == undefined) ? null : snapshot.data().creatorRef.id;
 
          for (let i in admins) {
             if (currentUser.uid === admins[i]) {
@@ -563,7 +562,7 @@ class Members extends React.Component {
                      }
                   </List>
 
-                  {band.members.length > 0 &&
+                  {band.members && band.members.length > 0 &&
                      <div>
                         <Divider />
                         <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
@@ -660,7 +659,7 @@ class Members extends React.Component {
                      </div>
                   }
 
-                  {band.pending.length > 0 &&
+                  {band.pending && band.pending.length > 0 &&
                      <div>
                         <Divider />
                         <List>
@@ -751,7 +750,7 @@ class Members extends React.Component {
                      }
                   </List>
 
-                  {band.members.length > 0 &&
+                  {band.members && band.members.length > 0 &&
                      <div>
                         <Divider />
                         <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
@@ -848,7 +847,7 @@ class Members extends React.Component {
                      </div>
                   }
 
-                  {band.pending.length > 0 &&
+                  {band.pending && band.pending.length > 0 &&
                      <div>
                         <Divider />
                         <List>
@@ -942,7 +941,7 @@ class Members extends React.Component {
 
                   <Divider />
 
-                  {band.members.length > 0 &&
+                  {band.members && band.members.length > 0 &&
                      <div>
                         <Divider />
                         <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
