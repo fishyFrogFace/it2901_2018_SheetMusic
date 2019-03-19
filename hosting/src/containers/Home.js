@@ -7,7 +7,7 @@ import Typography from 'material-ui/Typography';
 
 import {
     Button, CircularProgress, IconButton, List, ListItem, ListItemText, Menu, MenuItem,
-    Snackbar
+    Snackbar, Badge
 } from "material-ui";
 
 import ExitToApp from 'material-ui-icons/ExitToApp';
@@ -68,7 +68,8 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column'
-    }
+    },
+
 };
 
 class Home extends React.Component {
@@ -846,13 +847,17 @@ class Home extends React.Component {
                                 onClick={() => this._onNavClick(nameShort)}>
                                 {nameShort === 'scores' && <LibraryMusic style={{ color: color }} />}
                                 {nameShort === 'setlists' && <QueueMusic style={{ color: color }} />}
-                                {nameShort === 'members' && <SupervisorAccount style={{ color: color }} />}
+                                {nameShort === 'members' && <Badge style={{ color: color }} badgeContent={band.pending ? band.pending.length : '0'}>
+                                    <SupervisorAccount/>
+                                </Badge>
+                                }
                                 {nameShort === 'pdfs' && <LibraryBooks style={{ color: color }} />}
                                 <ListItemText
                                     disableTypography
                                     inset
-                                    primary={<Typography type="body2"
-                                        style={{ color: color }}>{nameLong}</Typography>}
+                                    primary={
+                                        <Typography type="body2" style={{ color: color }}>{nameLong}</Typography>
+                                    }
                                 />
                             </ListItem>
                         })}
