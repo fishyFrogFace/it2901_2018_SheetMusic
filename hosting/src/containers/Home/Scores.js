@@ -111,6 +111,7 @@ class Scores extends React.Component {
     super(props)
     this.state = {
       listView: false,
+      sortedAlphabetically: false,
       expanded: false,
       parts: {},
       score: {},
@@ -146,6 +147,13 @@ class Scores extends React.Component {
 
   _onMoreClick = (score) => {
     this.props.onRemoveScore(score);
+  };
+
+  _onSortByAlphaClick = () => {
+    let alpha = this.state.sortedAlphabetically;
+    alpha = !alpha;
+    console.log("alpha: " + alpha);
+    this.setState({sortedAlphabetically: alpha} )
   };
 
 
@@ -269,17 +277,26 @@ class Scores extends React.Component {
     this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments })
   }
 
+
   render() {
     const { classes, band } = this.props;
     const { listView } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
+    let scores;
+    if (this.state.sortedAlphabetically) {
+      scores = band.scores.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    else {
+      scores = band.scores;
+    }
+
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
     }
     return <div>
       <div>
         <div className={classes.flex} />
-        <IconButton>
+        <IconButton onClick={this._onSortByAlphaClick}>
           <SortByAlpha />
         </IconButton>
         {
@@ -303,7 +320,7 @@ class Scores extends React.Component {
           <Paper>
             <List>
               {
-                band.scores.map((score, index) =>
+                scores.map((score, index) =>
                   <ListItem key={index} dense button
                     onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                     <LibraryMusic color='action' />
