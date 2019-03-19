@@ -1,12 +1,14 @@
 import React from 'react';
+import firebase from 'firebase';
+import moment from 'moment';
 
 import {withStyles} from "material-ui/styles";
 import {
-    Button, Card, CardContent, CardMedia, Checkbox, IconButton, List, ListItem, ListItemText, Paper,
-    Typography
+    Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper,
+    Typography 
 } from "material-ui";
 import {PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
-
+import DeleteIcon from 'material-ui-icons/Delete';
 const styles = {
     root: {},
     card: {
@@ -34,19 +36,49 @@ class Setlists extends React.Component {
         }
     }
 
+    //Is called by the moduleView parent tag
     _onViewModuleClick = () => {
         window.localStorage.removeItem('setlistsListView');
         this.setState({listView: false});
     };
 
+    //Is called by the viewList parent tag
     _onViewListClick = () => {
         window.localStorage.setItem('setlistsListView', 'true');
         this.setState({listView: true});
     };
 
+    //Is called by the Card tag
     _onSetlistCreateClick = () => {
         this.props.onCreateSetlist();
     };
+
+    //This function will delete a setlist
+    _onSetlistDeleteClick = (setlistId) => {
+        console.log(setlistId);
+        const {band} = this.props;
+        //Fetching setlist reference from firestore
+        const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
+
+        setlistRef.delete().then(() => {
+            console.log("Document succesfully removed");
+        }).catch(() => {
+            console.error("Error removing document", error);
+        })
+    }
+
+    _onSetlistSorting = () => {
+
+    }
+
+    _getSetlistDate = (setlistId) => {
+        const {band} = this.props;
+        firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId).get().then(snapshot => {
+            let setlistDate = snapshot.data().date;
+            console.log(setlistDate);
+            return setlistDate;
+        });
+    }
 
     render() {
         const {classes, band} = this.props;
@@ -59,7 +91,7 @@ class Setlists extends React.Component {
                 <div className={classes.flex}/>
 
                 <IconButton>
-                    <SortByAlpha/>
+                    <SortByAlpha onClick={this._onSetlistSorting}/>
                 </IconButton>
 
                 {
@@ -85,7 +117,8 @@ class Setlists extends React.Component {
                                     <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}>
                                         <QueueMusic color='action'/>
                                         <ListItemText primary={setlist.title}/>
-                                    </ListItem>)
+                                    </ListItem>
+                                    )
                             }
                         </List>
                     </Paper>
@@ -94,11 +127,11 @@ class Setlists extends React.Component {
                     !listView && hasSetlists &&
                     <div style={{display: 'flex', flexWrap: 'wrap'}}>
                         {band.setlists.map((setlist, index) =>
-                            <Card key={index} className={classes.card}
-                                  onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
+                            <Card key={index} className={classes.card} 
                                   elevation={1}>
                                 <CardMedia
                                     className={classes.media}
+                                    onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
                                     image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
                                     title=""
                                 />
@@ -107,9 +140,13 @@ class Setlists extends React.Component {
                                         {setlist.title}
                                     </Typography>
                                     <Typography component="p">
-                                        {/* {setlist.date.toLocaleDateString()} */}
+                                        {this._getSetlistDate(setlist.id)}
                                     </Typography>
+                                    <IconButton style={{paddingBottom: '150px'}}>
+                                        <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id)}/>
+                                    </IconButton>
                                 </CardContent>
+                                
                             </Card>
                         )}
                     </div>
