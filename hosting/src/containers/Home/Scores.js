@@ -13,6 +13,7 @@ import FavoriteIcon from 'material-ui-icons/Favorite';
 import firebase from 'firebase';
 import InstrumentScores from '../../components/InstrumentScores';
 import SelectArrangement from '../../components/SelectArrangement';
+import SelectComposer from '../../components/SelectComposer'
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -116,6 +117,7 @@ class Scores extends React.Component {
       parts: {},
       score: {},
       vocal: '',
+      composers: [],
       activeInstrument: 'Default',
       activeInstrumentList: ['Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
       optionsdata: [
@@ -276,12 +278,16 @@ class Scores extends React.Component {
     this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments })
   }
 
+  changeComposer = (composers) => {
+      this.setState({composers: composers})
+  };
+
 
   render() {
     const { classes, band } = this.props;
     const { listView } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
-    let scores = {};
+    let scores = []; // Local variable to be able to switch back and forth between alphabetically and not
     if (hasScores) { // Should not fetch band.scores if empty
         if (this.state.sortedAlphabetically) { // If alphabetically is chosen
             scores = band.scores.slice(); // Get default
@@ -297,31 +303,32 @@ class Scores extends React.Component {
     }
     return <div>
       <div>
-        <div className={classes.flex} />
-        <IconButton onClick={this._onSortByAlphaClick}>
-          <SortByAlpha />
-        </IconButton>
-        {
-          listView &&
-          <IconButton onClick={this._onViewModuleClick}>
-            <ViewModule />
-          </IconButton>
-        }
-        {
-          !listView &&
-          <IconButton onClick={this._onViewListClick}>
-            <ViewList />
-          </IconButton>
-        }
+        <div className={classes.flex}>
+            <IconButton onClick={this._onSortByAlphaClick}>
+              <SortByAlpha />
+            </IconButton>
+            {
+              listView &&
+              <IconButton onClick={this._onViewModuleClick}>
+                <ViewModule />
+              </IconButton>
+            }
+            {
+              !listView &&
+              <IconButton onClick={this._onViewListClick}>
+                <ViewList />
+              </IconButton>
+            }
+              <SelectComposer onChange={this.changeComposer} optionsdata={this.state.activeInstrumentList}/>
       </div>
-
+      </div>
       <div>
         {/* the simple list view */}
         {
           listView && hasScores &&
           <Paper>
             <List>
-                {/* uses local variable scores */}
+                {/* uses the local variable scores */}
                 {
                 scores.map((score, index) =>
                   <ListItem key={index} dense button
