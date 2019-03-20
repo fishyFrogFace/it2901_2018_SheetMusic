@@ -70,6 +70,15 @@ const styles = {
         flexDirection: 'column'
     },
 
+    alertBadge: {
+        backgroundColor: "rgb(222, 53, 53)",
+        color: "white",
+        padding: '0px',
+        margin: '5px',
+        width: '16px',
+        height: '16px',
+    }
+
 };
 
 class Home extends React.Component {
@@ -847,10 +856,15 @@ class Home extends React.Component {
                                 onClick={() => this._onNavClick(nameShort)}>
                                 {nameShort === 'scores' && <LibraryMusic style={{ color: color }} />}
                                 {nameShort === 'setlists' && <QueueMusic style={{ color: color }} />}
-                                {nameShort === 'members' && <Badge style={{ color: color }} badgeContent={band.pending ? band.pending.length : '0'}>
-                                    <SupervisorAccount/>
-                                </Badge>
+                                {nameShort === 'members' && this.state.userData.isAdmin && band.pending && band.pending.length > 0 &&
+                                    <Badge classes={{ badge: classes.alertBadge }} badgeContent={band.pending.length}>
+                                        <SupervisorAccount style={{ color: color }} />
+                                    </Badge>
                                 }
+                                {nameShort === 'members' && this.state.userData.isAdmin && band.pending && band.pending.length == 0 &&
+                                    <SupervisorAccount style={{ color: color }} />
+                                }
+                                {nameShort === 'members' && !this.state.userData.isAdmin && <SupervisorAccount style={{ color: color }} />}
                                 {nameShort === 'pdfs' && <LibraryBooks style={{ color: color }} />}
                                 <ListItemText
                                     disableTypography
