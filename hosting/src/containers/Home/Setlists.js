@@ -1,6 +1,5 @@
 import React from 'react';
 import firebase from 'firebase';
-import moment from 'moment';
 
 import {withStyles} from "material-ui/styles";
 import {
@@ -62,25 +61,29 @@ class Setlists extends React.Component {
 
         setlistRef.delete().then(() => {
             console.log("Document succesfully removed");
-        }).catch(() => {
-            console.error("Error removing document", error);
+        }).catch((err) => {
+            console.error("Error removing document", err);
         })
     }
-
+    //TODO: Lag alfabetisk sortering
     _onSetlistSorting = () => {
 
     }
 
-    _getSetlistDate = (setlistId) => {
-        const {band} = this.props;
-        firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId).get().then(snapshot => {
-            let setlistDate = snapshot.data().date;
-            console.log(setlistDate);
-            return setlistDate;
-        });
+    //This function will take in a timestamp and display it in the correct date, hour and minute
+    _formatedDate = (setlist) => {
+        //Converting our timestamp to a date string object
+        let dateString = setlist.toDate().toString();
+        //Using the splice method to format the string in date, hours and minutes
+        let formatedString = dateString.split('');
+        //Splicing the interval we want to remove
+        formatedString.splice(21,45);
+        formatedString = formatedString.join('');
+        return formatedString;
     }
 
     render() {
+        
         const {classes, band} = this.props;
         const {listView} = this.state;
 
@@ -140,7 +143,8 @@ class Setlists extends React.Component {
                                         {setlist.title}
                                     </Typography>
                                     <Typography component="p">
-                                        {this._getSetlistDate(setlist.id)}
+                                        {/*Checking for date setlist.date, if that does not exist, then we don't get anything*/}
+                                        {setlist.date && this._formatedDate(setlist.date)}
                                     </Typography>
                                     <IconButton style={{paddingBottom: '150px'}}>
                                         <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id)}/>

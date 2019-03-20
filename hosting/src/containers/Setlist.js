@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import moment from 'moment';
 import {withStyles} from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
@@ -40,9 +41,9 @@ class Setlist extends Component {
         band: {}
     };
 
-    //addScoreDialog;
-    //addEventDialog;
-    //editSetlistDialog;
+    addScoreDialog;
+    addEventDialog;
+    editSetlistDialog;
 
     unsubs = [];
 
@@ -175,6 +176,18 @@ class Setlist extends Component {
         }
     }
 
+    //This function will take in a timestamp and display it in the correct date, hour and minute
+    _formatedDate = (setlist) => {
+        //Converting our timestamp to a date string object
+        let dateString = setlist.toDate().toString();
+        //Using the splice method to format the string in date, hours and minutes
+        let formatedString = dateString.split('');
+        //Splicing the interval we want to remove
+        formatedString.splice(21,45);
+        formatedString = formatedString.join('');
+        return formatedString;
+    }
+
     render() {
         const {anchorEl, updatedItems, setlist, band} = this.state;
         const {classes} = this.props;
@@ -194,7 +207,8 @@ class Setlist extends Component {
                                     {setlist.title}
                                 </Typography>
                                 <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                    {/* {setlist.date && setlist.date.toLocaleDateString()} */}
+                                    {/*Checking for date setlist.date, if that does not exist, then we don't get anything*/}
+                                    {setlist.date && this._formatedDate(setlist.date)}
                                 </Typography>
                             </div>
                             <div className={classes.flex}/>
