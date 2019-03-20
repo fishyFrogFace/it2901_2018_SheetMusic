@@ -108,7 +108,7 @@ const styles = {
 
 class Scores extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
       listView: false,
       sortedAlphabetically: false,
@@ -282,14 +282,18 @@ class Scores extends React.Component {
     const { classes, band } = this.props;
     const { listView } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
-    let scores;
-    if (this.state.sortedAlphabetically) {
-        scores = band.scores.slice()
-        scores = scores.sort((a, b) => a.title.localeCompare(b.title)));
+    let scores = {};
+    //console.log("Scores: ", scores)
+    if (this.state.sortedAlphabetically && hasScores) {
+        scores = band.scores.slice();
+        scores = scores.sort((a, b) => a.title.localeCompare(b.title)).slice();
+        //console.log("Scores: ", scores)
     }
-    else {
-      scores = band.scores.slice();
+    else if (hasScores){
+        scores = band.scores.slice();
+        //console.log("Scores: ", scores)
     }
+    console.log("Scores: ", scores);
 
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
@@ -345,7 +349,7 @@ class Scores extends React.Component {
           }}>
             {/* map over the scores in the band to get correct database-information */}
             {
-              band.scores.map((score, index) =>
+              scores.map((score, index) =>
                 <Card className={classes.card} key={index}
                   elevation={1}>
                   <CardHeader
