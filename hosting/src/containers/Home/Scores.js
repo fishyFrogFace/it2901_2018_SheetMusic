@@ -284,10 +284,11 @@ class Scores extends React.Component {
     const hasScores = band.scores && band.scores.length > 0;
     let scores;
     if (this.state.sortedAlphabetically) {
-      scores = band.scores.sort((a, b) => a.title.localeCompare(b.title));
+        scores = band.scores.slice()
+        scores = scores.sort((a, b) => a.title.localeCompare(b.title)));
     }
     else {
-      scores = band.scores;
+      scores = band.scores.slice();
     }
 
     let test = {
