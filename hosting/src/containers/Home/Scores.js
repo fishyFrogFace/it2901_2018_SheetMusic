@@ -151,9 +151,8 @@ class Scores extends React.Component {
 
   _onSortByAlphaClick = () => {
     let alpha = this.state.sortedAlphabetically;
-    alpha = !alpha;
-    console.log("alpha: " + alpha);
-    this.setState({sortedAlphabetically: alpha} )
+    alpha = !alpha; // Changed between alphabetically and not
+    this.setState({sortedAlphabetically: alpha});
   };
 
 
@@ -283,17 +282,15 @@ class Scores extends React.Component {
     const { listView } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
     let scores = {};
-    //console.log("Scores: ", scores)
-    if (this.state.sortedAlphabetically && hasScores) {
-        scores = band.scores.slice();
-        scores = scores.sort((a, b) => a.title.localeCompare(b.title)).slice();
-        //console.log("Scores: ", scores)
+    if (hasScores) { // Should not fetch band.scores if empty
+        if (this.state.sortedAlphabetically) { // If alphabetically is chosen
+            scores = band.scores.slice(); // Get default
+            scores = scores.sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
+        }
+        else {
+            scores = band.scores.slice(); // Use default
+        }
     }
-    else if (hasScores){
-        scores = band.scores.slice();
-        //console.log("Scores: ", scores)
-    }
-    console.log("Scores: ", scores);
 
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
@@ -324,7 +321,8 @@ class Scores extends React.Component {
           listView && hasScores &&
           <Paper>
             <List>
-              {
+                {/* uses local variable scores */}
+                {
                 scores.map((score, index) =>
                   <ListItem key={index} dense button
                     onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
@@ -348,6 +346,7 @@ class Scores extends React.Component {
             display: 'flex', flexWrap: 'wrap'
           }}>
             {/* map over the scores in the band to get correct database-information */}
+            {/* uses the local variable scores */}
             {
               scores.map((score, index) =>
                 <Card className={classes.card} key={index}
