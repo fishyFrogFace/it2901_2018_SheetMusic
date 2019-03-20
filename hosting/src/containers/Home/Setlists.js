@@ -26,7 +26,8 @@ const styles = {
 };
 class Setlists extends React.Component {
     state = {
-        listView: false
+        listView: false,
+        sortedAlphabetically: false,
     };
 
     componentWillMount() {
@@ -65,10 +66,14 @@ class Setlists extends React.Component {
             console.error("Error removing document", err);
         })
     }
-    //TODO: Lag alfabetisk sortering
-    _onSetlistSorting = () => {
-
-    }
+    //This function changes the boolean value of sortedAlphabetically
+    _onSortByAlphaClick = () => {
+        //Takes in the state
+        let alpha = this.state.sortedAlphabetically;
+        //Inverts the alpha
+        alpha = !alpha;
+        this.setState({sortedAlphabetically: alpha} )
+      };
 
     //This function will take in a timestamp and display it in the correct date, hour and minute
     _formatedDate = (setlist) => {
@@ -89,12 +94,25 @@ class Setlists extends React.Component {
 
         const hasSetlists = band.setlists && band.setlists.length > 0;
 
+        let setlists = [];
+
+        if (this.state.sortedAlphabetically && hasSetlists) {
+            setlists = band.setlists.slice();
+            //Sorting the setlists alphabetically
+            setlists = setlists.sort((a, b) => a.title.localeCompare(b.title)).slice();
+            //console.log("Scores: ", setlists)
+        }
+        else if (hasSetlists){
+            setlists = band.setlists.slice();
+            //console.log("Scores: ", setlists)
+        }
+
         return <div>
             <div style={{display: 'flex', alignItems: 'center', padding: '0 24px', height: 56}}>
                 <div className={classes.flex}/>
 
                 <IconButton>
-                    <SortByAlpha onClick={this._onSetlistSorting}/>
+                    <SortByAlpha onClick={this._onSortByAlphaClick}/>
                 </IconButton>
 
                 {
@@ -116,7 +134,7 @@ class Setlists extends React.Component {
                     <Paper>
                         <List>
                             {
-                                 band.setlists.map((setlist, index) =>
+                                 setlists.map((setlist, index) =>
                                     <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}>
                                         <QueueMusic color='action'/>
                                         <ListItemText primary={setlist.title}/>
@@ -129,7 +147,7 @@ class Setlists extends React.Component {
                 {
                     !listView && hasSetlists &&
                     <div style={{display: 'flex', flexWrap: 'wrap'}}>
-                        {band.setlists.map((setlist, index) =>
+                        {setlists.map((setlist, index) =>
                             <Card key={index} className={classes.card} 
                                   elevation={1}>
                                 <CardMedia
@@ -143,7 +161,7 @@ class Setlists extends React.Component {
                                         {setlist.title}
                                     </Typography>
                                     <Typography component="p">
-                                        {/*Checking for date setlist.date, if that does not exist, then we don't get anything*/}
+                                        {/*Checking for date setlist.date, if that does not exist, then we don't display anything*/}
                                         {setlist.date && this._formatedDate(setlist.date)}
                                     </Typography>
                                     <IconButton style={{paddingBottom: '150px'}}>
