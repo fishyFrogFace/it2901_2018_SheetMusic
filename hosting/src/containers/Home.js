@@ -261,6 +261,8 @@ class Home extends React.Component {
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`),
                 code: Math.random().toString(36).substring(2, 7),
                 admins: [user.uid],
+                bandtype: null,
+                description: null,
             });
 
             await bandRef.collection('leader').add({

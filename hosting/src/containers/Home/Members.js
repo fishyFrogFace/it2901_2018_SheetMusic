@@ -211,10 +211,6 @@ class Members extends React.Component {
    _onChooseBandType = async () => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
 
-      if (!bandRef.bandtype) {
-         alert("You must choose bandtype in the dropdown menu")
-      }
-
       bandRef.update({
          bandtype: null
       })
@@ -258,10 +254,20 @@ class Members extends React.Component {
          let userBandRefs = (await userRef.get()).data().bandRefs || [];
          let filteredRefs = await userBandRefs.filter(ref => ref.id !== bandRef.id);
 
-         await userRef.update({
-            bandRefs: filteredRefs,
-            defaultBandRef: filteredRefs[0],
-         });
+         if (filteredRefs.length > 0) {
+            await userRef.update({
+               bandRefs: filteredRefs,
+               defaultBandRef: filteredRefs[0],
+            });
+         }
+
+         else {
+            await userRef.update({
+               bandRefs: filteredRefs,
+            });
+         }
+
+         location.reload();
 
          // Deleting band
          await bandRef.delete()
