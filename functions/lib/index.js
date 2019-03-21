@@ -21,6 +21,8 @@ require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
 const cors = require("cors");
 const request = require("request-promise-native");
+const pdfUtil = require('pdf-to-text');
+const { Storage } = require('@google-cloud/storage');
 admin.initializeApp();
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
 // Extracts ZIP with pdfs
@@ -44,18 +46,18 @@ exports.extractZip = functions.storage.object().onFinalize((object, context) => 
             .filter(file => file.path.endsWith('.pdf'))
             .filter(file => !file.path.startsWith('__MACOSX'))
             .map((file) => __awaiter(this, void 0, void 0, function* () {
-            let pdfPathParts = file.path.split('/');
-            if (pdfPathParts[0] === fileName) {
-                pdfPathParts = pdfPathParts.slice(1);
-            }
-            const name = pdfPathParts.join(' - ');
-            yield new Promise((resolve, reject) => {
-                file.stream()
-                    .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
-                    .on('error', reject)
-                    .on('finish', resolve);
-            });
-        })));
+                let pdfPathParts = file.path.split('/');
+                if (pdfPathParts[0] === fileName) {
+                    pdfPathParts = pdfPathParts.slice(1);
+                }
+                const name = pdfPathParts.join(' - ');
+                yield new Promise((resolve, reject) => {
+                    file.stream()
+                        .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
+                        .on('error', reject)
+                        .on('finish', resolve);
+                });
+            })));
         // Clean up
         yield fs.remove('/tmp/file.zip');
     }
@@ -73,14 +75,21 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         filePath: filePath
     });
     yield ref.delete();
-    console.log("Depeted");
     let [bandId, fileNameExt] = filePath.split('/');
     // File name without extension
     const fileName = path.basename(fileNameExt, '.pdf');
     // Create storage bucket
     const inputBucket = storage.bucket(object.bucket);
-    const pdfBucket = storage.bucket('scores-butler-pdfs');
+    const pdfBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
     try {
+        pdfUtil.info(filePath, function (err, info) {
+            if (err)
+                throw (err);
+            console.log(info);
+        });
+        console.log('Test...');
+        console.log('Object ', object);
+        console.log('Bucket ', object.bucket);
         // Download to local directory
         yield inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
         // Delete PDF file
@@ -172,46 +181,46 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         if (pdfText.includes('jazzbandcharts')) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
-                    name: 'Score',
-                    expr: /(: )?score/i
-                }, {
-                    name: 'Vocal',
-                    expr: /(\w )?vocal/i
-                }, {
-                    name: 'Alto Sax',
-                    expr: /(\w )?alto sax\. \d/i
-                }, {
-                    name: 'Tenor Sax',
-                    expr: /(\w )?tenor sax\. \d/i
-                }, {
-                    name: 'Baritone Sax',
-                    expr: /(\w )?baritone sax\./i
-                }, {
-                    name: 'Trumpet',
-                    expr: /(\w )?trumpet .{0,6}\d/i
-                }, {
-                    name: 'Trombone',
-                    expr: /(\w )?trombone \d/i
-                }, {
-                    name: 'Guitar',
-                    expr: /(\w )?guitar/i
-                }, {
-                    name: 'Piano',
-                    expr: /(\w )?piano/i
-                }, {
-                    name: 'Bass',
-                    expr: /(\w )?bass/i
-                }, {
-                    name: 'Drum Set',
-                    expr: /(\w )?drum set/i
-                }];
+                name: 'Score',
+                expr: /(: )?score/i
+            }, {
+                name: 'Vocal',
+                expr: /(\w )?vocal/i
+            }, {
+                name: 'Alto Sax',
+                expr: /(\w )?alto sax\. \d/i
+            }, {
+                name: 'Tenor Sax',
+                expr: /(\w )?tenor sax\. \d/i
+            }, {
+                name: 'Baritone Sax',
+                expr: /(\w )?baritone sax\./i
+            }, {
+                name: 'Trumpet',
+                expr: /(\w )?trumpet .{0,6}\d/i
+            }, {
+                name: 'Trombone',
+                expr: /(\w )?trombone \d/i
+            }, {
+                name: 'Guitar',
+                expr: /(\w )?guitar/i
+            }, {
+                name: 'Piano',
+                expr: /(\w )?piano/i
+            }, {
+                name: 'Bass',
+                expr: /(\w )?bass/i
+            }, {
+                name: 'Drum Set',
+                expr: /(\w )?drum set/i
+            }];
             const _pages = pdfText.split('\f');
             const snapshot = yield admin.firestore().collection('instruments').get();
             const instruments = snapshot.docs.map(doc => (Object.assign({}, doc.data(), { ref: doc.ref })));
             const parts = [{
-                    page: 2,
-                    instruments: [admin.firestore().doc('instruments/YFNsZF5GxxpkfBqtbouy')]
-                }];
+                page: 2,
+                instruments: [admin.firestore().doc('instruments/YFNsZF5GxxpkfBqtbouy')]
+            }];
             const nameCount = {};
             for (let i = 3; i < _pages.length; i++) {
                 const page = _pages[i];

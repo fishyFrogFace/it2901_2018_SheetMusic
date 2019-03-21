@@ -1,11 +1,11 @@
 import React from 'react';
 
-import {withStyles} from "material-ui/styles";
+import { withStyles } from "material-ui/styles";
 import {
     Button, Card, CardContent, CardMedia, Checkbox, IconButton, List, ListItem, ListItemText, Paper,
     Typography
 } from "material-ui";
-import {PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
+import { PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule } from "material-ui-icons";
 
 const styles = {
     root: {},
@@ -30,18 +30,18 @@ class Setlists extends React.Component {
 
     componentWillMount() {
         if (window.localStorage.getItem('setlistsListView')) {
-            this.setState({listView: true});
+            this.setState({ listView: true });
         }
     }
 
     _onViewModuleClick = () => {
         window.localStorage.removeItem('setlistsListView');
-        this.setState({listView: false});
+        this.setState({ listView: false });
     };
 
     _onViewListClick = () => {
         window.localStorage.setItem('setlistsListView', 'true');
-        this.setState({listView: true});
+        this.setState({ listView: true });
     };
 
     _onSetlistCreateClick = () => {
@@ -49,42 +49,42 @@ class Setlists extends React.Component {
     };
 
     render() {
-        const {classes, band} = this.props;
-        const {listView} = this.state;
+        const { classes, band } = this.props;
+        const { listView } = this.state;
 
         const hasSetlists = band.setlists && band.setlists.length > 0;
 
         return <div>
-            <div style={{display: 'flex', alignItems: 'center', padding: '0 24px', height: 56}}>
-                <div className={classes.flex}/>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}>
+                <div className={classes.flex} />
 
                 <IconButton>
-                    <SortByAlpha/>
+                    <SortByAlpha />
                 </IconButton>
 
                 {
                     listView &&
                     <IconButton onClick={this._onViewModuleClick}>
-                        <ViewModule/>
+                        <ViewModule />
                     </IconButton>
                 }
                 {
                     !listView &&
                     <IconButton onClick={this._onViewListClick}>
-                        <ViewList/>
+                        <ViewList />
                     </IconButton>
                 }
             </div>
-            <div style={{padding: '0 24px'}}>
+            <div style={{ padding: '0 24px' }}>
                 {
                     listView && hasSetlists &&
                     <Paper>
                         <List>
                             {
-                                 band.setlists.map((setlist, index) =>
+                                band.setlists.map((setlist, index) =>
                                     <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}>
-                                        <QueueMusic color='action'/>
-                                        <ListItemText primary={setlist.title}/>
+                                        <QueueMusic color='action' />
+                                        <ListItemText primary={setlist.title} />
                                     </ListItem>)
                             }
                         </List>
@@ -92,11 +92,11 @@ class Setlists extends React.Component {
                 }
                 {
                     !listView && hasSetlists &&
-                    <div style={{display: 'flex', flexWrap: 'wrap'}}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                         {band.setlists.map((setlist, index) =>
                             <Card key={index} className={classes.card}
-                                  onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
-                                  elevation={1}>
+                                onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
+                                elevation={1}>
                                 <CardMedia
                                     className={classes.media}
                                     image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
@@ -107,7 +107,7 @@ class Setlists extends React.Component {
                                         {setlist.title}
                                     </Typography>
                                     <Typography component="p">
-                                        {/* {setlist.date.toLocaleDateString()} */}
+                                        {/*setlist.date.toLocaleDateString()*/}
                                     </Typography>
                                 </CardContent>
                             </Card>
@@ -119,9 +119,9 @@ class Setlists extends React.Component {
                 onClick={this._onSetlistCreateClick}
                 variant="fab"
                 color="secondary"
-                style={{position: 'absolute', bottom: 32, right: 32}}
+                style={{ position: 'absolute', bottom: 32, right: 32 }}
             >
-                <PlaylistAdd/>
+                <PlaylistAdd />
             </Button>
         </div>
     }

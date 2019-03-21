@@ -1,11 +1,11 @@
-import React, {Component} from 'react';
-import {withStyles} from 'material-ui/styles';
+import React, { Component } from 'react';
+import { withStyles } from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {IconButton, Menu, MenuItem, Card, CardContent} from "material-ui";
+import { IconButton, Menu, MenuItem, Card, CardContent } from "material-ui";
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -14,8 +14,8 @@ import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog
 import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
 
-import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
-import {Add, ArrowBack, Edit} from "material-ui-icons";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Add, ArrowBack, Edit } from "material-ui-icons";
 
 const styles = {
     root: {},
@@ -47,11 +47,11 @@ class Setlist extends Component {
     unsubs = [];
 
     _onAddButtonClick(e) {
-        this.setState({anchorEl: e.currentTarget});
+        this.setState({ anchorEl: e.currentTarget });
     }
 
     _onMenuClose() {
-        this.setState({anchorEl: null});
+        this.setState({ anchorEl: null });
     }
 
     _onDragEnd = async result => {
@@ -67,7 +67,7 @@ class Setlist extends Component {
             return result;
         };
 
-        const {band, setlist} = this.state;
+        const { band, setlist } = this.state;
 
         const newItems = reorder(
             setlist.items,
@@ -75,7 +75,7 @@ class Setlist extends Component {
             result.destination.index
         );
 
-        this.setState({updatedItems: newItems});
+        this.setState({ updatedItems: newItems });
 
         await firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`).update({
             items: newItems
@@ -83,7 +83,7 @@ class Setlist extends Component {
     };
 
     async _onMenuClick(type) {
-        const {band, setlist} = this.state;
+        const { band, setlist } = this.state;
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
 
         try {
@@ -101,7 +101,7 @@ class Setlist extends Component {
                     });
                     break;
                 case 'addEvent':
-                    const {eventTitle, description, time} = await this.addEventDialog.open();
+                    const { eventTitle, description, time } = await this.addEventDialog.open();
                     await setlistRef.update({
                         items: [...(setlist.items || []), {
                             type: 'event',
@@ -112,15 +112,15 @@ class Setlist extends Component {
                     });
                     break;
                 case 'editSetlist':
-                    const {title, date} = await this.editSetlistDialog.open(setlist);
-                    await setlistRef.update({title: title, date: date});
+                    const { title, date } = await this.editSetlistDialog.open(setlist);
+                    await setlistRef.update({ title: title, date: date });
                     break;
             }
         } catch (err) {
             console.log(err);
         }
 
-        this.setState({anchorEl: null});
+        this.setState({ anchorEl: null });
     }
 
     _onArrowBackButtonClick = () => {
@@ -128,7 +128,7 @@ class Setlist extends Component {
     };
 
     componentDidUpdate(prevProps, prevState) {
-        const {page, detail} = this.props;
+        const { page, detail } = this.props;
 
         if (page !== prevProps.page) {
             const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
@@ -146,38 +146,38 @@ class Setlist extends Component {
                     data.items = await Promise.all(
                         (data.items || []).map(async item => {
                             if (item.type === 'score') {
-                                return {...item, score: (await item.scoreRef.get()).data()};
+                                return { ...item, score: (await item.scoreRef.get()).data() };
                             }
 
-                            return {...item};
+                            return { ...item };
                         })
                     );
 
-                    this.setState({setlist: {...this.state.setlist, ...data, id: snapshot.id}});
+                    this.setState({ setlist: { ...this.state.setlist, ...data, id: snapshot.id } });
                 })
             );
 
             this.unsubs.push(
                 bandRef.onSnapshot(async snapshot => {
-                    this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                    this.setState({ band: { ...this.state.band, ...snapshot.data(), id: snapshot.id } });
                 })
             );
 
             this.unsubs.push(
                 bandRef.collection('scores').onSnapshot(async snapshot => {
                     let scores = await Promise.all(
-                        snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                        snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                     );
 
-                    this.setState({band: {...this.state.band, scores: scores}});
+                    this.setState({ band: { ...this.state.band, scores: scores } });
                 })
             );
         }
     }
 
     render() {
-        const {anchorEl, updatedItems, setlist, band} = this.state;
-        const {classes} = this.props;
+        const { anchorEl, updatedItems, setlist, band } = this.state;
+        const { classes } = this.props;
 
         const items = updatedItems || (setlist.items || []);
 
@@ -187,22 +187,22 @@ class Setlist extends Component {
                     <AppBar>
                         <Toolbar>
                             <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                                <ArrowBack/>
+                                <ArrowBack />
                             </IconButton>
-                            <div style={{marginLeft: 10}}>
+                            <div style={{ marginLeft: 10 }}>
                                 <Typography variant="title" color="inherit" className={classes.flex}>
                                     {setlist.title}
                                 </Typography>
                                 <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                    {/* {setlist.date && setlist.date.toLocaleDateString()} */}
+                                    {/*setlist.date && setlist.date.toLocaleDateString()*/}
                                 </Typography>
                             </div>
-                            <div className={classes.flex}/>
+                            <div className={classes.flex} />
                             <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
-                                <Edit/>
+                                <Edit />
                             </IconButton>
                             <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                                <Add/>
+                                <Add />
                             </IconButton>
                             <Menu
                                 anchorEl={anchorEl}
@@ -214,7 +214,7 @@ class Setlist extends Component {
                             </Menu>
                         </Toolbar>
                     </AppBar>
-                    <div style={{paddingTop: 64 + 20}}>
+                    <div style={{ paddingTop: 64 + 20 }}>
                         <Droppable droppableId="droppable">
                             {(provided, snapshot) =>
                                 <div ref={provided.innerRef}>
@@ -268,9 +268,9 @@ class Setlist extends Component {
                         </Droppable>
                     </div>
                 </DragDropContext>
-                <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref}/>
-                <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref}/>
-                <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref}/>
+                <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref} />
+                <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref} />
+                <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref} />
             </div>
         );
     }

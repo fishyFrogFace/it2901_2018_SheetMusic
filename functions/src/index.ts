@@ -1,20 +1,22 @@
 import * as functions from 'firebase-functions';
 import * as path from 'path';
-import * as Storage from '@google-cloud/storage';
-import {spawn} from 'child-process-promise';
+import { spawn } from 'child-process-promise';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
 import * as PDFDocument from 'pdfkit';
 import * as vision from '@google-cloud/vision';
 import 'isomorphic-fetch';
-import {Dropbox} from 'dropbox';
+import { Dropbox } from 'dropbox';
 import * as cors from 'cors';
 import * as request from 'request-promise-native';
+const pdfUtil = require('pdf-to-text');
+const { Storage } = require('@google-cloud/storage');
+
 
 admin.initializeApp();
 
-const storage = new Storage({keyFilename: 'service-account-key.json'});
+const storage = new Storage({ keyFilename: 'service-account-key.json' });
 
 // Extracts ZIP with pdfs
 exports.extractZip = functions.storage.object().onFinalize(async (object, context) => {
@@ -33,7 +35,7 @@ exports.extractZip = functions.storage.object().onFinalize(async (object, contex
 
     try {
         // Download to local directory
-        await bucket.file(filePath).download({destination: '/tmp/file.zip'});
+        await bucket.file(filePath).download({ destination: '/tmp/file.zip' });
 
         await bucket.file(filePath).delete();
 
@@ -83,26 +85,29 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
     await ref.delete();
 
-    console.log("Depeted");
-
-
     let [bandId, fileNameExt] = filePath.split('/');
 
     // File name without extension
     const fileName = path.basename(fileNameExt, '.pdf');
 
-
-
     // Create storage bucket
     const inputBucket = storage.bucket(object.bucket);
-
-    const pdfBucket = storage.bucket('scores-butler-pdfs');
-
-
+    const pdfBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
 
     try {
+
+        pdfUtil.info(filePath, function (err, info) {
+            if (err) throw (err);
+            console.log(info);
+        });
+
+
+        console.log('Test...')
+        console.log('Object ', object);
+        console.log('Bucket ', object.bucket);
+
         // Download to local directory
-        await inputBucket.file(filePath).download({destination: '/tmp/score.pdf'});
+        await inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
 
         // Delete PDF file
         await inputBucket.file(filePath).delete();
@@ -168,7 +173,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             '-resize', '40%',
             '-path', '../output-cropped',
             '*.png'
-        ], {cwd: '/tmp/output-original/'});
+        ], { cwd: '/tmp/output-original/' });
 
 
         convertProcess.childProcess.kill();
@@ -270,7 +275,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
             const snapshot = await admin.firestore().collection('instruments').get();
 
-            const instruments = snapshot.docs.map(doc => ({...doc.data(), ref: doc.ref}));
+            const instruments = snapshot.docs.map(doc => ({ ...doc.data(), ref: doc.ref }));
 
             const parts = [{
                 page: 2,
@@ -355,11 +360,11 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 });
 
 exports.analyzePDF = functions.https.onRequest(async (req, res) => {
-    const {bandId, pdfId} = req.query;
+    const { bandId, pdfId } = req.query;
 
     const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
 
-    await bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({destination: '/tmp/image.png'});
+    await bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({ destination: '/tmp/image.png' });
 
     const client = new vision.ImageAnnotatorClient();
 
@@ -377,7 +382,7 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
     const image = '';
 
     const file = bucket.file('test/test.pdf');
-    await file.setMetadata({contentType: 'application/pdf'});
+    await file.setMetadata({ contentType: 'application/pdf' });
 
     const writeStream = file.createWriteStream();
 
@@ -391,10 +396,10 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
 });
 
 exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
-    return cors({origin: true})(req, res, async () => {
-        const {bandId, folderPath, accessToken} = req.query;
-        const dropbox = new Dropbox({accessToken: accessToken});
-        const response = await dropbox.filesDownloadZip({path: folderPath}) as any;
+    return cors({ origin: true })(req, res, async () => {
+        const { bandId, folderPath, accessToken } = req.query;
+        const dropbox = new Dropbox({ accessToken: accessToken });
+        const response = await dropbox.filesDownloadZip({ path: folderPath }) as any;
         const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
         await bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
@@ -404,7 +409,7 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
 exports.updatePartCount = functions.firestore.document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite(async (change, context) => {
     const partRef = change.after.ref.parent.parent;
     const partCount = (await partRef.collection('parts').get()).size;
-    await partRef.update({partCount: partCount});
+    await partRef.update({ partCount: partCount });
 });
 
 exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{scoreId}').onCreate(async (snap, context) => {
@@ -414,6 +419,6 @@ exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{s
             uri: `https://www.googleapis.com/customsearch/v1?key=AIzaSyCufxroiY-CPDEHoprY0ESDpWnFcHICioQ&cx=015179294797728688054:y0lepqsymlg&q=${data.composer}&searchType=image`,
             json: true
         });
-        await snap.ref.update({thumbnailURL: response.items[0].link});
+        await snap.ref.update({ thumbnailURL: response.items[0].link });
     }
 });
