@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {TextField, withStyles} from "material-ui";
-import {DatePicker} from "material-ui-pickers"
+//import {DatePicker} from "material-ui-pickers"
 
 import AsyncDialog from "./AsyncDialog";
 

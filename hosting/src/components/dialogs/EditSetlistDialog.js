@@ -1,7 +1,10 @@
+/**
+ * This dialog is used in Setlist.js
+ */
+
 import React from 'react';
 
 import {TextField, withStyles} from "material-ui";
-import {DatePicker} from "material-ui-pickers"
 import AsyncDialog from "./AsyncDialog";
 
 const styles = {
@@ -10,7 +13,8 @@ const styles = {
 class EditSetlistDialog extends React.Component {
     state = {
         title: '',
-        date: new Date(),
+        date: '',
+        time: ''
     };
 
     componentDidMount() {
@@ -35,16 +39,40 @@ class EditSetlistDialog extends React.Component {
         this.setState({date: date});
     };
 
+    _onTimeChange = time => {
+        this.setState({time: time})
+    }
+
     render() {
         const {classes} = this.props;
         const {title, date} = this.state;
 
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
             <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}}/>
-            <DatePicker
-                value={date}
-                onChange={this._onDateChange}
-            />
+            <form className={classes.container} noValidate>
+                <TextField
+                    id="date"
+                    label="Date"
+                    type="date"
+                    defaultValue={this.date}
+                    className={classes.textField}
+                    InputLabelProps={{
+                    shrink: true,
+                    }}
+                />
+                <TextField
+                    id="time"
+                    label="Time"
+                    type="time"
+                    defaultValue={this.time}
+                    className={classes.textField}
+                    InputLabelProps={{
+                    shrink: true,
+                    }}
+                />
+
+                
+            </form>
         </AsyncDialog>
     }
 }

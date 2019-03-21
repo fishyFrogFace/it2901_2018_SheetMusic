@@ -8,6 +8,7 @@ import {
 } from "material-ui";
 import {PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
 import DeleteIcon from 'material-ui-icons/Delete';
+import AsyncDialog from '../../components/dialogs/AsyncDialog';
 const styles = {
     root: {},
     card: {
@@ -28,7 +29,23 @@ class Setlists extends React.Component {
     state = {
         listView: false,
         sortedAlphabetically: false,
+        title: "",
+        message: "",
     };
+
+    
+    open = async () => {
+        try {
+           await this.dialog.open();
+           return true;
+        } catch (error) {
+           return false;
+        }
+    }
+    /*
+    open = () => {
+        this.dialog.open();
+    }*/
 
     componentWillMount() {
         if (window.localStorage.getItem('setlistsListView')) {
@@ -48,14 +65,22 @@ class Setlists extends React.Component {
         this.setState({listView: true});
     };
 
-    //Is called by the Card tag
+    //This function call the function onCreateSetlist with
     _onSetlistCreateClick = () => {
         this.props.onCreateSetlist();
     };
 
-    //This function will delete a setlist
-    _onSetlistDeleteClick = (setlistId) => {
-        console.log(setlistId);
+    //This function takes in a setlistID and deletes the specified setlist
+    _onSetlistDeleteClick = async (setlistId, setlistTitle) => {
+        // Confirm modal for deleting
+        this.setState({
+            title: "Delete this setlist",
+            message: `Are you sure you want to delete ${setlistTitle}?`,
+        });
+
+        if (!await this.open()) return;
+
+        //console.log(setlistId);
         const {band} = this.props;
         //Fetching setlist reference from firestore
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
@@ -64,8 +89,9 @@ class Setlists extends React.Component {
             console.log("Document succesfully removed");
         }).catch((err) => {
             console.error("Error removing document", err);
-        })
+        });
     }
+
     //This function changes the boolean value of sortedAlphabetically
     _onSortByAlphaClick = () => {
         //Takes in the state
@@ -155,18 +181,20 @@ class Setlists extends React.Component {
                                     onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
                                     image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
                                     title=""
+                                    
                                 />
-                                <CardContent>
+                                <CardContent style={{position: 'relative'}}>
                                     <Typography variant="headline" component="h2">
                                         {setlist.title}
+                                        <IconButton style={{position: 'absolute', right: '15px'}}>
+                                            <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)}/>
+                                        </IconButton>
                                     </Typography>
                                     <Typography component="p">
                                         {/*Checking for date setlist.date, if that does not exist, then we don't display anything*/}
                                         {setlist.date && this._formatedDate(setlist.date)}
                                     </Typography>
-                                    <IconButton style={{paddingBottom: '150px'}}>
-                                        <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id)}/>
-                                    </IconButton>
+                                    
                                 </CardContent>
                                 
                             </Card>
@@ -182,7 +210,11 @@ class Setlists extends React.Component {
             >
                 <PlaylistAdd/>
             </Button>
+            <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+                <Typography variant="body1" >{this.state.message}</Typography>
+            </AsyncDialog>
         </div>
+        
     }
 }
 

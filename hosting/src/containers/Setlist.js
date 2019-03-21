@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import moment from 'moment';
 import {withStyles} from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
@@ -7,6 +6,7 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {IconButton, Menu, MenuItem, Card, CardContent} from "material-ui";
+import DeleteIcon from 'material-ui-icons/Delete';
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -14,6 +14,7 @@ import 'firebase/storage';
 import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog";
 import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
+import AsyncDialog from '../components/dialogs/AsyncDialog';
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import {Add, ArrowBack, Edit} from "material-ui-icons";
@@ -46,6 +47,15 @@ class Setlist extends Component {
     editSetlistDialog;
 
     unsubs = [];
+
+    open = async () => {
+        try {
+           await this.dialog.open();
+           return true;
+        } catch (error) {
+           return false;
+        }
+    }
 
     _onAddButtonClick(e) {
         this.setState({anchorEl: e.currentTarget});
@@ -94,6 +104,7 @@ class Setlist extends Component {
 
                     const scoreItems = selectedScoreIds.map(id => ({
                         type: 'score',
+                        id: id,
                         scoreRef: firebase.firestore().doc(`bands/${band.id}/scores/${id}`)
                     }));
 
@@ -108,7 +119,8 @@ class Setlist extends Component {
                             type: 'event',
                             title: eventTitle,
                             time: time,
-                            description: description
+                            description: description,
+                            id: Math.random().toString(36).substring(2, 7),
                         }]
                     });
                     break;
@@ -188,6 +200,57 @@ class Setlist extends Component {
         return formatedString;
     }
 
+    //TODO: make it possible to delete an event
+    _onEventDeleteClick = async (eventId, eventTitle) => {
+        //console.log("Event index: " + eventIndex);
+        //console.log("Event title: " + eventTitle);
+        
+        this.setState({
+            title: "Delete this event",
+            message: `Are you sure you want to delete ${eventTitle}?`,
+        });
+
+        if (!await this.open()) return;
+
+        const {detail} = this.props;
+        
+        const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
+        console.log("bandId: " + bandId);
+        console.log("setlistId: " + setlistId);
+
+        const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
+        console.log("setlistRef: " + setlistRef);
+
+        let itemBandRef = (await setlistRef.get()).data().items || [];
+
+        const filteredItems = await itemBandRef.filter(i => i.id !== eventId);
+
+        await setlistRef.update({
+            items: filteredItems
+        });
+
+        //Fetching event reference from firestore
+        //const eventRef = setlistDoc.items.data();
+        //console.log('EventRef: ' + eventRef);
+        /*
+        eventRef.items.filter(ref => ref !== eventId).then(() => {
+            console.log("Document successfully removed");
+        }).catch((err) => {
+            console.error("Error removing document", err);
+        });*/
+
+        /*
+        eventRef.delete().then(() => {
+            console.log("Document succesfully removed");
+        }).catch((err) => {
+            console.error("Error removing document", err);
+        })
+        */
+    }
+
+    //TODO: make it possible to delete a score
+
+
     render() {
         const {anchorEl, updatedItems, setlist, band} = this.state;
         const {classes} = this.props;
@@ -249,24 +312,32 @@ class Setlist extends Component {
                                                             <Card className={classes.card}>
                                                                 {
                                                                     item.type === 'score' &&
-                                                                    <CardContent>
+                                                                    <CardContent style={{position: 'relative'}}>
                                                                         <Typography variant='headline'>
                                                                             {item.score.title}
+                                                                            <IconButton style={{position: 'absolute', right: '25px'}}>
+                                                                                <DeleteIcon onClick={() => this._onScoreDeleteClick(index, item.score.title)}/>
+                                                                            </IconButton>
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
                                                                             by {item.score.composer}
                                                                         </Typography>
+                                                                        
                                                                     </CardContent>
                                                                 }
                                                                 {
                                                                     item.type === 'event' &&
-                                                                    <CardContent>
+                                                                    <CardContent style={{position: 'relative'}}>
                                                                         <Typography variant='headline'>
                                                                             {item.title} | {item.time} minutes
+                                                                            <IconButton style={{position: 'absolute', right: '25px'}}>
+                                                                                <DeleteIcon onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
+                                                                            </IconButton>
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
                                                                             {item.description}
                                                                         </Typography>
+                                                                        
                                                                     </CardContent>
                                                                 }
                                                             </Card>
@@ -285,6 +356,10 @@ class Setlist extends Component {
                 <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref}/>
                 <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref}/>
                 <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref}/>
+                
+                <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+                    <Typography variant="body1" >{this.state.message}</Typography>
+                </AsyncDialog>
             </div>
         );
     }
