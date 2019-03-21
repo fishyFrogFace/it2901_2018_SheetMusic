@@ -25,7 +25,7 @@ class ChangeBandNameDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Change bandname' confirmText='Confirm' onRef={ref => this.changeNamedialog = ref}>
-            <TextField label='Name' onChange={e => this._onTextFieldChange(e, 'name')}/>
+            <TextField label='Name' onChange={e => this._onTextFieldChange(e, 'name')} style={{width: '300px'}}/>
         </AsyncDialog>
     }
 }

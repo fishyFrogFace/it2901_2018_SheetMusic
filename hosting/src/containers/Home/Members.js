@@ -4,7 +4,7 @@ import firebase from 'firebase';
 import { withStyles } from "material-ui/styles";
 import {
    Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader, ExpansionPanel, ExpansionPanelSummary,
-   ExpansionPanelDetails, Divider, Checkbox, FormGroup, FormControlLabel, Menu, MenuItem
+   ExpansionPanelDetails, Divider, Checkbox, FormGroup, FormControlLabel, Menu, MenuItem, Button, FormControl, Select,
 } from "material-ui";
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
@@ -12,6 +12,7 @@ import { Done, Clear, Star, RemoveCircle, QueueMusic, Delete } from 'material-ui
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
 import ChangeBandNameDialog from '../../components/dialogs/ChangeBandNameDialog';
+import ChangeBandDescDialog from '../../components/dialogs/ChangeBandDescDialog';
 
 
 const styles = theme => ({
@@ -33,12 +34,13 @@ const styles = theme => ({
       fontWeight: 500,
       flexBasis: '33.33%',
       flexShrink: 0,
+      paddingLeft: '24px'
    },
    secondaryHeading: {
       fontSize: '13px',
       fontWeight: 400,
       color: 'rgba(0, 0, 0, 0.87)',
-      padding: '10px 0px 10px 24px',
+      padding: '10px 24px 20px 24px',
    },
    expansionPanel: {
       margin: '0',
@@ -91,7 +93,20 @@ const styles = theme => ({
       position: 'absolute',
       right: '24px',
       margin: '-8px 0px 0px 0px',
+   },
+   descButton: {
+      margin: '10px 0px 20px 24px',
+      backgroundColor: '#448AFF',
+      color: 'white',
+      fontSize: '12px',
+   }, 
+   chooseBandType: {
+      margin: '10px 0px 20px 24px',
+   },
+   chooseBandTypeSelect: {
+      fontSize: '13px',
    }
+   
 });
 
 
@@ -107,6 +122,8 @@ class Members extends React.Component {
       checkedSupervisor: false,
       checkedMembers: false,
       anchorEl: null,
+      bandtype: '',
+      bandtypes: [],
    };
 
    open = async () => {
@@ -175,11 +192,39 @@ class Members extends React.Component {
       await memberRef.delete();
    };
 
+   _onAddDescription = async () => {
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+      const { desc } = await this.changeDescDialog.open();
+      await bandRef.update({
+         description: desc
+      })
+   };
+
    _onChangeBandName = async () => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { name } = await this.changeNameDialog.open();
       await bandRef.update({
          name: name,
+      })
+   };
+
+   _onChooseBandType = async () => {
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+
+      if (!bandRef.bandtype) {
+         alert("You must choose bandtype in the dropdown menu")
+      }
+
+      bandRef.update({
+         bandtype: null
+      })
+   };
+
+   _onChangeBandDesc = async () => {
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+      const { desc } = await this.changeDescDialog.open();
+      await bandRef.update({
+         description: desc,
       })
    };
 
@@ -514,7 +559,34 @@ class Members extends React.Component {
             isLeader: false,
          });
       });
+
+      const types = [];
+      const bandtypeRef = firebase.firestore().collection('bandtype');
+
+      bandtypeRef.get()
+         .then(docs => {
+            docs.forEach(doc => {
+               types.push(doc.data());
+            });
+         })
+         .catch(err => {
+            console.log('Error getting bandtypes', err);
+         });
+
+      this.setState({ bandtypes: types });
    };
+
+
+   _onSelectChange = name => event => {
+      this.setState({ [name]: event.target.value });
+
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+
+      bandRef.update({
+         bandtype: event.target.value
+      })
+   };
+
 
    render() {
       const { classes, band } = this.props;
@@ -545,63 +617,58 @@ class Members extends React.Component {
                            open={Boolean(anchorEl)}
                            onClose={this.handleCloseSeeMore}
                         >
-                           <MenuItem onClick={this._onChangeBandName}>Change name</MenuItem>
+                           <MenuItem onClick={this._onChangeBandName}>Change bandname</MenuItem>
+                           <MenuItem onClick={this._onChooseBandType}>Change bandtype</MenuItem>
+                           <MenuItem onClick={this._onChangeBandDesc}>Change description</MenuItem>
                            <MenuItem onClick={this._onDeleteBand}>Delete band</MenuItem>
                         </Menu>
                      </Typography>
 
-                     <Typography className={classes.secondaryHeading}> Bandcode: {band.code} </Typography>
-                     <Typography className={classes.secondaryHeading}> Bandtype: {band.code} </Typography>
+                     <Typography className={classes.heading} style={{ marginTop: '10px' }}> Bandcode </Typography>
+                     <Typography className={classes.secondaryHeading}> {band.code} </Typography>
+
+                     {band.bandtype &&
+                        <div>
+                           <Typography className={classes.heading}> Bandtype </Typography>
+                           <Typography className={classes.secondaryHeading}> {band.bandtype} </Typography>
+                        </div>
+                     }
+
+                     {!band.bandtype &&
+                        <div>
+                           <Typography className={classes.heading}> Choose bandtype </Typography>
+                           <FormControl className={classes.chooseBandType}>
+                              <Select
+                                 className={classes.chooseBandTypeSelect}
+                                 native
+                                 value={this.state.bandtype}
+                                 onChange={this._onSelectChange('bandtype')}
+                                 inputProps={{
+                                    name: 'bandtype',
+                                 }}
+                              >
+                                 {this.state.bandtypes.map((type, index) =>
+                                    <option key={index} value={type.name}> {type.name} </option>
+                                 )}
+                              </Select>
+                           </FormControl>
+                        </div>
+                     }
+
+                     {band.description &&
+                        <div>
+                           <Typography className={classes.heading}> Band description </Typography>
+                           <Typography className={classes.secondaryHeading}> {band.description} </Typography>
+                        </div>
+                     }
+
+                     {!band.description &&
+                        <Button className={classes.descButton} onClick={this._onAddDescription}>
+                           Add description
+                        </Button>
+                     }
 
                      <Divider />
-
-                     <Typography className={classes.secondaryHeading}> Click boxes to filter the members list </Typography>
-                     <FormGroup row className={classes.checkboxRow}>
-                        <FormControlLabel
-                           className={classes.checkBox}
-                           control={
-                              <Checkbox
-                                 className={classes.checkboxName}
-                                 checked={this.state.checkedAdmin}
-                                 onChange={this.handleCheckChange('checkedAdmin')}
-                                 value="checkedAdmin"
-                              />}
-                           label="Admin"
-                        />
-                        <FormControlLabel
-                           className={classes.checkBox}
-                           control={
-                              <Checkbox
-                                 className={classes.checkboxName}
-                                 checked={this.state.checkedSupervisor}
-                                 onChange={this.handleCheckChange('checkedSupervisor')}
-                                 value="checkedSupervisor"
-                              />}
-                           label="Supervisor"
-                        />
-                        <FormControlLabel
-                           className={classes.checkBox}
-                           control={
-                              <Checkbox
-                                 className={classes.checkboxName}
-                                 checked={this.state.checkedMembers}
-                                 onChange={this.handleCheckChange('checkedMembers')}
-                                 value="checkedMembers"
-                              />}
-                           label="No roles"
-                        />
-                     </FormGroup>
-
-                     <Divider />
-
-
-                  </Paper>
-               }
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: 500, paddingTop: 20, paddingLeft: 20 }}>
-               {band.leader && band.leader.length > 0 &&
-                  <Paper style={{ width: 500 }}>
 
                      <List>
                         <ListSubheader className={classes.heading}> Band leader </ListSubheader>
@@ -619,6 +686,82 @@ class Members extends React.Component {
                               </ListItem>)
                         }
                      </List>
+
+                     {band.pending && band.pending.length > 0 &&
+                        <div>
+                           <Divider />
+                           <List>
+                              <ListSubheader className={classes.heading}> Pending </ListSubheader>
+                              {band.pending.map((member, index) =>
+                                 <ListItem key={index} dense >
+                                    <Avatar src={member.user.photoURL} />
+                                    <ListItemText primary={member.user.displayName} />
+                                    {member.status === 'pending' &&
+                                       <div>
+                                          <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
+                                          <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
+                                       </div>
+                                    }
+                                 </ListItem>)
+                              }
+                           </List>
+                        </div>
+                     }
+
+                  </Paper>
+               }
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: 500, paddingTop: 20, paddingLeft: 20 }}>
+               {band.leader && band.leader.length > 0 &&
+                  <Paper style={{ width: 500 }}>
+
+                     <ExpansionPanel className={classes.expansionPanel}>
+                        <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
+                           <Typography className={classes.heading}> Filter options </Typography>
+                        </ExpansionPanelSummary>
+                        <ExpansionPanelDetails className={classes.expansionPanelDetails}>
+
+                           <FormGroup row className={classes.checkboxRow}>
+                              <FormControlLabel
+                                 className={classes.checkBox}
+                                 control={
+                                    <Checkbox
+                                       className={classes.checkboxName}
+                                       checked={this.state.checkedAdmin}
+                                       onChange={this.handleCheckChange('checkedAdmin')}
+                                       value="checkedAdmin"
+                                    />}
+                                 label="Admin"
+                              />
+                              <FormControlLabel
+                                 className={classes.checkBox}
+                                 control={
+                                    <Checkbox
+                                       className={classes.checkboxName}
+                                       checked={this.state.checkedSupervisor}
+                                       onChange={this.handleCheckChange('checkedSupervisor')}
+                                       value="checkedSupervisor"
+                                    />}
+                                 label="Supervisor"
+                              />
+                              <FormControlLabel
+                                 className={classes.checkBox}
+                                 control={
+                                    <Checkbox
+                                       className={classes.checkboxName}
+                                       checked={this.state.checkedMembers}
+                                       onChange={this.handleCheckChange('checkedMembers')}
+                                       value="checkedMembers"
+                                    />}
+                                 label="No roles"
+                              />
+                           </FormGroup>
+
+                        </ExpansionPanelDetails>
+                     </ExpansionPanel>
+
+                     <Divider />
 
                      {band.members && band.members.length > 0 &&
                         <div>
@@ -716,27 +859,6 @@ class Members extends React.Component {
                            </ExpansionPanel>
                         </div>
                      }
-
-                     {band.pending && band.pending.length > 0 &&
-                        <div>
-                           <Divider />
-                           <List>
-                              <ListSubheader className={classes.heading}> Pending </ListSubheader>
-                              {band.pending.map((member, index) =>
-                                 <ListItem key={index} dense >
-                                    <Avatar src={member.user.photoURL} />
-                                    <ListItemText primary={member.user.displayName} />
-                                    {member.status === 'pending' &&
-                                       <div>
-                                          <Tooltip title="Accept membership request"><IconButton onClick={() => this._onAccept(member)}><Done style={{ color: 'green' }} /></IconButton></Tooltip>
-                                          <Tooltip title="Reject membership request"><IconButton onClick={() => this._onReject(member)}><Clear style={{ color: 'red' }} /></IconButton></Tooltip>
-                                       </div>
-                                    }
-                                 </ListItem>)
-                              }
-                           </List>
-                        </div>
-                     }
                   </Paper>
                }
             </div>
@@ -745,7 +867,9 @@ class Members extends React.Component {
                <Typography variant="body1" >{this.state.message}</Typography>
             </AsyncDialog>
             <ChangeBandNameDialog onRef={ref => this.changeNameDialog = ref} />
-         </div>
+            <ChangeBandDescDialog onRef={ref => this.changeDescDialog = ref} />
+
+         </div >
       }
 
       else if (this.state.isAdmin) {

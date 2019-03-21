@@ -245,7 +245,7 @@ class Home extends React.Component {
     _onCreateBand = async () => {
         this.setState({ bandAnchorEl: null });
 
-        const { name } = await this.createDialog.open();
+        const { name,  } = await this.createDialog.open();
 
         this.setState({ message: 'Creating band...' });
 
