@@ -22,32 +22,55 @@ class SelectArrangements extends React.Component {
 
   render() {
     const { classes } = this.props;
+    const isThisIndex = this.props.index;
+    const isThisActiveName = this.props.activeName;
+
+
     return <div className={classes.content}>
+
+
 
       <form className={classes.root} autoComplete="off">
         <FormControl className={classes.formControl}>
           <InputLabel className={classes.label} htmlFor="ensemble-simple">Ensemble</InputLabel>
-          <Select
-            autoWidth
-            value={this.props.activeInstrument}
-            onChange={this.props.onChange}
-            inputProps={{
-              name: 'ensemble',
-              id: 'ensemble-simple',
-            }}
-            className={classes.selecter}
-            renderValue={() => this.props.activeInstrument} // the displayed alternative in the select box
-          >
-            {/* map over the arrangment and instrument options declared in state in Scores.js */}
-            {this.props.optionsdata.map((data, key) =>
-              <MenuItem key={key} value={data.key}>{data.value}
-                {console.log('key', key)}
-              </MenuItem>
 
-            )}
-          </Select>
+          {"" + isThisIndex == isThisActiveName &&
+            <Select
+              autoWidth
+              value={this.props.activeInstrument}
+              onChange={this.props.onChange}
+              inputProps={{
+                name: "" + this.props.index,
+              }}
+              className={classes.selecter}
+              renderValue={() => this.props.activeInstrument} // the displayed alternative in the select box
+            >
+              {/* map over the arrangment and instrument options declared in state in Scores.js */}
+              {
+                this.props.optionsdata.map((data, key) =>
+                  <MenuItem key={key} value={data.key} >{data.value}
+                  </MenuItem>
+                )}
+            </Select>}
+          {"" + isThisIndex !== isThisActiveName &&
+            <Select
 
-
+              autoWidth
+              value={'default'}
+              onChange={this.props.onChange}
+              inputProps={{
+                name: "" + this.props.index,
+              }}
+              className={classes.selecter}
+              renderValue={() => this.props.optionsdata[0].value} // the displayed alternative in the select box
+            >
+              {/* map over the arrangment and instrument options declared in state in Scores.js */}
+              {
+                this.props.optionsdata.map((data, key) =>
+                  <MenuItem key={key} value={data.key}>{data.value}
+                  </MenuItem>
+                )}
+            </Select>}
         </FormControl>
       </form>
 

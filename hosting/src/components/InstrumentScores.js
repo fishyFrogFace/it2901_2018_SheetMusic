@@ -37,14 +37,7 @@ class InstrumentScores extends React.Component {
                         <ListItemText primary={instr} className={classes.instrumentstyle} key={index}>  </ListItemText>)}
                 </ListItem>
             }<div>
-                {/* {Object.keys(this.props.testList).map((key, index) => {
-                    return (
-                        <div key={index}>
-                            {index}: {this.props.testList[index]}
-                        </div>
-                    )
-                }
-                )} */}
+
             </div>
         </div>
     }
