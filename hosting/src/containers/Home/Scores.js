@@ -312,18 +312,15 @@ class Scores extends React.Component {
     };
 
     changeInstrument = (e) => {
-        console.log(e.target.value);
         this.setState({chosenInstrument: e.target.value})
     };
 
     instrumentInScore(instrument, score) {
         let inScore = false;
         score.instruments.map(instrumentInScore => {
-            console.log(instrumentInScore, instrument);
             if (instrumentInScore === instrument) {
                 inScore = true;
             }
-            console.log(inScore);
         });
         return inScore;
     }
@@ -344,17 +341,13 @@ class Scores extends React.Component {
                 scores = this.state.scores.slice(); // Use default
             }
 
-            console.log('Scores: ', scores);
-
             if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
                 scores = scores.filter(score => score.composer === this.state.chosenComposer) // The scores are filtered on composer
             }
 
             let chosenInstrument = this.state.chosenInstrument;
             if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
-                scores = scores.filter(score => {
-                    this.instrumentInScore(chosenInstrument, score)
-                }) // The scorer are filtered on instrument
+                scores = scores.filter(score => this.instrumentInScore(chosenInstrument, score)) // The scorer are filtered on instrument
             }
 
             // Make list of all available composers
@@ -427,7 +420,7 @@ class Scores extends React.Component {
                         }
                     </Select>
 
-                    <InputLabel style={{padding: 5}} htmlFor="instrument">For instrument:</InputLabel>
+                    <InputLabel style={{padding: 5}} htmlFor="instrument">Instrument:</InputLabel>
                     <Select
                         onChange={this.changeInstrument}
                         autoWidth
