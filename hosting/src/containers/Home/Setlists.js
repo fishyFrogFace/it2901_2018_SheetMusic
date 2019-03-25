@@ -103,6 +103,15 @@ class Setlists extends React.Component {
 
     //This function will take in a timestamp and display it in the correct date, hour and minute
     _formatedDate = (setlist) => {
+        if(typeof setlist === 'string'){
+            //Formatting the date
+            let dateString = setlist.slice(0,10);
+            //console.log("dateString: " + dateString);
+            //Formatting the time
+            let timeString = setlist.slice(11,16);
+            //console.log("timeString: " + timeString);
+            return dateString + " " + timeString;
+        }
         //Converting our timestamp to a date string object
         let dateString = setlist.toDate().toString();
         //Using the splice method to format the string in date, hours and minutes

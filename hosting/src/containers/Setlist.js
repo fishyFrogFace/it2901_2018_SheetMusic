@@ -190,6 +190,16 @@ class Setlist extends Component {
 
     //This function will take in a timestamp and display it in the correct date, hour and minute
     _formatedDate = (setlist) => {
+        //Checks if setlist is a string and returns the formatted result
+        if(typeof setlist === 'string'){
+            //Formatting the date
+            let dateString = setlist.slice(0,10);
+            //console.log("dateString: " + dateString);
+            //Formatting the time
+            let timeString = setlist.slice(11,16);
+            //console.log("timeString: " + timeString);
+            return dateString + " " + timeString;
+        }
         //Converting our timestamp to a date string object
         let dateString = setlist.toDate().toString();
         //Using the splice method to format the string in date, hours and minutes
@@ -229,23 +239,6 @@ class Setlist extends Component {
             items: filteredItems
         });
 
-        //Fetching event reference from firestore
-        //const eventRef = setlistDoc.items.data();
-        //console.log('EventRef: ' + eventRef);
-        /*
-        eventRef.items.filter(ref => ref !== eventId).then(() => {
-            console.log("Document successfully removed");
-        }).catch((err) => {
-            console.error("Error removing document", err);
-        });*/
-
-        /*
-        eventRef.delete().then(() => {
-            console.log("Document succesfully removed");
-        }).catch((err) => {
-            console.error("Error removing document", err);
-        })
-        */
     }
 
     //TODO: make it possible to delete a score

@@ -1,5 +1,5 @@
 /**
- * This dialog is used in Setlist.js
+ * This dialog is used in Setlist.js and changes the title and date of the setlist
  */
 
 import React from 'react';
@@ -7,14 +7,22 @@ import React from 'react';
 import {TextField, withStyles} from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
-const styles = {
-};
+const styles = theme => ({
+    container: {
+        display: 'flex',
+        flexWrap: 'wrap',
+    },
+    textField: {
+        marginLeft: theme.spacing.unit,
+        marginRight: theme.spacing.unit,
+        width: 210,
+    },
+});
 
 class EditSetlistDialog extends React.Component {
     state = {
         title: '',
         date: '',
-        time: ''
     };
 
     componentDidMount() {
@@ -35,36 +43,23 @@ class EditSetlistDialog extends React.Component {
         this.setState({title: e.target.value});
     };
 
-    _onDateChange = date => {
-        this.setState({date: date});
+    _onDateChange = e => {
+        this.setState({date: e.target.value});
     };
-
-    _onTimeChange = time => {
-        this.setState({time: time})
-    }
 
     render() {
         const {classes} = this.props;
-        const {title, date} = this.state;
+        //const {title, date} = this.state;
+        console.log(this.state.date);
 
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
             <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}}/>
             <form className={classes.container} noValidate>
-                <TextField
-                    id="date"
-                    label="Date"
-                    type="date"
-                    defaultValue={this.date}
-                    className={classes.textField}
-                    InputLabelProps={{
-                    shrink: true,
-                    }}
-                />
-                <TextField
-                    id="time"
-                    label="Time"
-                    type="time"
-                    defaultValue={this.time}
+            <TextField onChange={this._onDateChange}
+                    id="datetime-local"
+                    label="Date and time"
+                    type="datetime-local"
+                    defaultValue={this.state.date}
                     className={classes.textField}
                     InputLabelProps={{
                     shrink: true,
