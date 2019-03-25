@@ -105,6 +105,9 @@ const styles = theme => ({
    },
    chooseBandTypeSelect: {
       fontSize: '13px',
+   },
+   dropDownMenu: {
+      padding: '5px'
    }
 
 });
@@ -267,7 +270,7 @@ class Members extends React.Component {
             });
          }
 
-         location.reload();
+
 
          // Deleting band
          await bandRef.delete()
@@ -616,7 +619,6 @@ class Members extends React.Component {
                         >
                            <MoreVertIcon />
                         </IconButton>
-
                         <Menu
                            id="simple-menu"
                            anchorEl={anchorEl}

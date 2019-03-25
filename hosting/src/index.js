@@ -47,12 +47,12 @@ class App extends React.Component {
 
         // Initialize Firebase
         var config = {
-            apiKey: "AIzaSyB5ofZU4-5tj0vT-KPShQ6QhZCP6TeAQvQ",
-            authDomain: "scoresbutler-9ff30.firebaseapp.com",
-            databaseURL: "https://scoresbutler-9ff30.firebaseio.com",
-            projectId: "scoresbutler-9ff30",
-            storageBucket: "scoresbutler-9ff30.appspot.com",
-            messagingSenderId: "60488644815"
+            apiKey: "AIzaSyCBHe8CK4uabfrJeS-GwyQ3phiQQ2Q73cE",
+            authDomain: "scores-bc679.firebaseapp.com",
+            databaseURL: "https://scores-bc679.firebaseio.com",
+            projectId: "scores-bc679",
+            storageBucket: "scores-bc679.appspot.com",
+            messagingSenderId: "717099268802"
         };
         firebase.initializeApp(config);
 

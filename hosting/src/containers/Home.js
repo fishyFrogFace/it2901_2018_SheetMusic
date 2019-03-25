@@ -24,7 +24,6 @@ import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
 import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
-import { async } from '@firebase/util';
 
 
 
@@ -119,7 +118,6 @@ class Home extends React.Component {
         const data = {};
         data.title = scoreData.title || 'Untitled Score';
 
-
         if (scoreData.composer) {
             data.composer = scoreData.composer;
         }
@@ -145,7 +143,6 @@ class Home extends React.Component {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         })
     }
-
 
     _onAddFullScore = async (scoreData, parts, pdf) => {
         const { band } = this.state;
@@ -240,8 +237,6 @@ class Home extends React.Component {
         this.setState({ message: null });
     }
 
-
-
     _onBandClick = e => {
         this.setState({ bandAnchorEl: e.currentTarget })
     };
@@ -303,7 +298,7 @@ class Home extends React.Component {
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
-            const bandRef = firebase.firestore().doc(`bands / ${bandSnapshot.docs[0].id}`);
+            const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
             let userBandRefs = (await userRef.get()).data().bandRefs || [];
 
@@ -416,10 +411,10 @@ class Home extends React.Component {
                 this.setState({ message: null });
                 break;
 
-            case 'dropbox':
-                const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
-                console.log(response.status);
-                break;
+            // case 'dropbox':
+            //     const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
+            //     console.log(response.status);
+            //     break;
 
             case 'drive':
                 break;
@@ -574,11 +569,11 @@ class Home extends React.Component {
 
                     // Creating list with scores
                     this.unsubs.push(
-                        data.defaultBandRef.collection('score').onSnapshot(async snapshot => {
+                        data.defaultBandRef.collection('scores').onSnapshot(async snapshot => {
                             let items = await Promise.all(
                                 snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                             );
-                            this.setState({ band: { ...this.state.band, score: items } });
+                            this.setState({ band: { ...this.state.band, scores: items } });
                         })
                     );
 
@@ -666,8 +661,6 @@ class Home extends React.Component {
                 })
             );
         }
-
-
 
         const options = {
             duration: 200,
@@ -929,7 +922,6 @@ class Home extends React.Component {
                         onRemoveScore={this._onRemoveScore}
                     />
                 }
-
                 {
                     page === 'setlists' &&
                     <Setlists

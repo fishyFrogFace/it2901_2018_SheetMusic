@@ -46,7 +46,8 @@ const styles = {
   },
 
   flex: {
-    flex: 1
+    display: 'inline-flex',
+    padding: '0px'
   },
 
   ellipsis: {
@@ -101,6 +102,10 @@ const styles = {
   metadata: {
   },
 
+  selectArrangement: {
+    display: 'flex'
+  },
+
 
   cardHeader: {
     cursor: 'default'
@@ -122,9 +127,9 @@ class Scores extends React.Component {
       activeInstrument: 'default',
       tempActiveInstrument: '',
       tempActiveInstrumentList: [],
-      activeInstrumentList: ['Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
+      activeInstrumentList: ['Trombone', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
       optionsdata: [
-        { key: '101', value: 'Default', instruments: ['Trombone', 'Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'] },
+        { key: '101', value: 'Default', instruments: ['Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'] },
         { key: '102', value: 'Jazz Orchestra', instruments: ['Banjo', 'Bass', 'Drums', 'Guitar', 'Piano', 'Clarinet', 'Sax', 'Trombone', 'Trumpet', 'Tuba', 'Violin', 'Cello'] },
         { key: '103', value: 'Chamber Orchestra', instruments: ['Trombone', 'Trumpet'] },
         { key: '104', value: 'Symphony Orchestra', instruments: ['Piano', 'Clarinet', 'Sax'] },
@@ -273,40 +278,9 @@ class Scores extends React.Component {
     })
     var name = e.target.name
     this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments, activeName: name })
-  }
-
-  handleCollapse = async (e) => {
-    //value = e.target.value
-    // this.setState({
-    //   expanded: !this.state.expanded
-    // })
-    console.log('e.target', e.target.id)
-    //     for (let i = 0; i < 3; i++) {
-    // if (this.state.expanded == true) {
-
-    // } 
-    const id = e.target.id
-    let { cardIds } = this.state
-    if (this.state.expanded == false) {
-
-      cardIds = await [...cardIds, id];
-      this.setState(await {
-        cardIds: cardIds
-      }
-      )
-    }
-
-
 
   }
 
-
-  // handleCollapse = (index) => () => {
-  //   const { expanded } = this.state
-  //   expanded[index] = !expanded[index]
-  //   this.setState({ expanded })
-
-  // }
 
   render() {
     const { classes, band } = this.props;
@@ -317,13 +291,13 @@ class Scores extends React.Component {
     }
 
 
-    console.log('this.state.expanded', this.state.expanded)
-    console.log('this.state.cardIds', this.state.cardIds)
+
 
 
     return <div>
-      <div>
-        <div className={classes.flex} />
+      <div className={classes.flex}>
+        <div
+        />
         <IconButton>
           <SortByAlpha />
         </IconButton>
@@ -338,6 +312,22 @@ class Scores extends React.Component {
           <IconButton onClick={this._onViewListClick}>
             <ViewList />
           </IconButton>
+        }
+        {
+          !listView &&
+          <div className={classes.selectArrangement}>
+            <SelectArrangement
+              bandtype={band.bandtype}
+              vocalValue={this.state.vocal}
+              ensemble={this.state.ensemble}
+              onChange={this.handleChange}
+              optionsdata={this.state.optionsdata}
+              activeInstrument={this.state.activeInstrument}
+              //index={index}
+              activeName={this.state.activeName}
+            />
+
+          </div>
         }
       </div>
 
@@ -358,7 +348,8 @@ class Scores extends React.Component {
                         <MoreVertIcon onClick={() => this._onMoreClick} />
                       </IconButton>
                     </ListItemSecondaryAction>
-                  </ListItem>)
+                  </ListItem>
+                )
               }
             </List>
           </Paper>
@@ -421,56 +412,65 @@ class Scores extends React.Component {
                   {/* The toggle panel and content */}
                   {/* Conditional rendering done by a large ternary operator, if the card-index is equal to the activeName sat in the select 
                   method in selectArrangement, the first chosen expansion panel is rendered. Else the default expansional panel is rendered. */}
-                  {"" + index == this.state.activeName ?
-                    <ExpansionPanel onChange={this.handleCollapse}
+                  {/* {"" + index == this.state.activeName ? */}
+                  <ExpansionPanel onChange={this.handleCollapse}
 
-                    >
-                      <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}
-                        id={index} >
-                        <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
-                      </ExpansionPanelSummary>
-                      <ExpansionPanelDetails className={classes.expandedPanel}>
-                        <Typography variant='subheading'>
-                          <SelectArrangement
-                            vocalValue={this.state.vocal}
-                            ensemble={this.state.ensemble}
-                            scoresID={score.id}
-                            onChange={this.handleChange}
-                            optionsdata={this.state.optionsdata}
-                            activeInstrument={this.state.activeInstrument}
-                            index={index}
-                            activeName={this.state.activeName}
-                          />
-                          {"" + index == this.state.activeName &&
-                            <List>
-                              {/* map over the instruments handled by state set in the handleChange method, 
+                  >
+                    <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}
+                      id={index} >
+                      <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails className={classes.expandedPanel}>
+                      {/* {console.log('band.bandtype', band.bandtype)}
+                        <Typography> {band.bandtype ? band.bantype : console.log('null')} </Typography> */}
+
+
+
+
+                      <Typography variant='subheading'>
+                        {/* <SelectArrangement
+                          bandtype={band.bandtype}
+                          vocalValue={this.state.vocal}
+                          ensemble={this.state.ensemble}
+                          scoresID={score.id}
+                          onChange={this.handleChange}
+                          optionsdata={this.state.optionsdata}
+                          activeInstrument={this.state.activeInstrument}
+                          index={index}
+                          activeName={this.state.activeName}
+                        /> */}
+                        {/* {"" + index == this.state.activeName && */}
+                        <List>
+                          {/* map over the instruments handled by state set in the handleChange method, 
                           to display correct instruments for the arrangement selected */}
-                              {this.state.activeInstrumentList.map((instruments, index) =>
-                                <ListItem key={index} className={classes.expandedListItems}>
-                                  <LibraryMusic color='action' />
-                                  <ListItemText primary={`${instruments}: `} />
-                                  <List>
-                                    <InstrumentScores
-                                      test={test}
-                                      testList={this.state.testList}
-                                      _onGetParts={this._onGetParts.bind(this)}
-                                      _onGetAllScores={this._onGetAllScores.bind(this)}
-                                      allscoresList={this.state.allscoresList} />
-                                    {
-                                      <ListItem>
-                                      </ListItem>
-                                    }
-                                  </List>
-                                </ListItem>
-                              )}
-                            </List>
-                          }
-                        </Typography>
-                      </ExpansionPanelDetails>
-                    </ExpansionPanel>
+                          {this.state.activeInstrumentList.map((instruments, index) =>
+                            <ListItem key={index} className={classes.expandedListItems}>
+                              <LibraryMusic color='action' />
+                              <ListItemText primary={`${instruments}: `} />
+                              <List>
+                                <InstrumentScores
+                                  test={test}
+                                  testList={this.state.testList}
+                                  _onGetParts={this._onGetParts.bind(this)}
+                                  _onGetAllScores={this._onGetAllScores.bind(this)}
+                                  allscoresList={this.state.allscoresList} />
+                                {
+                                  <ListItem>
+                                  </ListItem>
+                                }
+                              </List>
+                            </ListItem>
+                          )}
+                        </List>
+
+                      </Typography>
+                    </ExpansionPanelDetails>
+                  </ExpansionPanel>
+                  {/* 
+                    
                     // the else statement in the ternary operator
-                    :
-                    <ExpansionPanel
+                    : */}
+                  {/* <ExpansionPanel
                       onChange={this.handleCollapse}
                     //CollapseProps={{ unmountOnExit: true }}
                     >
@@ -518,7 +518,7 @@ class Scores extends React.Component {
                         </Typography>
                       </ExpansionPanelDetails>
                     </ExpansionPanel>
-                  }
+                  } */}
 
                 </Card>
               )}
