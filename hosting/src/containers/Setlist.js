@@ -223,13 +223,14 @@ class Setlist extends Component {
         return formatedString;
     }
 
-    //TODO: make it possible to delete an event
+    //This function takes in an event id and it's title,
+    //Warns the user about the action and deletes the event
     _onEventDeleteClick = async (eventId, eventTitle) => {
         //console.log("Event index: " + eventIndex);
         //console.log("Event title: " + eventTitle);
         
         this.setState({
-            title: "Delete this event",
+            title: "Deleting event",
             message: `Are you sure you want to delete ${eventTitle}?`,
         });
 
@@ -238,11 +239,11 @@ class Setlist extends Component {
         const {detail} = this.props;
         
         const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
-        console.log("bandId: " + bandId);
-        console.log("setlistId: " + setlistId);
+        //console.log("bandId: " + bandId);
+        //console.log("setlistId: " + setlistId);
 
         const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
-        console.log("setlistRef: " + setlistRef);
+        //console.log("setlistRef: " + setlistRef);
 
         let itemBandRef = (await setlistRef.get()).data().items || [];
 
@@ -251,10 +252,39 @@ class Setlist extends Component {
         await setlistRef.update({
             items: filteredItems
         });
-
     }
 
-    //TODO: make it possible to delete a score
+    //This function takes in a score id and it's title,
+    //Warns the user about the action and deletes the score
+    _onScoreDeleteClick = async (scoreId, scoreTitle) => {
+        //console.log("Event index: " + eventIndex);
+        //console.log("Event title: " + eventTitle);
+        //console.log("Score id: " + scoreId);
+        
+        this.setState({
+            title: "Deleting score",
+            message: `Are you sure you want to delete ${scoreTitle}?`,
+        });
+
+        if (!await this.open()) return;
+
+        const {detail} = this.props;
+        
+        const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
+        //console.log("score bandId: " + bandId);
+        //console.log("score setlistId: " + setlistId);
+
+        const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
+        //console.log("score setlistRef: " + setlistRef);
+
+        let itemBandRef = (await setlistRef.get()).data().items || [];
+
+        const filteredItems = await itemBandRef.filter(i => i.id !== scoreId);
+
+        await setlistRef.update({
+            items: filteredItems
+        });
+    }
 
 
     render() {
@@ -322,7 +352,7 @@ class Setlist extends Component {
                                                                         <Typography variant='headline'>
                                                                             {item.score.title}
                                                                             <IconButton style={{position: 'absolute', right: '25px'}}>
-                                                                                <DeleteIcon onClick={() => this._onScoreDeleteClick(index, item.score.title)}/>
+                                                                                <DeleteIcon onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
                                                                             </IconButton>
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
