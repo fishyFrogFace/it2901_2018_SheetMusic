@@ -12,7 +12,7 @@ const styles = theme => ({
     textField: {
         marginLeft: theme.spacing.unit,
         marginRight: theme.spacing.unit,
-        width: 200,
+        width: 220,
     },
 });
 
@@ -50,7 +50,7 @@ class CreateSetlistDialog extends React.Component {
         //console.log(date);
         
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} required/>
+            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} required />
             <form className={classes.container} noValidate>
                 <TextField onChange={this._onDateChange}
                     id="datetime-local"

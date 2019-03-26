@@ -15,7 +15,7 @@ const styles = theme => ({
     textField: {
         marginLeft: theme.spacing.unit,
         marginRight: theme.spacing.unit,
-        width: 210,
+        width: 220,
     },
 });
 
@@ -49,17 +49,17 @@ class EditSetlistDialog extends React.Component {
 
     render() {
         const {classes} = this.props;
-        //const {title, date} = this.state;
+        const {title, date} = this.state;
         console.log(this.state.date);
 
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
-            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}}/>
+            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} defaultValue={title}/>
             <form className={classes.container} noValidate>
             <TextField onChange={this._onDateChange}
                     id="datetime-local"
                     label="Date and time"
                     type="datetime-local"
-                    defaultValue={this.state.date}
+                    defaultValue={date}
                     className={classes.textField}
                     InputLabelProps={{
                     shrink: true,

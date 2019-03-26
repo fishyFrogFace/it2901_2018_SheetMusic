@@ -39,7 +39,8 @@ class Setlist extends Component {
         anchorEl: null,
         updatedItems: null,
         setlist: {},
-        band: {}
+        band: {},
+        message: 'Looks like your setlist is empty, add some!'
     };
 
     addScoreDialog;
@@ -195,6 +196,18 @@ class Setlist extends Component {
             //Formatting the date
             let dateString = setlist.slice(0,10);
             //console.log("dateString: " + dateString);
+
+            /* Formatting for norwegian date, not in use at this time
+            let dayString = dateString.slice(8,10);
+            console.log("dayString: " + dayString);
+
+            let monthString = dateString.slice(5,7);
+            console.log("monthString: " + monthString);
+
+            let yearString = dateString.slice(0,4);
+            console.log("dayString: " + yearString);
+            */
+            
             //Formatting the time
             let timeString = setlist.slice(11,16);
             //console.log("timeString: " + timeString);
