@@ -528,7 +528,7 @@ class Home extends React.Component {
                         })
                     );
 
-                    // Creating list with admins
+                    // Creating list with conductors
                     this.unsubs.push(
                         data.defaultBandRef.collection('members').where("supervisor", "==", true).onSnapshot(async snapshot => {
                             let items = await Promise.all(
@@ -541,7 +541,7 @@ class Home extends React.Component {
                         })
                     );
 
-                    // Creating list with admins
+                    // Creating list with no roles
                     this.unsubs.push(
                         data.defaultBandRef.collection('members').where("supervisor", "==", false).where("admin", "==", false).onSnapshot(async snapshot => {
                             let items = await Promise.all(

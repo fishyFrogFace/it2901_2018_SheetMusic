@@ -1,7 +1,6 @@
 import React from 'react';
-import firebase from 'firebase';
 
-import { TextField, withStyles, Menu, MenuItem, FormControl, InputLabel, Select } from "material-ui";
+import { TextField, withStyles } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
 const styles = {
@@ -28,9 +27,6 @@ class CreateBandDialog extends React.Component {
     }
 
     render() {
-        const { classes } = this.props;
-
-
         return <AsyncDialog title='Create Band' confirmText='Create' onRef={ref => this.dialog = ref}>
             <TextField label='Name' onChange={e => this._onDataChangeName('name', e)} style={{ marginBottom: 20, width: 300 }} />
         </AsyncDialog>
