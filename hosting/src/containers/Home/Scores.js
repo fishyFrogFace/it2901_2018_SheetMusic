@@ -315,7 +315,6 @@ class Scores extends React.Component {
       .catch(err => {
         console.log('Error getting bandtypes', err);
       });
-    console.log('types', types)
 
 
 

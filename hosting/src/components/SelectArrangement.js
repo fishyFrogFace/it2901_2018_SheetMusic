@@ -19,7 +19,7 @@ class SelectArrangements extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      bandtype: 'jifoe ',
+      bandtype: 'Select.. ',
       selected: false,
     }
   }
@@ -29,18 +29,12 @@ class SelectArrangements extends React.Component {
 
     const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
     const bandtypeRef = firebase.firestore().collection('bandtype');
-    console.log('bandtypeRef', bandtypeRef)
-    console.log('bandRef', bandRef)
-    // bandRef.update({
-    //   bandtype: event.target.value
-    // })
-    console.log('event.target', event.target)
+
   };
 
   componenDidUpdate = () => {
     const ensemble = ''
     const bandtypeRef = firebase.firestore().collection('bandtype');
-    console.log('bandtypeRef', bandtypeRef)
 
     this.setState({
       bandtype: this.props.band.bandtype
