@@ -209,9 +209,12 @@ class Members extends React.Component {
    _onAddDescription = async () => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { desc } = await this.changeDescDialog.open();
-      await bandRef.update({
-         description: desc
-      })
+      if (desc) {
+         await bandRef.update({
+            description: desc
+         })
+         return;
+      }
    };
 
    // Changing band name
