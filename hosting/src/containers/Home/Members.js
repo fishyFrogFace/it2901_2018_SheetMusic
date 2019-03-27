@@ -284,7 +284,7 @@ class Members extends React.Component {
                defaultBandRef: filteredRefs[0],
                bandRefs: filteredRefs,
             });
-         } 
+         }
          else {
             await userRef.update({
                defaultBandRef: firebase.firestore.FieldValue.delete(),
@@ -576,6 +576,7 @@ class Members extends React.Component {
 
    // Demoting member from admin
    _onDemoteAdmin = async (member) => {
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
       // Confirm modal about demoting member as admin
@@ -585,9 +586,20 @@ class Members extends React.Component {
       });
       if (!await this.open()) return;
 
+      // Updating admin status for member
       await memberRef.update({
          admin: false,
       });
+
+      // Removing admin from band adminlist
+      let admins = (await bandRef.get()).data().admins || [];
+      let filteredAdmins = await admins.filter(ref => ref !== member.uid);
+
+      if (filteredAdmins.length > 0) {
+         await bandRef.update({
+            admins: filteredAdmins,
+         });
+      }
    }
 
    // Function when clicking checkbox
