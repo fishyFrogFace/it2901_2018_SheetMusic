@@ -206,9 +206,12 @@ class Members extends React.Component {
    _onAddDescription = async () => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { desc } = await this.changeDescDialog.open();
-      await bandRef.update({
-         description: desc
-      })
+      if (desc) {
+         await bandRef.update({
+            description: desc
+         })
+         return;
+      }
    };
 
    // Changing band name
@@ -233,7 +236,6 @@ class Members extends React.Component {
    _onChangeBandDesc = async () => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { desc } = await this.changeDescDialog.open();
-
       if (desc) {
          await bandRef.update({
             description: desc
@@ -264,12 +266,12 @@ class Members extends React.Component {
       if (this.state.isLeader && band.creatorRef.id == this.state.user) {
 
          // Deleting scores from storage
-         if (await band.score.length > 0) {
+         if (await band.score && band.score.length > 0) {
             console.log('Deleting scores not yet implemented')
          }
 
          // Deleting unsorted pdfs from storage
-         if (await band.pdfs.length > 0) {
+         if (await band.pdf && band.pdfs.length > 0) {
             console.log('Deleting unsorted pdfs not yet implemented')
          }
 
@@ -279,14 +281,14 @@ class Members extends React.Component {
 
          if (filteredRefs.length > 0) {
             await userRef.update({
-               bandRefs: filteredRefs,
                defaultBandRef: filteredRefs[0],
+               bandRefs: filteredRefs,
             });
-         }
-
+         } 
          else {
             await userRef.update({
-               bandRefs: filteredRefs,
+               defaultBandRef: firebase.firestore.FieldValue.delete(),
+               bandRefs: firebase.firestore.FieldValue.delete(),
             });
          }
 
@@ -294,7 +296,6 @@ class Members extends React.Component {
 
          // Deleting band
          await bandRef.delete()
-         console.log('Band deleted');
       }
    }
 
@@ -409,7 +410,7 @@ class Members extends React.Component {
          title: "Leave band",
       });
 
-      if (person.leader && leaders.lenght < 2 && members.lenght > 0) {
+      if (person.leader && leaders.length === 1 && members.length > 0) {
          this.setState({
             message: `You are the only bandleader of ${this.props.band.name}. To leave the band you have to promote someone else to bandleader first.`,
          });
@@ -417,9 +418,10 @@ class Members extends React.Component {
          return;
       }
 
-      else if (leaders.lenght < 2 && members.length < 1) {
+      else if (person.leader && leaders.length === 1 && members.length === 0) {
          this.setState({
-            message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
+            message: `Are you sure you want to leave ${this.props.band.name}? 
+            You are the last member of the band and this action will lead to the deletion of the band.`,
          });
          if (!await this.open()) return;
          this._onDeleteBand();
