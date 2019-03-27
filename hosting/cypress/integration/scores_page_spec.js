@@ -1,14 +1,17 @@
+import firebase from "firebase";
+import * as admin from "firebase-admin";
+
 describe('The Home Page', function() {
     it('successfully loads', function () {
         cy.visit('/')
-    })
+    });
 
     let username = 'oystein.holland@gmail.com';
+    let password = '0aEc262ur2Qj';
+    admin.initializeApp();
 
     it('logs in', function () {
-        cy.contains('Sign in with Google').click()
+        let promise = firebase.auth().signInWithEmailAndPassword(username, password);
+    });
 
-        cy.get('input[type=email]').type(username)
-
-    })
-})
+});
