@@ -14,10 +14,12 @@ import 'firebase/storage';
 import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog";
 import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
+import EditSetlistEventDialog from "../components/dialogs/EditSetlistEventDialog";
 import AsyncDialog from '../components/dialogs/AsyncDialog';
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import {Add, ArrowBack, Edit} from "material-ui-icons";
+import { isAdmin } from '@firebase/util';
 
 const styles = {
     root: {},
@@ -286,6 +288,39 @@ class Setlist extends Component {
         });
     }
 
+    //TODO: make it possible to edit an event
+    _onEventEditClick = async(eventId,index) => {
+        
+        const {band, setlist} = this.state;
+        const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
+        const event = setlistRef.items !== undefined ? setlistRef.items[index]: [];
+        console.log(event)
+        const {title, description, time} = await this.editSetlistEventDialog.open(event);
+
+        let itemBandRef = (await setlistRef.get()).data().items || [];
+
+        const filteredItems = await itemBandRef.filter(i => i.id !== eventId);
+
+        await setlistRef.update({
+            items : filteredItems
+        });
+    
+        /*event.update({
+            type: 'event',
+            title: title,
+            time: time,
+            description: description,
+            id: eventId,
+        });*/
+    
+    }
+
+
+    //TODO: make it possible to edit a score
+    _onScoreEditClick = async() => {
+        
+    }
+
 
     render() {
         const {anchorEl, updatedItems, setlist, band} = this.state;
@@ -351,6 +386,9 @@ class Setlist extends Component {
                                                                     <CardContent style={{position: 'relative'}}>
                                                                         <Typography variant='headline'>
                                                                             {item.score.title}
+                                                                            <IconButton style={{position: 'absolute', right: '70px'}}>
+                                                                                <Edit onClick={() => this._onScoreEditClick()}/>
+                                                                            </IconButton>
                                                                             <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
                                                                             </IconButton>
@@ -366,6 +404,9 @@ class Setlist extends Component {
                                                                     <CardContent style={{position: 'relative'}}>
                                                                         <Typography variant='headline'>
                                                                             {item.title} | {item.time} minutes
+                                                                            <IconButton style={{position: 'absolute', right: '70px'}}>
+                                                                                <Edit onClick={() => this._onEventEditClick(item.id,index)}/>
+                                                                            </IconButton>
                                                                             <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
                                                                             </IconButton>
@@ -392,6 +433,7 @@ class Setlist extends Component {
                 <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref}/>
                 <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref}/>
                 <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref}/>
+                <EditSetlistEventDialog onRef={ref => this.editSetlistEventDialog = ref}/>
                 
                 <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
                     <Typography variant="body1" >{this.state.message}</Typography>
