@@ -233,9 +233,18 @@ class Members extends React.Component {
    _onChangeBandDesc = async () => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { desc } = await this.changeDescDialog.open();
+
+      if (desc) {
+         await bandRef.update({
+            description: desc
+         })
+         return;
+      }
+
       await bandRef.update({
-         description: desc,
+         description: null
       })
+
    };
 
    // Deleting a band (only possible as band leader)
@@ -289,8 +298,7 @@ class Members extends React.Component {
       }
    }
 
-
-   // REMARK: what to do with the band when last member leaves?
+   // Member leaving the band
    _onLeave = async (member) => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`);
@@ -298,10 +306,17 @@ class Members extends React.Component {
 
       let admins = (await bandRef.get()).data().admins;
       let members = [];
+      let leaders = [];
 
       await bandRef.collection(`/members`).get().then(docs => {
          docs.forEach(doc => {
             members.push(doc.data());
+         });
+      });
+
+      await bandRef.collection(`/leader`).get().then(docs => {
+         docs.forEach(doc => {
+            leaders.push(doc.data());
          });
       });
 
@@ -315,12 +330,14 @@ class Members extends React.Component {
          });
          if (!await this.open()) return;
          return;
-      } else if (members.length < 2) {
+      }
+      else if (members.length < 1) {
          this.setState({
             message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
          });
          if (!await this.open()) return;
-      } else {
+      }
+      else {
          this.setState({
             message: `Are you sure you want to leave ${this.props.band.name}?`,
          });
@@ -363,17 +380,95 @@ class Members extends React.Component {
             bandRefs: firebase.firestore.FieldValue.delete(),
          });
       }
+   }
 
-      members = [];
+   // Bandleader leaving band
+   _onLeaveLeader = async (person) => {
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+      const leaderRef = firebase.firestore().doc(`bands/${this.props.band.id}/leader/${person.id}`);
+      const userRef = firebase.firestore().doc(`users/${person.uid}`);
+
+      let admins = (await bandRef.get()).data().admins;
+      let members = [];
+      let leaders = [];
+
       await bandRef.collection(`/members`).get().then(docs => {
          docs.forEach(doc => {
             members.push(doc.data());
          });
       });
-      if (members.length < 1) {
-         await bandRef.delete();
+
+      await bandRef.collection(`/leader`).get().then(docs => {
+         docs.forEach(doc => {
+            leaders.push(doc.data());
+         });
+      });
+
+      // Confirm modals about leaving
+      this.setState({
+         title: "Leave band",
+      });
+
+      if (person.leader && leaders.lenght < 2 && members.lenght > 0) {
+         this.setState({
+            message: `You are the only bandleader of ${this.props.band.name}. To leave the band you have to promote someone else to bandleader first.`,
+         });
+         if (!await this.open()) return;
+         return;
       }
-   }
+
+      else if (leaders.lenght < 2 && members.length < 1) {
+         this.setState({
+            message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
+         });
+         if (!await this.open()) return;
+         this._onDeleteBand();
+         return;
+      }
+
+      else {
+         this.setState({
+            message: `Are you sure you want to leave ${this.props.band.name}?`,
+         });
+         if (!await this.open()) return;
+      }
+
+      // Remove leader from admin list if member was admin
+      if (person.admin) {
+         admins = admins.filter(admin => {
+            return admin !== person.uid;
+         });
+         await bandRef.update({
+            admins: admins,
+         });
+      }
+
+      // Remove member from bands member list
+      await leaderRef.delete();
+
+      // Remove band from user bandRef list and update defaultBandRef to the first element in bandRef list
+      // If bandRef is empty then remove bandRef and defaultBandRef values
+      const oldBandRefs = (await userRef.get()).data().bandRefs || [];
+      const newBandRefs = [];
+      const bandCode = (await bandRef.get()).data().code;
+      for (let i in oldBandRefs) {
+         const refCode = (await oldBandRefs[i].get()).data().code;
+         if (refCode !== bandCode) {
+            newBandRefs.push(oldBandRefs[i]);
+         }
+      }
+      if (newBandRefs.length > 0) {
+         await userRef.update({
+            defaultBandRef: newBandRefs[0],
+            bandRefs: newBandRefs,
+         });
+      } else {
+         await userRef.update({
+            defaultBandRef: firebase.firestore.FieldValue.delete(),
+            bandRefs: firebase.firestore.FieldValue.delete(),
+         });
+      }
+   };
 
    // Removing a member from the band
    _onRemove = async (member) => {
@@ -562,7 +657,7 @@ class Members extends React.Component {
       firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
          const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
          const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-         
+
          for (let i in admins) {
             if (currentUser.uid === admins[i]) {
                this.setState({
@@ -600,11 +695,6 @@ class Members extends React.Component {
       const { anchorEl } = this.state;
       const open = Boolean(anchorEl);
       let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
-
-      console.log(this.state.user);
-      console.log(band);
-      console.log(this.state.isAdmin);
-
 
       if (this.state.isLeader) {
          return <div>
@@ -689,12 +779,9 @@ class Members extends React.Component {
                               <ListItem key={index} dense >
                                  <Avatar src={member.user.photoURL} />
                                  <ListItemText primary={member.user.displayName} />
-                                 {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
-                                 {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                                 {member.supervisor && <Tooltip title="Conductor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                 {member.status === 'member' && !member.supervisor && <Tooltip title="Make conductor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                                 {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                                 {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                 {member.admin && <Tooltip title="Admin"><div><IconButton disabled><Star color="secondary" /></IconButton></div></Tooltip>}
+                                 {member.supervisor && <Tooltip title="Conductor"><div><IconButton disabled><QueueMusic color="secondary" /></IconButton></div></Tooltip>}
+                                 {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeaveLeader(member)}><RemoveCircle /></IconButton></Tooltip>}
                               </ListItem>)
                         }
                      </List>
@@ -727,13 +814,11 @@ class Members extends React.Component {
             <div style={{ display: 'flex', justifyContent: 'space-between', width: 500, paddingTop: 20, paddingLeft: 20 }}>
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
-
                      <ExpansionPanel className={classes.expansionPanel}>
                         <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
                            <Typography className={classes.expansionHeading}> Filter options </Typography>
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails className={classes.expansionPanelDetails}>
-
                            <FormGroup row className={classes.checkboxRow}>
                               <FormControlLabel
                                  className={classes.checkBox}
@@ -769,15 +854,11 @@ class Members extends React.Component {
                                  label="No roles"
                               />
                            </FormGroup>
-
                         </ExpansionPanelDetails>
                      </ExpansionPanel>
 
-                     <Divider />
-
                      {band.members && band.members.length > 0 &&
                         <div>
-                           <Divider />
                            <ExpansionPanel className={classes.expansionPanel} expanded={this.state.expanded} onChange={this.handleExpansionChange(!this.state.expanded)}>
                               <ExpansionPanelSummary className={classes.expansionPanelSummary} expandIcon={<ExpandMoreIcon />}>
                                  <Typography className={classes.expansionHeading}> Members </Typography>
