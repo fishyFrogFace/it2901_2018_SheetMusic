@@ -335,10 +335,10 @@ class Scores extends React.Component {
         let instruments = []; // --||--
         if (hasScores) { // Should not fetch band.scores if empty
             if (this.state.sortedAlphabetically) { // If alphabetically is chosen
-                scores = this.state.scores.slice(); // Get default
+                scores = band.scores.slice(); // Get default
                 scores = scores.sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
             } else {
-                scores = this.state.scores.slice(); // Use default
+                scores = band.scores.slice(); // Use default
             }
 
             if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
@@ -351,29 +351,26 @@ class Scores extends React.Component {
             }
 
             // Make list of all available composers
-            composers.push(this.state.defaultComposer); // Get default
+            composers.push(this.state.defaultComposer); // Get default (All composers)
 
-            this.state.scores.map(score => {
+            band.scores.map(score => {
                 if (!composers.includes(score.composer)) { // And all unique composer
                     composers.push(score.composer)
                 }
             });
 
-            // With dummy data:
-
-            // Make list of all available instruments
-            instruments.push(this.state.defaultInstrument); // Get default
+            // Make list of all available composers (with dummy data)
+            /*composers.push(this.state.defaultComposer); // Get default
 
             this.state.scores.map(score => {
-                score.instruments.map(instrument => {
-                    if (!instruments.includes(instrument)) { // And all unique instruments
-                        instruments.push(instrument)
-                    }
-                })
-            })
+                if (!composers.includes(score.composer)) { // And all unique composer
+                    composers.push(score.composer)
+                }
+            });*/
 
-           // With instruments from scores (not tested):
-            /*
+            
+            // With instruments from scores:
+
             // Make list of all available instruments
             band.scores.map(score => {
                 score.instruments.map(instrument => {
@@ -382,7 +379,18 @@ class Scores extends React.Component {
                     }
                 })
 
-            })*/
+            })
+
+            // Make list of all available instruments  (with dummy data)
+            /* instruments.push(this.state.defaultInstrument); // Get default
+
+             this.state.scores.map(score => {
+                 score.instruments.map(instrument => {
+                     if (!instruments.includes(instrument)) { // And all unique instruments
+                         instruments.push(instrument)
+                     }
+                 })
+             })*/
         }
 
 
