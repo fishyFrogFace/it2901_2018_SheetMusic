@@ -116,10 +116,14 @@ class Scores extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      props,
       listView: false,
       expanded: false,
       //expanded: [],
+      selected: false,
       cardIds: [],
+      bandtypes: [],
+      bandtype: 'loo',
       parts: {},
       score: {},
       vocal: '',
@@ -143,6 +147,7 @@ class Scores extends React.Component {
     if (window.localStorage.getItem('scoresListView')) {
       this.setState({ listView: true });
     }
+
   }
 
   _onViewModuleClick = () => {
@@ -273,11 +278,49 @@ class Scores extends React.Component {
 
   // handlechange the value of the onChange in <select /> in selectArrangement.js
   handleChange = async (e) => {
-    var value = this.state.optionsdata.filter(function (item) {
+    var value = this.state.bandtypes.filter(function (item) {
       return item.key == e.target.value
     })
     var name = e.target.name
     this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments, activeName: name })
+    // this.setState({
+    //   activeInstrument:
+    // })
+    console.log('e.target', e.target)
+  }
+
+  _onSelectChange = event => {
+    this.setState({ bandtype: event.target.value, selected: true });
+
+    const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+
+    // bandRef.update({
+    //   bandtype: event.target.value
+    // })
+    console.log('event.target', event.target)
+  };
+
+
+  componentDidMount = () => {
+    const types = [];
+    const bandtypeRef = firebase.firestore().collection('bandtype');
+
+
+    bandtypeRef.get()
+      .then(docs => {
+        docs.forEach(doc => {
+          types.push(doc.data());
+        });
+      })
+      .catch(err => {
+        console.log('Error getting bandtypes', err);
+      });
+    console.log('types', types)
+
+
+
+    //console.log('band.bandtype', band.bandtype)
+    this.setState({ bandtypes: types });
 
   }
 
@@ -317,14 +360,19 @@ class Scores extends React.Component {
           !listView &&
           <div className={classes.selectArrangement}>
             <SelectArrangement
-              bandtype={band.bandtype}
+              bandtypes={this.state.bandtypes}
+              bandtype={this.state.bandtype}
+              band={band}
+              instruments={band.instruments}
               vocalValue={this.state.vocal}
               ensemble={this.state.ensemble}
-              onChange={this.handleChange}
+              //onChange={this.handleChange}
+              onChange={this._onSelectChange}
               optionsdata={this.state.optionsdata}
               activeInstrument={this.state.activeInstrument}
               //index={index}
               activeName={this.state.activeName}
+              isSelected={this.state.selected}
             />
 
           </div>

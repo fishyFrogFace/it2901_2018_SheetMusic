@@ -1,7 +1,7 @@
 import React from 'react';
 import { InputLabel, Select, MenuItem, FormControl } from "material-ui";
 import { withStyles } from "material-ui/styles";
-
+import firebase from 'firebase';
 const styles = {
   label: {
     display: 'contents',
@@ -18,6 +18,33 @@ const styles = {
 class SelectArrangements extends React.Component {
   constructor(props) {
     super(props)
+    this.state = {
+      bandtype: 'jifoe ',
+      selected: false,
+    }
+  }
+
+  _onSelectChange = event => {
+    this.setState({ bandtype: event.target.value, selected: true });
+
+    const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+    const bandtypeRef = firebase.firestore().collection('bandtype');
+    console.log('bandtypeRef', bandtypeRef)
+    console.log('bandRef', bandRef)
+    // bandRef.update({
+    //   bandtype: event.target.value
+    // })
+    console.log('event.target', event.target)
+  };
+
+  componenDidUpdate = () => {
+    const ensemble = ''
+    const bandtypeRef = firebase.firestore().collection('bandtype');
+    console.log('bandtypeRef', bandtypeRef)
+
+    this.setState({
+      bandtype: this.props.band.bandtype
+    })
   }
 
   render() {
@@ -37,18 +64,20 @@ class SelectArrangements extends React.Component {
 
           <Select
             autoWidth
-            value={this.props.activeInstrument}
-            onChange={this.props.onChange}
+            value={this.state.bandtype}
+            onChange={this._onSelectChange}
             inputProps={{
-              name: "" + this.props.index,
+              name: 'bandtype'
             }}
             className={classes.selecter}
-            renderValue={() => this.props.activeInstrument} // the displayed alternative in the select box
+            renderValue={() => this.state.selected ? this.props.band.bandtype : this.state.bandtype} // the displayed alternative in the select box
+
           >
             {/* map over the arrangment and instrument options declared in state in Scores.js */}
+
             {
-              this.props.optionsdata.map((data, key) =>
-                <MenuItem key={key} value={data.key} >{data.value}
+              this.props.bandtypes.map((data, key) =>
+                <MenuItem key={key} value={data.name}>{data.name}
                 </MenuItem>
               )}
           </Select>
