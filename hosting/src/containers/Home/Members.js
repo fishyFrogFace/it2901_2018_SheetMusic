@@ -210,7 +210,6 @@ class Members extends React.Component {
          await bandRef.update({
             description: desc
          })
-         return;
       }
    };
 
@@ -244,7 +243,7 @@ class Members extends React.Component {
       }
 
       await bandRef.update({
-         description: null
+         description: firebase.firestore.FieldValue.delete()
       })
 
    };
@@ -307,7 +306,6 @@ class Members extends React.Component {
 
       let admins = (await bandRef.get()).data().admins;
       let members = [];
-      let leaders = [];
 
       await bandRef.collection(`/members`).get().then(docs => {
          docs.forEach(doc => {
@@ -315,35 +313,12 @@ class Members extends React.Component {
          });
       });
 
-      await bandRef.collection(`/leader`).get().then(docs => {
-         docs.forEach(doc => {
-            leaders.push(doc.data());
-         });
-      });
-
       // Confirm modals about leaving
       this.setState({
          title: "Leave band",
+         message: `Are you sure you want to leave ${this.props.band.name}?`,
       });
-      if (member.admin && admins.length < 2 && members.length > 1) {
-         this.setState({
-            message: `You are the final admin of ${this.props.band.name}. To leave the band you have to promote someone else to admin first.`,
-         });
-         if (!await this.open()) return;
-         return;
-      }
-      else if (members.length < 1) {
-         this.setState({
-            message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
-         });
-         if (!await this.open()) return;
-      }
-      else {
-         this.setState({
-            message: `Are you sure you want to leave ${this.props.band.name}?`,
-         });
-         if (!await this.open()) return;
-      }
+      if (!await this.open()) return;
 
       // Remove member from admin list if member was admin
       if (member.admin) {
@@ -355,7 +330,7 @@ class Members extends React.Component {
          });
       }
 
-      // Remove member from bands member list
+      // Remove member from band
       await memberRef.delete();
 
       // Remove band from user bandRef list and update defaultBandRef to the first element in bandRef list
@@ -870,6 +845,7 @@ class Members extends React.Component {
                            </FormGroup>
                         </ExpansionPanelDetails>
                      </ExpansionPanel>
+                     <Divider />
 
                      {band.members && band.members.length > 0 &&
                         <div>
