@@ -118,6 +118,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             await promise;
         });
 
+        console.log('pfdInfo', pdfInfo)
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
 
         // Create document
@@ -197,8 +198,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             '-cfg', '/tmp/.xpdfrc',
             '/tmp/score.pdf',
         ]);
-
         process2.childProcess.kill();
+        console.log('process2', process2)
 
         const data = {
             processing: admin.firestore.FieldValue.delete(),
@@ -207,6 +208,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         };
 
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
+        console.log('pdfText', pdfText)
 
         if (pdfText.includes('jazzbandcharts')) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;

@@ -97,6 +97,7 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             });
             yield promise;
         }));
+        console.log('pfdInfo', pdfInfo);
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
         // Create document
         const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
@@ -156,12 +157,14 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             '/tmp/score.pdf',
         ]);
         process2.childProcess.kill();
+        console.log('process2', process2);
         const data = {
             processing: admin.firestore.FieldValue.delete(),
             thumbnailURL: croppedPageUrls[0],
             pages: pages,
         };
         const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
+        console.log('pdfText', pdfText);
         if (pdfText.includes('jazzbandcharts')) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{

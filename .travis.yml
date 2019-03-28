@@ -3,7 +3,4 @@ language: node_js
 node_js:
   - "stable"
 
-notifications:
-  slack: it2901group21:c1b3uho1igakiwKfGh62PvrD
-
 before_install: cd hosting
