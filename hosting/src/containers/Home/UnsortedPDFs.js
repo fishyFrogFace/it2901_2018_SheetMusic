@@ -117,8 +117,7 @@ class UnsortedPDFs extends React.Component {
                                     <List>
                                         {
                                             group.pdfs.map(pdf =>
-                                                <ListItem key={pdf.id} style={{ height: 40, padding: '10px 20px' }} button
-                                                    disableRipple>
+                                                <ListItem key={pdf.id} style={{ height: 40, padding: '10px 20px' }}>
                                                     <ListItemText primary={pdf.name} />
                                                 </ListItem>
                                             )
