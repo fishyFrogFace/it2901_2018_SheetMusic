@@ -23,6 +23,7 @@ class EditSetlistEventDialog extends React.Component {
     }
 
     async open(event) {
+        console.log("event: " + event);
         this.setState({title: event.title, description: event.description, time: event.time})
         await this.dialog.open();
         return {title: this.state.title, description: this.state.title, time: this.state.time};
@@ -46,8 +47,11 @@ class EditSetlistEventDialog extends React.Component {
     render() {
 
         const {title, description, time} = this.state;
+        //console.log("title: " + title);
+        //console.log("description: " + description);
+        //console.log("time: " + time);
         return <AsyncDialog title='Edit Event' confirmText='Save' onRef={ref => this.dialog = ref}>
-            <TextField defaultValue={title} required label='Name' onChange={this._onTitleInputChange}/>
+            <TextField defaultValue={title} label='Name' onChange={this._onTitleInputChange}/>
             <TextField defaultValue={description} label='Description' onChange={this._onDescriptionInputChange}/>
             <FormControl>
                 <InputLabel> Time </InputLabel>

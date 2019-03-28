@@ -69,6 +69,7 @@ class Setlist extends Component {
     }
 
     _onDragEnd = async result => {
+        console.log("Result: " + JSON.stringify(result));
         // dropped outside the list
         if (!result.destination) {
             return;
@@ -152,10 +153,10 @@ class Setlist extends Component {
             const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
 
             const bandRef = firebase.firestore().doc(`bands/${bandId}`);
-            console.log("bandRef: " + bandRef);
+            //console.log("bandRef: " + bandRef);
 
             const setlistDoc = bandRef.collection('setlists').doc(setlistId);
-            console.log("setlistDoc: " + setlistDoc);
+            //console.log("setlistDoc: " + setlistDoc);
 
             
 
@@ -168,8 +169,7 @@ class Setlist extends Component {
                     if(data === undefined){
                         return;
                     }
-
-                    console.log("data: " + data);
+                    //console.log("data: " + data);
 
                     data.items = await Promise.all(
                         (data.items || []).map(async item => {
@@ -302,41 +302,46 @@ class Setlist extends Component {
     }
 
     //TODO: make it possible to edit an event
-    _onEventEditClick = async(eventId,index) => {
+    _onEventEditClick = async(eventId, index) => {
         
         const {band, setlist} = this.state;
+        //console.log("band: " + band);
+        //console.log("setlist: " + setlist);
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
-        const event = setlistRef.items !== undefined ? setlistRef.items[index]: [];
-        console.log("event: " + event);
-        const {title, description, time} = await this.editSetlistEventDialog.open();
-        console.log
+        //console.log("setlistRef: " + setlistRef);
+        
+        const event = (await setlistRef.get()).data().items[index] || [];
+        //console.log('event type: ' + event.type);
+        //console.log('event id: ' + eventId);
+        //console.log('event index: ' + index);
+        //console.log(typeof(event));
+        const {title, description, time} = await this.editSetlistEventDialog.open(event);
+        //console.log('title: ' + title);
+        //console.log('description: ' + description);
+        //console.log('time: ' + time);
 
-        let itemBandRef = (await setlistRef.get()).data().items || [];
+        let items = (await setlistRef.get()).data().items || [];
 
-        const filteredItems = await itemBandRef.filter(i => i.id !== eventId);
+        const filteredItems = await items.filter(i => i.id !== eventId);
 
-        /*await setlistRef.update({
-            items : filteredItems
-        });*/
-
-        /*await setlistRef.update({
-            items: [index, {
-                type: 'event',
-                title: title,
-                time: time,
-                description: description,
-                id: Math.random().toString(36).substring(2, 7),
-            }]
-        })*/
-    
-        /*event.update({
-            type: 'event',
+        const newItems = [...(filteredItems || []), {
+            type: event.type,
             title: title,
             time: time,
             description: description,
-            id: eventId,
-        });*/
+            id: event.id,
+        }]
+
+        //Getting the item
+        const item = newItems.filter(i => i.id === eventId)
+        //console.log(item);
+        //Splice is inserting item into filteredlist at index
+        filteredItems.splice(index, 0, item[0]);
+        //console.log(filteredItems);
     
+        await setlistRef.update({
+            items: filteredItems
+        })
     }
 
 
