@@ -1,7 +1,7 @@
 import React from 'react';
 
-import {TextField, withStyles} from "material-ui";
-import {DatePicker} from "material-ui-pickers"
+import { TextField, withStyles } from "material-ui";
+import { DatePicker } from "material-ui-pickers"
 
 import AsyncDialog from "./AsyncDialog";
 
@@ -24,25 +24,23 @@ class CreateSetlistDialog extends React.Component {
 
     async open() {
         await this.dialog.open();
-        return {title: this.state.title, date: this.state.date};
+        return { title: this.state.title, date: this.state.date };
     }
 
     _onTitleInputChange = e => {
-        this.setState({title: e.target.value});
+        this.setState({ title: e.target.value });
     };
 
     _onDateChange = date => {
-        this.setState({date: date});
+        this.setState({ date: date });
     };
 
     render() {
-        const {classes} = this.props;
-        const {title, date} = this.state;
-
-        console.log(date);
+        const { classes } = this.props;
+        const { title, date } = this.state;
 
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}}/>
+            <TextField label='Title' onChange={this._onTitleInputChange} style={{ marginBottom: 20 }} />
             <DatePicker
                 value={date}
                 onChange={this._onDateChange}
