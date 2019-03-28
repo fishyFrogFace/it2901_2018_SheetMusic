@@ -8,7 +8,7 @@ import {
 } from "material-ui";
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
-import { Done, Clear, Star, RemoveCircle, QueueMusic, Delete } from 'material-ui-icons';
+import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
 import ChangeBandNameDialog from '../../components/dialogs/ChangeBandNameDialog';
@@ -291,12 +291,60 @@ class Members extends React.Component {
             });
          }
 
-         location.reload();
+         //location.reload();
 
          // Deleting band
-         await bandRef.delete()
+         // await bandRef.delete();
+         await this._onDeleteCollection(bandRef, 50);
+         
       }
    }
+
+   // Deleting collections with subcollections
+   _onDeleteCollection = async (collectionPath, batchSize) => {
+      var query = collectionPath;
+      // var query = collectionRef.orderBy('__name__').limit(batchSize);
+      console.log(query);
+    
+      return await new Promise((resolve, reject) => {
+        this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+      });
+    }
+    
+    // Deleting the subcollections one by one
+   _onDeleteQueryBatch = async (query, batchSize, resolve, reject) => {
+      query.get()
+        .then((snapshot) => {
+           console.log(snapshot);
+          // When there are no documents left, we are done
+          if (snapshot.size == 0) {
+            return 0;
+          }
+    
+          // Delete documents in a batch
+          var batch = firebase.firestore().batch();
+          snapshot.docs.forEach((doc) => {
+            console.log(doc.data());
+            batch.delete(doc.ref);
+          });
+    
+          return batch.commit().then(() => {
+            return snapshot.size;
+          });
+        }).then((numDeleted) => {
+          if (numDeleted === 0) {
+            resolve();
+            return;
+          }
+    
+          // Recurse on the next process tick, to avoid
+          // exploding the stack.
+          process.nextTick(() => {
+            this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+          });
+        })
+        .catch(reject);
+    }
 
    // Member leaving the band
    _onLeave = async (member) => {
