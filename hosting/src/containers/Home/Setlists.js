@@ -42,16 +42,13 @@ class Setlists extends React.Component {
            return false;
         }
     }
-    /*
-    open = () => {
-        this.dialog.open();
-    }*/
 
     componentWillMount() {
         if (window.localStorage.getItem('setlistsListView')) {
             this.setState({listView: true});
         }
     }
+
 
     //Is called by the moduleView parent tag
     _onViewModuleClick = () => {
@@ -78,18 +75,23 @@ class Setlists extends React.Component {
             message: `Are you sure you want to delete ${setlistTitle}?`,
         });
 
+        //Blank return statement
         if (!await this.open()) return;
 
         //console.log(setlistId);
         const {band} = this.props;
         //Fetching setlist reference from firestore
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
-
+        
+        
         setlistRef.delete().then(() => {
             console.log("Document succesfully removed");
+            //location.reload();
         }).catch((err) => {
             console.error("Error removing document", err);
         });
+
+        
     }
 
     //This function changes the boolean value of sortedAlphabetically
@@ -98,7 +100,7 @@ class Setlists extends React.Component {
         let alpha = this.state.sortedAlphabetically;
         //Inverts the alpha
         alpha = !alpha;
-        this.setState({sortedAlphabetically: alpha} )
+        this.setState({sortedAlphabetically: alpha});
       };
 
     //This function will take in a timestamp and display it in the correct date, hour and minute

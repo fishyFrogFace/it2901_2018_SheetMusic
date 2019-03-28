@@ -50,7 +50,7 @@ class EditSetlistDialog extends React.Component {
     render() {
         const {classes} = this.props;
         const {title, date} = this.state;
-        console.log(this.state.date);
+        //console.log(this.state.date);
 
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
             <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} defaultValue={title}/>

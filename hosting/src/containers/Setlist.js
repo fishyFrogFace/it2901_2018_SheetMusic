@@ -19,7 +19,7 @@ import AsyncDialog from '../components/dialogs/AsyncDialog';
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import {Add, ArrowBack, Edit} from "material-ui-icons";
-import { isAdmin } from '@firebase/util';
+//import { isAdmin } from '@firebase/util';
 
 const styles = {
     root: {},
@@ -143,6 +143,8 @@ class Setlist extends Component {
         window.location.hash = '/setlists';
     };
 
+    //Remark: this function has some issues that need to be looked at
+    //See the workaround
     componentDidUpdate(prevProps, prevState) {
         const {page, detail} = this.props;
 
@@ -150,14 +152,24 @@ class Setlist extends Component {
             const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
 
             const bandRef = firebase.firestore().doc(`bands/${bandId}`);
+            console.log("bandRef: " + bandRef);
 
             const setlistDoc = bandRef.collection('setlists').doc(setlistId);
+            console.log("setlistDoc: " + setlistDoc);
+
+            
 
             this.unsubs.forEach(unsub => unsub());
 
             this.unsubs.push(
                 setlistDoc.onSnapshot(async snapshot => {
                     const data = snapshot.data();
+                    //Workaround to fix deleting problem in setlists
+                    if(data === undefined){
+                        return;
+                    }
+
+                    console.log("data: " + data);
 
                     data.items = await Promise.all(
                         (data.items || []).map(async item => {
@@ -254,6 +266,7 @@ class Setlist extends Component {
         await setlistRef.update({
             items: filteredItems
         });
+
     }
 
     //This function takes in a score id and it's title,
@@ -294,16 +307,27 @@ class Setlist extends Component {
         const {band, setlist} = this.state;
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
         const event = setlistRef.items !== undefined ? setlistRef.items[index]: [];
-        console.log(event)
-        const {title, description, time} = await this.editSetlistEventDialog.open(event);
+        console.log("event: " + event);
+        const {title, description, time} = await this.editSetlistEventDialog.open();
+        console.log
 
         let itemBandRef = (await setlistRef.get()).data().items || [];
 
         const filteredItems = await itemBandRef.filter(i => i.id !== eventId);
 
-        await setlistRef.update({
+        /*await setlistRef.update({
             items : filteredItems
-        });
+        });*/
+
+        /*await setlistRef.update({
+            items: [index, {
+                type: 'event',
+                title: title,
+                time: time,
+                description: description,
+                id: Math.random().toString(36).substring(2, 7),
+            }]
+        })*/
     
         /*event.update({
             type: 'event',
@@ -326,7 +350,10 @@ class Setlist extends Component {
         const {anchorEl, updatedItems, setlist, band} = this.state;
         const {classes} = this.props;
 
-        const items = updatedItems || (setlist.items || []);
+        let items;
+        if(setlist.items){
+            items = updatedItems || (setlist.items || []);
+        }
 
         return (
             <div className={classes.root}>
@@ -363,6 +390,7 @@ class Setlist extends Component {
                         </Toolbar>
                     </AppBar>
                     <div style={{paddingTop: 64 + 20}}>
+                    {setlist.items &&
                         <Droppable droppableId="droppable">
                             {(provided, snapshot) =>
                                 <div ref={provided.innerRef}>
@@ -405,7 +433,7 @@ class Setlist extends Component {
                                                                         <Typography variant='headline'>
                                                                             {item.title} | {item.time} minutes
                                                                             <IconButton style={{position: 'absolute', right: '70px'}}>
-                                                                                <Edit onClick={() => this._onEventEditClick(item.id,index)}/>
+                                                                                <Edit onClick={() => this._onEventEditClick(item.id, index)}/>
                                                                             </IconButton>
                                                                             <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
@@ -422,12 +450,12 @@ class Setlist extends Component {
                                                         {provided.placeholder}
                                                     </div>
                                                 }
-                                            </Draggable>
+                                            </Draggable> 
                                         )
                                     }
                                 </div>
                             }
-                        </Droppable>
+                        </Droppable> }
                     </div>
                 </DragDropContext>
                 <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref}/>
