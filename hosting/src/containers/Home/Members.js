@@ -251,7 +251,7 @@ class Members extends React.Component {
    // Deleting a band (only possible as band leader)
    _onDeleteBand = async () => {
       let band = this.props.band;
-      const bandRef = firebase.firestore().doc(`bands/${band.id}`);
+      const bandRef = firebase.firestore().collection(`bands`).doc(`${band.id}`);
       const userRef = firebase.firestore().doc(`users/${this.state.user}`);
 
       // Confirm modal about rejecting
@@ -262,7 +262,7 @@ class Members extends React.Component {
       if (!await this.open()) return;
 
       // Checking if user is band leader
-      if (this.state.isLeader && band.creatorRef.id == this.state.user) {
+      if (this.state.isLeader && band.creatorRef.id === this.state.user) {
 
          // Deleting scores from storage
          if (await band.score && band.score.length > 0) {
@@ -291,31 +291,32 @@ class Members extends React.Component {
             });
          }
 
-         //location.reload();
+         // Deleting the band and all its subcollections
+         await this._onDeleteCollection(bandRef.collection('leader'), 20);
+         await this._onDeleteCollection(bandRef.collection('members'), 50);
+         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
+         await this._onDeleteCollection(bandRef.collection('scores'), 50);
+         await this._onDeleteCollection(bandRef.collection('setlists'), 50);
+         await bandRef.delete();
 
-         // Deleting band
-         // await bandRef.delete();
-         await this._onDeleteCollection(bandRef, 50);
-         
+         location.reload();
+
       }
    }
 
    // Deleting collections with subcollections
    _onDeleteCollection = async (collectionPath, batchSize) => {
       var query = collectionPath;
-      // var query = collectionRef.orderBy('__name__').limit(batchSize);
-      console.log(query);
-    
-      return await new Promise((resolve, reject) => {
-        this._onDeleteQueryBatch(query, batchSize, resolve, reject);
-      });
-    }
-    
-    // Deleting the subcollections one by one
-   _onDeleteQueryBatch = async (query, batchSize, resolve, reject) => {
+
+      return new Promise((resolve, reject) => {
+         this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+       });
+   }
+
+   // Deleting the subcollections one by one
+   _onDeleteQueryBatch(query, batchSize, resolve, reject) {
       query.get()
         .then((snapshot) => {
-           console.log(snapshot);
           // When there are no documents left, we are done
           if (snapshot.size == 0) {
             return 0;
@@ -324,7 +325,6 @@ class Members extends React.Component {
           // Delete documents in a batch
           var batch = firebase.firestore().batch();
           snapshot.docs.forEach((doc) => {
-            console.log(doc.data());
             batch.delete(doc.ref);
           });
     
