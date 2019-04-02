@@ -106,11 +106,12 @@ class Setlists extends React.Component {
     //This function will take in a timestamp and display it in the correct date, hour and minute
     _formatedDate = (setlist) => {
         if(typeof setlist === 'string'){
+            //console.log('Setlist: ' + setlist);
             //Formatting the date
             let dateString = setlist.slice(0,10);
             //console.log("dateString: " + dateString);
             //Formatting the time
-            let timeString = setlist.slice(11,16);
+            let timeString = setlist.slice(10,16);
             //console.log("timeString: " + timeString);
             return dateString + " " + timeString;
         }
@@ -203,7 +204,7 @@ class Setlists extends React.Component {
                                     </Typography>
                                     <Typography component="p">
                                         {/*Checking for date setlist.date, if that does not exist, then we don't display anything*/}
-                                        {setlist.date && this._formatedDate(setlist.date)}
+                                        {setlist.date && setlist.time && this._formatedDate(setlist.date + setlist.time)}
                                     </Typography>
                                     
                                 </CardContent>

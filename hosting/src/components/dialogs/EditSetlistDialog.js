@@ -23,6 +23,7 @@ class EditSetlistDialog extends React.Component {
     state = {
         title: '',
         date: '',
+        setlistTime: '',
     };
 
     componentDidMount() {
@@ -34,9 +35,9 @@ class EditSetlistDialog extends React.Component {
     }
 
     async open(setlist) {
-        this.setState({title: setlist.title, date: setlist.date});
+        this.setState({title: setlist.title, date: setlist.date, time: setlist.time});
         await this.dialog.open();
-        return {title: this.state.title, date: this.state.date};
+        return {title: this.state.title, date: this.state.date, setlistTime: this.state.setlistTime};
     }
 
     _onTitleInputChange = e => {
@@ -47,26 +48,42 @@ class EditSetlistDialog extends React.Component {
         this.setState({date: e.target.value});
     };
 
+    _onTimeChange = e => {
+        this.setState({setlistTime: e.target.value})
+    }
+
     render() {
         const {classes} = this.props;
-        const {title, date} = this.state;
+        const {title, date, time} = this.state;
         //console.log(this.state.date);
+        //console.log('time: ' + time)
 
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
             <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} defaultValue={title}/>
             <form className={classes.container} noValidate>
-            <TextField onChange={this._onDateChange}
-                    id="datetime-local"
-                    label="Date and time"
-                    type="datetime-local"
+                <TextField onChange={this._onDateChange}
+                    id="date"
+                    label="Date"
+                    type="date"
                     defaultValue={date}
                     className={classes.textField}
                     InputLabelProps={{
                     shrink: true,
                     }}
                 />
-
-                
+                <TextField onChange={this._onTimeChange}
+                    id="time"
+                    label="Time"
+                    type="time"
+                    defaultValue={time}
+                    className={classes.textField}
+                    InputLabelProps={{
+                    shrink: true,
+                    }}
+                    inputProps={{
+                        step: 300, // 5 min
+                    }}
+                />
             </form>
         </AsyncDialog>
     }

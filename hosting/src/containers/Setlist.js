@@ -117,20 +117,21 @@ class Setlist extends Component {
                     });
                     break;
                 case 'addEvent':
-                    const {eventTitle, description, time} = await this.addEventDialog.open();
+                    const {eventTitle, description, eventTime} = await this.addEventDialog.open();
                     await setlistRef.update({
                         items: [...(setlist.items || []), {
                             type: 'event',
                             title: eventTitle,
-                            time: time,
+                            time: eventTime,
                             description: description,
                             id: Math.random().toString(36).substring(2, 7),
                         }]
                     });
                     break;
                 case 'editSetlist':
-                    const {title, date} = await this.editSetlistDialog.open(setlist);
-                    await setlistRef.update({title: title, date: date});
+                    const {title, date, setlistTime} = await this.editSetlistDialog.open(setlist);
+                    console.log('setlistTime: ' + setlistTime);
+                    await setlistRef.update({title: title, date: date, time: setlistTime});
                     break;
             }
         } catch (err) {
@@ -223,7 +224,7 @@ class Setlist extends Component {
             */
             
             //Formatting the time
-            let timeString = setlist.slice(11,16);
+            let timeString = setlist.slice(10,16);
             //console.log("timeString: " + timeString);
             return dateString + " " + timeString;
         }
@@ -345,7 +346,7 @@ class Setlist extends Component {
     }
 
 
-    //TODO: make it possible to edit a score
+    //TODO: make it possible to edit a score?
     _onScoreEditClick = async() => {
         
     }
@@ -379,7 +380,7 @@ class Setlist extends Component {
                                 </Typography>
                                 <Typography variant='subheading' color='inherit' className={classes.flex}>
                                     {/*Checking for date setlist.date, if that does not exist, then we don't get anything*/}
-                                    {setlist.date && this._formatedDate(setlist.date)}
+                                    {setlist.date && setlist.time && this._formatedDate(setlist.date + setlist.time)}
                                 </Typography>
                             </div>
                             <div className={classes.flex}/>

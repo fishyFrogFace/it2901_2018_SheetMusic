@@ -314,7 +314,7 @@ class Home extends React.Component {
 
         const {band} = this.state;
 
-        const {title, date} = await this.setlistDialog.open();
+        const {title, date, time} = await this.setlistDialog.open();
 
         this.setState({message: 'Creating setlist...'});
 
@@ -322,6 +322,7 @@ class Home extends React.Component {
             let setlistRef = await firebase.firestore().collection(`bands/${band.id}/setlists`).add({
                 title: title,
                 date: date,
+                time: time,
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`)
             });
 
