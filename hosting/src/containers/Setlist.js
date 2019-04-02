@@ -117,12 +117,12 @@ class Setlist extends Component {
                     });
                     break;
                 case 'addEvent':
-                    const {eventTitle, description, eventTime} = await this.addEventDialog.open();
+                    const {eventTitle, description, time} = await this.addEventDialog.open();
                     await setlistRef.update({
                         items: [...(setlist.items || []), {
                             type: 'event',
                             title: eventTitle,
-                            time: eventTime,
+                            time: time,
                             description: description,
                             id: Math.random().toString(36).substring(2, 7),
                         }]
@@ -211,31 +211,12 @@ class Setlist extends Component {
             //Formatting the date
             let dateString = setlist.slice(0,10);
             //console.log("dateString: " + dateString);
-
-            /* Formatting for norwegian date, not in use at this time
-            let dayString = dateString.slice(8,10);
-            console.log("dayString: " + dayString);
-
-            let monthString = dateString.slice(5,7);
-            console.log("monthString: " + monthString);
-
-            let yearString = dateString.slice(0,4);
-            console.log("dayString: " + yearString);
-            */
             
             //Formatting the time
             let timeString = setlist.slice(10,16);
             //console.log("timeString: " + timeString);
             return dateString + " " + timeString;
         }
-        //Converting our timestamp to a date string object
-        let dateString = setlist.toDate().toString();
-        //Using the splice method to format the string in date, hours and minutes
-        let formatedString = dateString.split('');
-        //Splicing the interval we want to remove
-        formatedString.splice(21,45);
-        formatedString = formatedString.join('');
-        return formatedString;
     }
 
     //This function takes in an event id and it's title,

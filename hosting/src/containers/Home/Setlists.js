@@ -115,14 +115,6 @@ class Setlists extends React.Component {
             //console.log("timeString: " + timeString);
             return dateString + " " + timeString;
         }
-        //Converting our timestamp to a date string object
-        let dateString = setlist.toDate().toString();
-        //Using the splice method to format the string in date, hours and minutes
-        let formatedString = dateString.split('');
-        //Splicing the interval we want to remove
-        formatedString.splice(21,45);
-        formatedString = formatedString.join('');
-        return formatedString;
     }
 
     render() {
