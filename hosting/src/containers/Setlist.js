@@ -18,7 +18,7 @@ import EditSetlistEventDialog from "../components/dialogs/EditSetlistEventDialog
 import AsyncDialog from '../components/dialogs/AsyncDialog';
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
-import {Add, ArrowBack, Edit} from "material-ui-icons";
+import {Add, ArrowBack, Edit, MusicNote} from "material-ui-icons";
 //import { isAdmin } from '@firebase/util';
 
 const styles = {
@@ -354,6 +354,11 @@ class Setlist extends Component {
     render() {
         const {anchorEl, updatedItems, setlist, band} = this.state;
         const {classes} = this.props;
+        const eventIcon = <IconButton disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                <path d="M13 7H5v2h8V7zm-3 3H5v2h5v-2zm5-8h-1V1h-2v1H6V1H4v1H3c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1zm-1 12H4V6h10v8z"/>
+            </svg>
+        </IconButton>;
 
         let items;
         if(setlist.items){
@@ -418,7 +423,9 @@ class Setlist extends Component {
                                                                     item.type === 'score' &&
                                                                     <CardContent style={{position: 'relative'}}>
                                                                         <Typography variant='headline'>
+                                                                            <MusicNote style={{paddingRight:'10px'}}/>
                                                                             {item.score.title}
+                                                                            
                                                                             <IconButton style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onScoreEditClick()}/>
                                                                             </IconButton>
@@ -436,7 +443,9 @@ class Setlist extends Component {
                                                                     item.type === 'event' &&
                                                                     <CardContent style={{position: 'relative'}}>
                                                                         <Typography variant='headline'>
+                                                                            {eventIcon}
                                                                             {item.title} | {item.time} minutes
+                                                                        
                                                                             <IconButton style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onEventEditClick(item.id, index)}/>
                                                                             </IconButton>
