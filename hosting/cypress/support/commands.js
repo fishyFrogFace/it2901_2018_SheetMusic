@@ -23,3 +23,27 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+
+
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/database';
+import 'firebase/firestore';
+import { attachCustomCommands } from 'cypress-firebase';
+
+const projectId = Cypress.env('FIREBASE_PROJECT_ID');
+const env = Cypress.env('env') || 'stage';
+const apiKey = Cypress.env('FIREBASE_API_KEY');
+
+const fbConfig = {
+    // Your config from Firebase Console
+    apiKey,
+    authDomain: `${projectId}.firebaseapp.com`,
+    databaseURL: `https://${projectId}.firebaseio.com`,
+    projectId: `${projectId}`,
+    storageBucket: `${projectId}.appspot.com`
+};
+
+firebase.initializeApp(fbConfig);
+
+attachCustomCommands({ Cypress, cy, firebase });
