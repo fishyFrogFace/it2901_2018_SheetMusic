@@ -117,7 +117,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
             await promise;
         });
-
+        console.log("Funker serve");
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
 
         // Create document
