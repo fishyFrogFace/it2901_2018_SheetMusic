@@ -1,31 +1,31 @@
 const path = require('path');
-const {Storage} = require('@google-cloud/storage');
-const {spawn} = require('child-process-promise');
+const Storage = require('@google-cloud/storage');
+const { spawn } = require('child-process-promise');
 const fs = require('fs-extra');
 const admin = require('firebase-admin');
 
 const serviceAccount = require('./service-account-key');
 
-const storage = Storage({keyFilename: 'service-account-key.json'});
+const storage = Storage({ keyFilename: 'service-account-key.json' });
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://scoresbutler-9ff30.firebaseio.com',
-    storageBucket: 'scoresbutler-9ff30.appspot.com'
+    databaseURL: 'https://scores-bc679.firebaseio.com',
+    storageBucket: 'scores-bc679.appspot.com'
 });
 
 admin.firestore().collection('__pdfs').onSnapshot(snap => {
     snap.docChanges.forEach(async change => {
         if (change.type === "added") {
-            const {filePath} = change.doc.data();
+            const { filePath } = change.doc.data();
 
             let [bandId, fileNameExt] = filePath.split('/');
 
             // File name without extension
             const fileName = path.basename(fileNameExt, '.pdf');
 
-            const inputBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
-            const pdfBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+            const inputBucket = storage.bucket('scores-bc679.appspot.com');
+            const pdfBucket = storage.bucket('scores-butler-pdfs');
 
             const rand = Math.random().toString().substring(2, 10);
 
@@ -34,7 +34,7 @@ admin.firestore().collection('__pdfs').onSnapshot(snap => {
             await fs.ensureDir(_root);
 
             // Download to local directory
-            await inputBucket.file(filePath).download({destination: `${_root}/score.pdf`});
+            await inputBucket.file(filePath).download({ destination: `${_root}/score.pdf` });
 
             // Delete PDF file
             await inputBucket.file(filePath).delete();
@@ -92,7 +92,7 @@ admin.firestore().collection('__pdfs').onSnapshot(snap => {
                 '-resize', '40%',
                 '-path', '../output-cropped',
                 '*.png'
-            ], {cwd: `${_root}/output-original`});
+            ], { cwd: `${_root}/output-original` });
 
             convertProcess.childProcess.kill();
 
@@ -137,6 +137,7 @@ admin.firestore().collection('__pdfs').onSnapshot(snap => {
             }
 
             // Analyze PDF
+
             console.log('Analyzing...');
 
             const process2 = await spawn('xpdf/pdftotext', [
@@ -195,7 +196,7 @@ admin.firestore().collection('__pdfs').onSnapshot(snap => {
 
                 const snapshot = await admin.firestore().collection('instruments').get();
 
-                const instruments = snapshot.docs.map(doc => ({...doc.data(), ref: doc.ref}));
+                const instruments = snapshot.docs.map(doc => ({ ...doc.data(), ref: doc.ref }));
 
                 const parts = [{
                     page: 2,

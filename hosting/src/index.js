@@ -32,23 +32,49 @@ class App extends React.Component {
         signin: 'SignIn'
     };
 
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
+
+        // firebase.initializeApp({
+        //     apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
+        //     authDomain: "scores-butler.firebaseapp.com",
+        //     databaseURL: "https://scores-butler.firebaseio.com",
+        //     projectId: "scores-butler",
+        //     storageBucket: "scoresbutler-9ff30.appspot.com",
+        //     messagingSenderId: "124262758995"
+        // });
+
 
         // Initialize Firebase
         var config = {
-            apiKey: "AIzaSyB5ofZU4-5tj0vT-KPShQ6QhZCP6TeAQvQ",
-            authDomain: "scoresbutler-9ff30.firebaseapp.com",
-            databaseURL: "https://scoresbutler-9ff30.firebaseio.com",
-            projectId: "scoresbutler-9ff30",
-            storageBucket: "scoresbutler-9ff30.appspot.com",
-            messagingSenderId: "60488644815"
+            apiKey: "AIzaSyCBHe8CK4uabfrJeS-GwyQ3phiQQ2Q73cE",
+            authDomain: "scores-bc679.firebaseapp.com",
+            databaseURL: "https://scores-bc679.firebaseio.com",
+            projectId: "scores-bc679",
+            storageBucket: "scores-bc679.appspot.com",
+            messagingSenderId: "717099268802"
         };
         firebase.initializeApp(config);
 
+
         firebase.auth().onAuthStateChanged(user => this._onUserStateChanged(user));
         window.addEventListener('hashchange', () => this._onHashChange());
+
+        //     let ref = firebase.ref('instruments');
+        //     ref.on('value', gotData, errdata);
+        // }
+
+        // gotData = (data) => {
+        //     console.log(data)
     }
+
+    readUserData() {
+        firebase.database().ref('instruments/').once('value', function (snapshot) {
+            console.log(snapshot.val())
+        });
+    }
+
+
 
     async _onUserStateChanged(user) {
         let hash = (() => {

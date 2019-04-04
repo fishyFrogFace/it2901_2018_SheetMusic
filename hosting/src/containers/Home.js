@@ -245,7 +245,7 @@ class Home extends React.Component {
     _onCreateBand = async () => {
         this.setState({ bandAnchorEl: null });
 
-        const { name,  } = await this.createDialog.open();
+        const { name, } = await this.createDialog.open();
 
         this.setState({ message: 'Creating band...' });
 
@@ -411,10 +411,10 @@ class Home extends React.Component {
                 this.setState({ message: null });
                 break;
 
-            case 'dropbox':
-                const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
-                console.log(response.status);
-                break;
+            // case 'dropbox':
+            //     const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
+            //     console.log(response.status);
+            //     break;
 
             case 'drive':
                 break;
@@ -569,11 +569,11 @@ class Home extends React.Component {
 
                     // Creating list with scores
                     this.unsubs.push(
-                        data.defaultBandRef.collection('score').onSnapshot(async snapshot => {
+                        data.defaultBandRef.collection('scores').onSnapshot(async snapshot => {
                             let items = await Promise.all(
                                 snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                             );
-                            this.setState({ band: { ...this.state.band, score: items } });
+                            this.setState({ band: { ...this.state.band, scores: items } });
                         })
                     );
 
@@ -742,7 +742,7 @@ class Home extends React.Component {
                                 open={Boolean(bandAnchorEl)}
                                 onClose={this._onMenuClose}
                             >
-                                <MenuItem onClick={this._onCreateBand} style={{ height: 15 }}>
+                                <MenuItem id='create-band-button' onClick={this._onCreateBand} style={{ height: 15 }}>
                                     Create band
                                 </MenuItem>
                                 <MenuItem onClick={this._onJoinBand} style={{ height: 15 }}>

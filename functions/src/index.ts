@@ -1,5 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as path from 'path';
+import * as Storage from '@google-cloud/storage';
+
 import { spawn } from 'child-process-promise';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
@@ -10,9 +12,6 @@ import 'isomorphic-fetch';
 import { Dropbox } from 'dropbox';
 import * as cors from 'cors';
 import * as request from 'request-promise-native';
-const pdfUtil = require('pdf-to-text');
-const {Storage} = require('@google-cloud/storage');
-
 
 admin.initializeApp();
 
@@ -74,16 +73,14 @@ exports.extractZip = functions.storage.object().onFinalize(async (object, contex
 
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
 exports.convertPDF = functions.storage.object().onFinalize(async (object, context) => {
+    //const object = event.data;
+
+    //if (object.resourceState === 'not_exists') return null;
+
     // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
 
     if (!filePath.endsWith('.pdf')) return null;
-
-    const ref = await admin.firestore().collection('__pdfs').add({
-        filePath: filePath
-    });
-
-    await ref.delete();
 
     let [bandId, fileNameExt] = filePath.split('/');
 
@@ -92,43 +89,23 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
     // Create storage bucket
     const inputBucket = storage.bucket(object.bucket);
-    const pdfBucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+
+    const pdfBucket = storage.bucket('gs://scores-bc679.appspot.com');
 
     try {
-
-        pdfUtil.info(filePath, function(err, info) {
-            if (err) throw(err);
-            console.log(info);
-        });
-
-
-        console.log('Test...')
-        console.log('Object ', object);
-        console.log('Bucket ', object.bucket);
-
         // Download to local directory
         await inputBucket.file(filePath).download({ destination: '/tmp/score.pdf' });
 
         // Delete PDF file
         await inputBucket.file(filePath).delete();
 
-        console.log('Creating directories...');
-
         // Create output directories
         await fs.ensureDir('/tmp/output-original');
         await fs.ensureDir('/tmp/output-cropped');
         await fs.ensureDir('/tmp/output-cropped-compressed');
 
-        await fs.writeFile('/tmp/.xpdfrc', '');
-
-        console.log('Getting PDF info...');
-
-        console.log(await fs.readdir('./'));
-
-        console.log(await fs.readdir('/tmp'));
-
         const pdfInfo = await new Promise<string>(async resolve => {
-            const promise = spawn('./xpdf/pdfinfo', [
+            const promise = spawn('xpdf/pdfinfo', [
                 '-cfg', '/tmp/.xpdfrc',
                 '/tmp/score.pdf',
             ]);
@@ -141,11 +118,10 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             await promise;
         });
 
+        console.log('pfdInfo', pdfInfo)
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
 
-        console.log('Creating document...');
-
-
+        // Create document
         const pdfRef = await admin.firestore().collection(`bands/${bandId}/pdfs`).add({
             name: fileName,
             uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -153,8 +129,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             processing: true
         });
 
-        console.log('Generating images...');
-
+        // Generate images
         const gsProcess = await spawn('ghostscript/bin/./gs', [
             '-dBATCH',
             '-dNOPAUSE',
@@ -166,7 +141,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
         gsProcess.childProcess.kill();
 
-        console.log('Cropping images...');
+        console.log('PDF conversion complete!');
 
         const convertProcess = await spawn('mogrify', [
             '-crop', '4000x666+0+0',
@@ -175,6 +150,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             '*.png'
         ], { cwd: '/tmp/output-original/' });
 
+        console.log('Image crop complete!');
 
         convertProcess.childProcess.kill();
 
@@ -182,7 +158,6 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             // Read files
             const fileNames = await fs.readdir(`/tmp/output-${outputType}`);
 
-            // Upload files
             const uploadResponses = await Promise.all(
                 fileNames.map((name, index) =>
                     pdfBucket.upload(`/tmp/output-${outputType}/${name}`, {
@@ -217,13 +192,14 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         }
 
         // Analyze PDF
+        await fs.writeFile('/tmp/.xpdfrc', '');
 
         const process2 = await spawn('xpdf/pdftotext', [
             '-cfg', '/tmp/.xpdfrc',
             '/tmp/score.pdf',
         ]);
-
         process2.childProcess.kill();
+        console.log('process2', process2)
 
         const data = {
             processing: admin.firestore.FieldValue.delete(),
@@ -232,6 +208,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         };
 
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
+        console.log('pdfText', pdfText)
 
         if (pdfText.includes('jazzbandcharts')) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
@@ -362,7 +339,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 exports.analyzePDF = functions.https.onRequest(async (req, res) => {
     const { bandId, pdfId } = req.query;
 
-    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+    const bucket = storage.bucket('gs://scores-bc679.appspot.com');
 
     await bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({ destination: '/tmp/image.png' });
 
@@ -375,7 +352,7 @@ exports.analyzePDF = functions.https.onRequest(async (req, res) => {
 });
 
 exports.generatePDF = functions.https.onRequest(async (req, res) => {
-    const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+    const bucket = storage.bucket('gs://scores-bc679.appspot.com');
 
     const doc = new PDFDocument();
 
@@ -400,7 +377,7 @@ exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
         const { bandId, folderPath, accessToken } = req.query;
         const dropbox = new Dropbox({ accessToken: accessToken });
         const response = await dropbox.filesDownloadZip({ path: folderPath }) as any;
-        const bucket = storage.bucket('scoresbutler-9ff30.appspot.com');
+        const bucket = storage.bucket('scores-bc679.appspot.com');
         await bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
         res.status(200).send();
     });

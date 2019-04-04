@@ -1,11 +1,11 @@
 import React from 'react';
-import {withStyles} from 'material-ui/styles';
+import { withStyles } from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {Drawer, IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
+import { Drawer, IconButton, Menu, MenuItem, Select, Snackbar } from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 
@@ -13,7 +13,8 @@ import firebase from 'firebase';
 import 'firebase/storage';
 
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
-import {FileDownload, Info, InfoOutline} from "material-ui-icons";
+import { FileDownload, Info, InfoOutline } from "material-ui-icons";
+
 
 const styles = {
     root: {},
@@ -51,7 +52,7 @@ class Score extends React.Component {
     unsubs = [];
 
     _onInstrumentSelectChange(e) {
-        this.setState({selectedPart: e.target.value});
+        this.setState({ selectedPart: e.target.value });
     }
 
     _onArrowBackButtonClick = () => {
@@ -59,32 +60,32 @@ class Score extends React.Component {
     };
 
     _onMenuClose() {
-        this.setState({anchorEl: null});
+        this.setState({ anchorEl: null });
     }
 
     _onMoreVertClick(e) {
-        this.setState({anchorEl: e.currentTarget});
+        this.setState({ anchorEl: e.currentTarget });
     }
 
     async _onMenuClick(type) {
-        this.setState({anchorEl: null});
+        this.setState({ anchorEl: null });
 
         const user = firebase.auth().currentUser;
 
         switch (type) {
             case 'download':
                 try {
-                    const {selectedPart, score} = this.state;
+                    const { selectedPart, score } = this.state;
 
                     const part = score.parts[selectedPart];
 
-                    const {} = await this.downloadDialog.open(part.instrument);
+                    const { } = await this.downloadDialog.open(part.instrument);
 
                     const jsPDF = await import('jspdf');
 
                     const dateString = new Date().toLocaleDateString();
 
-                    const {width, height} = await new Promise(resolve => {
+                    const { width, height } = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
                         img.src = part.pages[0].originalURL;
@@ -123,7 +124,7 @@ class Score extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-        const {page, detail} = this.props;
+        const { page, detail } = this.props;
 
         if (page !== prevProps.page) {
             const [bandId, scoreId] = [detail.slice(0, 20), detail.slice(20)];
@@ -136,7 +137,7 @@ class Score extends React.Component {
 
             this.unsubs.push(
                 scoreDoc.onSnapshot(async snapshot => {
-                    this.setState({score: {...this.state.score, ...snapshot.data(), id: snapshot.id}});
+                    this.setState({ score: { ...this.state.score, ...snapshot.data(), id: snapshot.id } });
                 })
             );
 
@@ -149,19 +150,24 @@ class Score extends React.Component {
                             instrument: (await doc.data().instrumentRef.get()).data()
                         }))
                     );
+                    { console.log('unsubs: ', this.unsubs) }
+
 
                     const partsSorted = parts
                         .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
 
-                    this.setState({score: {...this.state.score, parts: partsSorted}});
+                    this.setState({ score: { ...this.state.score, parts: partsSorted } });
                 })
             );
         }
     }
 
+
+
     render() {
-        const {classes} = this.props;
-        const {anchorEl, message, selectedPart, score} = this.state;
+
+        const { classes } = this.props;
+        const { anchorEl, message, selectedPart, score } = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
 
@@ -170,7 +176,7 @@ class Score extends React.Component {
                 <AppBar>
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                            <ArrowBackIcon/>
+                            <ArrowBackIcon />
                         </IconButton>
                         <Typography variant="title" color="inherit">
                             {score.title}
@@ -186,17 +192,20 @@ class Score extends React.Component {
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                                  value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}</MenuItem>
+                                            value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
+
+                                            {console.log(part.instrument.name)}
+                                        </MenuItem>
                                     )
                                 }
                             </Select>
                         }
-                        <div className={classes.flex}/>
+                        <div className={classes.flex} />
                         <IconButton color='inherit' onClick={e => this._onMenuClick('download')}>
-                            <FileDownload/>
+                            <FileDownload />
                         </IconButton>
                         <IconButton color='inherit' onClick={e => this._onMenuClick('info')}>
-                            <InfoOutline/>
+                            <InfoOutline />
                         </IconButton>
                     </Toolbar>
                 </AppBar>
@@ -204,18 +213,18 @@ class Score extends React.Component {
                     {
                         hasParts &&
                         (score.parts[selectedPart].pages || []).map((page, index) =>
-                            <img key={index} className={classes.sheet} src={page.originalURL}/>
+                            <img key={index} className={classes.sheet} src={page.originalURL} />
                         )
                     }
                 </div>
                 <Drawer
                     anchor='right'
                     open={false}
-                    classes={{paper: classes.drawer__paper}}
+                    classes={{ paper: classes.drawer__paper }}
                 >
                     lol
                 </Drawer>
-                <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref}/>
+                <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref} />
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',

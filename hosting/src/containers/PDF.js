@@ -87,6 +87,8 @@ class PDF extends React.Component {
         } else {
             if (selectedPages.has(index)) {
                 selectedPages.delete(index);
+                
+        console.log("Depeted");
             } else {
                 selectedPages.add(index);
             }
