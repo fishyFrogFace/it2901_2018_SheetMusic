@@ -347,11 +347,21 @@ class Scores extends React.Component {
 
             let chosenInstrument = this.state.chosenInstrument;
             if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
-                scores = scores.filter(score => this.instrumentInScore(chosenInstrument, score)) // The scorer are filtered on instrument
+                scores = scores.filter(score => this.instrumentInScore(chosenInstrument, score)) // The scores are filtered on instrument
             }
 
             // Make list of all available composers
-            composers.push(this.state.defaultComposer); // Get default (All composers)
+
+            /*.push(this.state.defaultComposer); // Get default (All composers)
+
+            band.scores.map(score => {
+                if (!composers.includes(score.composer)) { // And all unique composer
+                    composers.push(score.composer)
+                }
+            });*/
+
+            // Make list of all available composers (with dummy data)
+            composers.push(this.state.defaultComposer); // Get default
 
             band.scores.map(score => {
                 if (!composers.includes(score.composer)) { // And all unique composer
@@ -359,30 +369,22 @@ class Scores extends React.Component {
                 }
             });
 
-            // Make list of all available composers (with dummy data)
-            /*composers.push(this.state.defaultComposer); // Get default
 
-            this.state.scores.map(score => {
-                if (!composers.includes(score.composer)) { // And all unique composer
-                    composers.push(score.composer)
-                }
-            });*/
-
-            
-            // With instruments from scores:
+           // With instruments from scores:
 
             // Make list of all available instruments
-            band.scores.map(score => {
+            /*band.scores.map(score => {
                 score.instruments.map(instrument => {
                     if (!instruments.includes(instrument)) { // And all unique instruments
                         instruments.push(instrument)
                     }
                 })
 
-            })
+            })*/
+
 
             // Make list of all available instruments  (with dummy data)
-            /* instruments.push(this.state.defaultInstrument); // Get default
+             instruments.push(this.state.defaultInstrument); // Get default
 
              this.state.scores.map(score => {
                  score.instruments.map(instrument => {
@@ -390,7 +392,8 @@ class Scores extends React.Component {
                          instruments.push(instrument)
                      }
                  })
-             })*/
+
+             })
         }
 
 
@@ -435,6 +438,7 @@ class Scores extends React.Component {
                         value={this.state.defaultInstrument}
                         renderValue={() => this.state.chosenInstrument}
                         inputProps={{id: 'instrument'}}
+                        id = "filterInstrument"
                     >
                         {instruments.map((instrument, key) =>
                             <MenuItem key={key} value={instrument}>{instrument}</MenuItem>)
@@ -443,7 +447,7 @@ class Scores extends React.Component {
 
                 </div>
             </div>
-            <div>
+            <div className="scoreList">
                 {/* the simple list view */}
                 {
                     listView && hasScores &&
