@@ -12,6 +12,8 @@ import 'isomorphic-fetch';
 import { Dropbox } from 'dropbox';
 import * as cors from 'cors';
 import * as request from 'request-promise-native';
+import * as XMLHttpRequest from 'xmlhttprequest';
+// import * as firebase from 'firebase';
 
 admin.initializeApp();
 
@@ -142,8 +144,9 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
         console.log('PDF conversion complete!');
 
+        // '-crop', '4000x666+0+0',
         const convertProcess = await spawn('mogrify', [
-            '-crop', '4000x666+0+0',
+            '-crop', '4000x666',
             '-resize', '40%',
             '-path', '../output-cropped',
             '*.png'
@@ -350,24 +353,43 @@ exports.analyzePDF = functions.https.onRequest(async (req, res) => {
 });
 
 exports.generatePDF = functions.https.onRequest(async (req, res) => {
-    const bucket = storage.bucket('gs://scores-bc679.appspot.com');
+    console.log("TEST!!3");
+    // const bucket = storage.bucket('gs://scores-bc679.appspot.com');
+    // const doc = new PDFDocument();
 
-    const doc = new PDFDocument();
+    // const image = '';
 
-    const image = '';
+    // const file = bucket.file('test/test.pdf');
+    // await file.setMetadata({ contentType: 'application/pdf' });
 
-    const file = bucket.file('test/test.pdf');
-    await file.setMetadata({ contentType: 'application/pdf' });
+    // const writeStream = file.createWriteStream();
 
-    const writeStream = file.createWriteStream();
+    // doc.pipe(writeStream);
+    // doc.image(image, 0, 0);
+    // doc.end();
 
-    doc.pipe(writeStream);
-    doc.image(image, 0, 0);
-    doc.end();
-
-    writeStream.on('finish', async () => {
-        res.status(200).send();
-    });
+    // writeStream.on('finish', async () => {
+    //     res.status(200).send();
+    // });
+    
+    // firebase.storage().ref().child('test/test.pdf').getDownloadURL().then(function(url) {
+    //     // `url` is the download URL for 'images/stars.jpg'
+      
+    //     // This can be downloaded directly:
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.responseType = 'blob';
+    //     xhr.onload = function(event) {
+    //       var blob = xhr.response;
+    //     };
+    //     xhr.open('GET', url);
+    //     xhr.send();
+      
+    //     // Or inserted into an <img> element:
+    //     // var img = document.getElementById('myimg');
+    //     // img.src = url;
+    // }).catch(function(error) {
+    //     // Handle any errors
+    // });
 });
 
 exports.uploadFromDropbox = functions.https.onRequest((req, res) => {

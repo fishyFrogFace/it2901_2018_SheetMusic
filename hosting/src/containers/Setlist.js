@@ -15,7 +15,7 @@ import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
 
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { Add, ArrowBack, Edit } from "material-ui-icons";
+import { Add, ArrowBack, Edit, FileDownload } from "material-ui-icons";
 
 const styles = {
     root: {},
@@ -115,10 +115,53 @@ class Setlist extends Component {
                     const { title, date } = await this.editSetlistDialog.open(setlist);
                     await setlistRef.update({ title: title, date: date });
                     break;
+                case 'download':
+                        console.log(score);
+                        console.log(this.state);
+                        const setlist = this.state.setlist;
+                    //     const { selectedPart, score } = this.state;
+
+                    //     const part = score.parts[selectedPart];
+                    //     const { } = await this.downloadDialog.open(part.instrument);
+
+                        const dateString = new Date().toLocaleDateString();
+
+                        // Get image
+                        const { width, height } = await new Promise(resolve => {
+                            const img = new Image();
+                            img.onload = () => resolve(img);
+                            img.src = part.pages[0].originalURL;
+                        });
+                        
+                    //     // Make PDF
+                    //     const size_increase = 1.33334;
+                    //     const doc = new jsPDF('p', 'px', [width*size_increase, height*size_increase]);
+
+                    //     for (let i = 0; i < part.pages.length; i++) {
+                    //         if (i > 0) {
+                    //             doc.addPage();
+                    //         }
+
+                    //         const url = part.pages[i].originalURL;
+                    //         const response = await fetch(url);
+                    //         const blob = await response.blob();
+
+                    //         const imageData = await new Promise((resolve, reject) => {
+                    //             const reader = new FileReader();
+                    //             reader.onloadend = () => resolve(reader.result);
+                    //             reader.onerror = reject;
+                    //             reader.readAsDataURL(blob);
+                    //         });
+
+                    //         doc.addImage(imageData, 'PNG', 0, 0, width, height);
+                    //         doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
+                    //     }
+                    //     doc.save(`${score.title}.pdf`);
+                        break;
+                }
+            } catch (err) {
+                console.log(err);
             }
-        } catch (err) {
-            console.log(err);
-        }
 
         this.setState({ anchorEl: null });
     }
@@ -198,6 +241,9 @@ class Setlist extends Component {
                                 </Typography>
                             </div>
                             <div className={classes.flex} />
+                            <IconButton color="inherit" onClick={() => this._onMenuClick('download')}>
+                                <FileDownload />
+                            </IconButton>
                             <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
                                 <Edit />
                             </IconButton>

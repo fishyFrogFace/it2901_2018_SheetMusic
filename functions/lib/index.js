@@ -15,12 +15,12 @@ const child_process_promise_1 = require("child-process-promise");
 const fs = require("fs-extra");
 const admin = require("firebase-admin");
 const unzipper = require("unzipper");
-const PDFDocument = require("pdfkit");
 const vision = require("@google-cloud/vision");
 require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
 const cors = require("cors");
 const request = require("request-promise-native");
+// import * as firebase from 'firebase';
 admin.initializeApp();
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
 // Extracts ZIP with pdfs
@@ -116,8 +116,9 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         ]);
         gsProcess.childProcess.kill();
         console.log('PDF conversion complete!');
+        // '-crop', '4000x666+0+0',
         const convertProcess = yield child_process_promise_1.spawn('mogrify', [
-            '-crop', '4000x666+0+0',
+            '-crop', '4000x666',
             '-resize', '40%',
             '-path', '../output-cropped',
             '*.png'
@@ -276,18 +277,35 @@ exports.analyzePDF = functions.https.onRequest((req, res) => __awaiter(this, voi
     yield res.json(detections);
 }));
 exports.generatePDF = functions.https.onRequest((req, res) => __awaiter(this, void 0, void 0, function* () {
-    const bucket = storage.bucket('gs://scores-bc679.appspot.com');
-    const doc = new PDFDocument();
-    const image = '';
-    const file = bucket.file('test/test.pdf');
-    yield file.setMetadata({ contentType: 'application/pdf' });
-    const writeStream = file.createWriteStream();
-    doc.pipe(writeStream);
-    doc.image(image, 0, 0);
-    doc.end();
-    writeStream.on('finish', () => __awaiter(this, void 0, void 0, function* () {
-        res.status(200).send();
-    }));
+    console.log("TEST!!3");
+    // const bucket = storage.bucket('gs://scores-bc679.appspot.com');
+    // const doc = new PDFDocument();
+    // const image = '';
+    // const file = bucket.file('test/test.pdf');
+    // await file.setMetadata({ contentType: 'application/pdf' });
+    // const writeStream = file.createWriteStream();
+    // doc.pipe(writeStream);
+    // doc.image(image, 0, 0);
+    // doc.end();
+    // writeStream.on('finish', async () => {
+    //     res.status(200).send();
+    // });
+    // firebase.storage().ref().child('test/test.pdf').getDownloadURL().then(function(url) {
+    //     // `url` is the download URL for 'images/stars.jpg'
+    //     // This can be downloaded directly:
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.responseType = 'blob';
+    //     xhr.onload = function(event) {
+    //       var blob = xhr.response;
+    //     };
+    //     xhr.open('GET', url);
+    //     xhr.send();
+    //     // Or inserted into an <img> element:
+    //     // var img = document.getElementById('myimg');
+    //     // img.src = url;
+    // }).catch(function(error) {
+    //     // Handle any errors
+    // });
 }));
 exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
     return cors({ origin: true })(req, res, () => __awaiter(this, void 0, void 0, function* () {

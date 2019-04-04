@@ -5,6 +5,7 @@
   "dependencies": {
     "@babel/runtime": "^7.0.0-beta.55",
     "@material-ui/icons": "^3.0.2",
+    "cors": "^2.8.5",
     "date-fns": "2.0.0-alpha.7",
     "dropbox": "^4.0.1",
     "fast-levenshtein": "^2.0.6",
