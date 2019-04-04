@@ -219,6 +219,7 @@ class Members extends React.Component {
 
    // Changing band name
    _onChangeBandName = async () => {
+      this.setState({ anchorEl: null });
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { name } = await this.changeNameDialog.open();
       await bandRef.update({
@@ -228,8 +229,8 @@ class Members extends React.Component {
 
    // Choosing or changing band type
    _onChooseBandType = async () => {
+      this.setState({ anchorEl: null });
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-
       bandRef.update({
          bandtype: null
       })
@@ -237,6 +238,7 @@ class Members extends React.Component {
 
    // Changing band description
    _onChangeBandDesc = async () => {
+      this.setState({ anchorEl: null });
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { desc } = await this.changeDescDialog.open();
 
@@ -255,6 +257,8 @@ class Members extends React.Component {
 
    // Deleting a band (only possible as band leader)
    _onDeleteBand = async () => {
+      this.setState({ anchorEl: null });
+
       let band = this.props.band;
       const bandRef = firebase.firestore().doc(`bands/${band.id}`);
       const userRef = firebase.firestore().doc(`users/${this.state.user}`);
@@ -708,8 +712,9 @@ class Members extends React.Component {
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
 
-                     <Typography className={classes.headerPanel}> {band.name}
+                     <Typography id='band-name-title' className={classes.headerPanel}> {band.name}
                         <IconButton
+                           id='see-more-band-button'
                            className={classes.seeMoreButton}
                            aria-label="See more"
                            aria-owns={open ? 'long-menu' : undefined}
@@ -724,10 +729,10 @@ class Members extends React.Component {
                            open={Boolean(anchorEl)}
                            onClose={this.handleCloseSeeMore}
                         >
-                           <MenuItem onClick={this._onChangeBandName}>Change bandname</MenuItem>
-                           <MenuItem onClick={this._onChooseBandType}>Change bandtype</MenuItem>
-                           <MenuItem onClick={this._onChangeBandDesc}>Change description</MenuItem>
-                           <MenuItem onClick={this._onDeleteBand}>Delete band</MenuItem>
+                           <MenuItem id='change-bandName-button' onClick={this._onChangeBandName}>Change bandname</MenuItem>
+                           <MenuItem id='change-bandType-button' onClick={this._onChooseBandType}>Change bandtype</MenuItem>
+                           <MenuItem id='change-bandDesc-button' onClick={this._onChangeBandDesc}>Change description</MenuItem>
+                           <MenuItem id='delete-band-button' onClick={this._onDeleteBand}>Delete band</MenuItem>
                         </Menu>
                      </Typography>
 
@@ -765,7 +770,7 @@ class Members extends React.Component {
                      {band.description &&
                         <div>
                            <Typography className={classes.heading}> Band description </Typography>
-                           <Typography className={classes.secondaryHeading}> {band.description} </Typography>
+                           <Typography id='band-description-text' className={classes.secondaryHeading}> {band.description} </Typography>
                         </div>
                      }
 
@@ -975,8 +980,9 @@ class Members extends React.Component {
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
 
-                     <Typography className={classes.headerPanel}> {band.name}
+                     <Typography id='band-name-title' className={classes.headerPanel}> {band.name}
                         <IconButton
+                           id='see-more-band-button'
                            className={classes.seeMoreButton}
                            aria-label="See more"
                            aria-owns={open ? 'long-menu' : undefined}
@@ -1244,7 +1250,7 @@ class Members extends React.Component {
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
 
-                     <Typography className={classes.headerPanel}> {band.name} </Typography>
+                     <Typography id='band-name-title' className={classes.headerPanel}> {band.name} </Typography>
 
                      <Typography className={classes.heading} style={{ marginTop: '10px' }}> Bandcode </Typography>
                      <Typography className={classes.secondaryHeading}> {band.code} </Typography>

@@ -742,7 +742,7 @@ class Home extends React.Component {
                                 open={Boolean(bandAnchorEl)}
                                 onClose={this._onMenuClose}
                             >
-                                <MenuItem onClick={this._onCreateBand} style={{ height: 15 }}>
+                                <MenuItem id='create-band-button' onClick={this._onCreateBand} style={{ height: 15 }}>
                                     Create band
                                 </MenuItem>
                                 <MenuItem onClick={this._onJoinBand} style={{ height: 15 }}>
