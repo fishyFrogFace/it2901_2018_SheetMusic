@@ -26,12 +26,8 @@ class EditSetlistEventDialog extends React.Component {
         console.log("event: " + event);
         this.setState({title: event.title, description: event.description, time: event.time})
         await this.dialog.open();
-        return {title: this.state.title, description: this.state.title, time: this.state.time};
+        return {title: this.state.title, description: this.state.description, time: this.state.time};
     }
-
-    /*_onTextFieldChange(e, name) {
-        this.state[name] = e.target.value;
-    }*/
     _onTitleInputChange = e => {
         this.setState({title: e.target.value});
     };
