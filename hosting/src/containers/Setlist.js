@@ -204,18 +204,19 @@ class Setlist extends Component {
         }
     }
 
-    //This function will take in a timestamp and display it in the correct date, hour and minute
-    _formatedDate = (setlist) => {
-        //Checks if setlist is a string and returns the formatted result
-        if(typeof setlist === 'string'){
-            //Formatting the date
-            let dateString = setlist.slice(0,10);
-            //console.log("dateString: " + dateString);
-            
-            //Formatting the time
-            let timeString = setlist.slice(10,16);
-            //console.log("timeString: " + timeString);
-            return dateString + " " + timeString;
+    //This function checks that setlistDate is a string, if so returns it and a space
+    _formatedDate = (setlistDate) => {
+        if(typeof setlistDate === 'string'){
+            console.log('Setlist date: ' + setlistDate);
+            return setlistDate + " ";
+        }
+    }
+
+    //This function checks that setlistTime is a string, if so returns it
+    _formatedTime = (setlistTime) => {
+        if(typeof setlistTime === 'string'){
+            console.log("setlist time: " + setlistTime);
+            return setlistTime;
         }
     }
 
@@ -360,8 +361,9 @@ class Setlist extends Component {
                                     {setlist.title}
                                 </Typography>
                                 <Typography variant='subheading' color='inherit' className={classes.flex}>
-                                    {/*Checking for date setlist.date, if that does not exist, then we don't get anything*/}
-                                    {setlist.date && setlist.time && this._formatedDate(setlist.date + setlist.time)}
+                                    {/*Checking for date setlist.date, if that does not exist, then we don't get anything, same with setlist.time*/}
+                                    {setlist.date && this._formatedDate(setlist.date)}
+                                    {setlist.time && this._formatedTime(setlist.time)}
                                 </Typography>
                             </div>
                             <div className={classes.flex}/>

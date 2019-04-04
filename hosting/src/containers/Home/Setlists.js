@@ -103,17 +103,19 @@ class Setlists extends React.Component {
         this.setState({sortedAlphabetically: alpha});
       };
 
-    //This function will take in a timestamp and display it in the correct date, hour and minute
-    _formatedDate = (setlist) => {
-        if(typeof setlist === 'string'){
-            //console.log('Setlist: ' + setlist);
-            //Formatting the date
-            let dateString = setlist.slice(0,10);
-            //console.log("dateString: " + dateString);
-            //Formatting the time
-            let timeString = setlist.slice(10,16);
-            //console.log("timeString: " + timeString);
-            return dateString + " " + timeString;
+    //This function checks that setlistDate is a string, if so returns it and a space
+    _formatedDate = (setlistDate) => {
+        if(typeof setlistDate === 'string'){
+            console.log('Setlist date: ' + setlistDate);
+            return setlistDate + " ";
+        }
+    }
+
+    //This function checks that setlistTime is a string, if so returns it
+    _formatedTime = (setlistTime) => {
+        if(typeof setlistTime === 'string'){
+            console.log("setlist time: " + setlistTime);
+            return setlistTime;
         }
     }
 
@@ -196,7 +198,8 @@ class Setlists extends React.Component {
                                     </Typography>
                                     <Typography component="p">
                                         {/*Checking for date setlist.date, if that does not exist, then we don't display anything*/}
-                                        {setlist.date && setlist.time && this._formatedDate(setlist.date + setlist.time)}
+                                        {setlist.date && this._formatedDate(setlist.date)}
+                                        {setlist.time && this._formatedTime(setlist.time)}
                                     </Typography>
                                     
                                 </CardContent>
