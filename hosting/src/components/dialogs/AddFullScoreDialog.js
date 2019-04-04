@@ -76,6 +76,8 @@ class AddFullScoreDialog extends React.Component {
                 .map(doc => ({...doc.data(), id: doc.id}))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
+            console.log(instruments);
+
             this.setState({
                 instruments: instruments,
                 parts: pdf.parts || []

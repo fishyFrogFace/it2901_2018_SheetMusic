@@ -14,6 +14,7 @@ import 'firebase/storage';
 
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 import { FileDownload, Info, InfoOutline } from "material-ui-icons";
+import jsPDF from jspdf;
 
 
 const styles = {
@@ -80,8 +81,6 @@ class Score extends React.Component {
                     const part = score.parts[selectedPart];
 
                     const { } = await this.downloadDialog.open(part.instrument);
-
-                    const jsPDF = await import('jspdf');
 
                     const dateString = new Date().toLocaleDateString();
 

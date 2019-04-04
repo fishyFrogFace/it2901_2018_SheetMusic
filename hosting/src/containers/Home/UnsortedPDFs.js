@@ -52,8 +52,8 @@ class UnsortedPDFs extends React.Component {
     };
 
     _onAddParts = async pdfs => {
-        const { score, parts } = await this.addPartsDialog.open(pdfs);
-        this.props.onAddParts(score, parts);
+        const { score, parts, tune } = await this.addPartsDialog.open(pdfs);
+        this.props.onAddParts(score, parts, tune);
     };
 
     _onRemoveUnsortedPdf = async pdf => {

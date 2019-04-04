@@ -162,7 +162,8 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             pages: pages,
         };
         const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
-        if (pdfText.includes('jazzbandcharts')) {
+        if (true) {
+            //(pdfText.includes('jazzbandcharts')) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
                     name: 'Score',

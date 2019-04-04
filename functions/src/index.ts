@@ -208,7 +208,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
 
-        if (pdfText.includes('jazzbandcharts')) {
+        if (true) {
+            //(pdfText.includes('jazzbandcharts')) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
 
             const patterns = [{
@@ -397,5 +398,3 @@ exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{s
         await snap.ref.update({ thumbnailURL: response.items[0].link });
     }
 });
-
-
