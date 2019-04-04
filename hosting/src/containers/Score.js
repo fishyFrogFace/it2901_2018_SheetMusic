@@ -16,6 +16,7 @@ import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 import { FileDownload, Info, InfoOutline } from "material-ui-icons";
 
 
+
 const styles = {
     root: {},
 
@@ -171,6 +172,7 @@ class Score extends React.Component {
 
         const hasParts = Boolean(score.parts && score.parts.length);
 
+        console.log('this.state.score', this.state.score)
         return (
             <div className={classes.root}>
                 <AppBar>
@@ -214,6 +216,7 @@ class Score extends React.Component {
                         hasParts &&
                         (score.parts[selectedPart].pages || []).map((page, index) =>
                             <img key={index} className={classes.sheet} src={page.originalURL} />
+
                         )
                     }
                 </div>

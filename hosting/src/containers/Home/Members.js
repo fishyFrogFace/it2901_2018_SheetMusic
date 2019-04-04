@@ -611,6 +611,7 @@ class Members extends React.Component {
       this.setState({ [name]: event.target.value });
 
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+      console.log('event.target', event.target)
 
       bandRef.update({
          bandtype: event.target.value
@@ -701,6 +702,7 @@ class Members extends React.Component {
       const { anchorEl } = this.state;
       const open = Boolean(anchorEl);
       let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
+
 
       if (this.state.isLeader) {
          return <div>
