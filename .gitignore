@@ -31,4 +31,3 @@ yarn-error.log*
 
 hosting/build/
 package-lock.json
-service-account-key.json
