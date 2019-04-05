@@ -108,7 +108,8 @@ class App extends React.Component {
             //     pg = 'Score';
             // }
             
-            const component = (await import(`./containers/${pg}.js`)).default;
+            // const component = (await import(`./containers/${pg}.js`)).default;
+            const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
             this.setState({ Component: component }, () => {
                 this.setState({ page: page, detail: detail, componentLoaded: this._componentLoaded }, () => {

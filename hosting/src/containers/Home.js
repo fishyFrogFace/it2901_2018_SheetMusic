@@ -96,6 +96,7 @@ class Home extends React.Component {
         userData: {},
 
         pdfSelected: false,
+        scoreInfo: []
     };
 
     unsubs = [];
@@ -180,6 +181,8 @@ class Home extends React.Component {
 
         this.setState({ message: 'Adding parts...' });
 
+
+
         let scoreRef;
         if (scoreData.id) {
             scoreRef = firebase.firestore().doc(`bands/${band.id}/scores/${scoreData.id}`);
@@ -189,6 +192,9 @@ class Home extends React.Component {
 
         for (let part of parts) {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
+            console.log('pdfDoc', pdfDoc)
+            console.log('pdfDoc.data()', pdfDoc.data())
+            this.setState({ band: { ...this.state.band, scoreInfo: part } });
 
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
@@ -196,13 +202,17 @@ class Home extends React.Component {
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
             });
 
+
             await pdfDoc.ref.delete();
 
             console.log("Depeted");
         }
 
-        this.setState({ message: null });
+        this.setState({ message: null, });
+
     };
+
+
 
     // REMOVING UPLOADED PDF FROM UNSORTED PDFS
     _onRemoveUnsortedPdf = async (pdf) => {
@@ -240,6 +250,7 @@ class Home extends React.Component {
     _onBandClick = e => {
         this.setState({ bandAnchorEl: e.currentTarget })
     };
+
 
     // Creating a band
     _onCreateBand = async () => {
@@ -327,12 +338,14 @@ class Home extends React.Component {
     }
 
     _onBandSelect = async bandId => {
+
         this.setState({ bandAnchorEl: null });
         const user = firebase.auth().currentUser;
         await firebase.firestore().doc(`users/${user.uid}`).update({
-            defaultBandRef: firebase.firestore().doc(`bands/${bandId}`)
+            defaultBandRef: firebase.firestore().doc(`bands/${bandId}`),
         });
     };
+
 
     _onCreateSetlist = async () => {
         const user = firebase.auth().currentUser;
@@ -571,10 +584,25 @@ class Home extends React.Component {
                     this.unsubs.push(
                         data.defaultBandRef.collection('scores').onSnapshot(async snapshot => {
                             let items = await Promise.all(
-                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                                snapshot.docs.map(async doc => ({
+                                    ...doc.data(),
+                                    id: doc.id,
+                                }))
                             );
+                            // getting information for each part for each score
+                            for (let item of items) {
+                                data.defaultBandRef.collection(`scores/${item.id}/parts`).onSnapshot(async snapshot => {
+                                    let parts = await Promise.all(
+                                        snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                                    );
+                                    item.parts = parts;
+                                    let instr = 
+                                    item.instruments 
+                                });
+                            }
                             this.setState({ band: { ...this.state.band, scores: items } });
                         })
+
                     );
 
                     this.unsubs.push(
@@ -585,7 +613,6 @@ class Home extends React.Component {
                             this.setState({ band: { ...this.state.band, setlists: items } });
                         })
                     );
-
 
                     this.unsubs.push(
                         data.defaultBandRef.collection('pdfs').onSnapshot(async snapshot => {
@@ -656,10 +683,10 @@ class Home extends React.Component {
                             ({ ...(await bandRef.get()).data(), id: bandRef.id })
                         )
                     );
-
                     this.setState({ bands: bands });
                 })
             );
+
         }
 
         const options = {
@@ -705,6 +732,7 @@ class Home extends React.Component {
         const { classes, page, loaded } = this.props;
 
         let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
+
 
         return <div className={classes.root}>
             {
@@ -916,10 +944,12 @@ class Home extends React.Component {
                 }} ref={ref => this.contentEl = ref}
             >
                 {
-                    page === 'scores' &&
+                    
+                    page === 'scores' && 
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
+                        scoreInfo={this.state.scoreInfo}
                     />
                 }
                 {

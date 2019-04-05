@@ -84,8 +84,6 @@ class Score extends React.Component {
             case 'download':
                 try {
                     const { selectedPart, score } = this.state;
-                    console.log(score);
-                    console.log(this.state);
 
                     const part = score.parts[selectedPart];
                     const { } = await this.downloadDialog.open(part.instrument);
@@ -103,9 +101,7 @@ class Score extends React.Component {
                     const size_increase = 1.33334;
                     // const doc = new jsPDF('p', 'px', 'a4'); //[width*size_increase, height*size_increase]);
                     const doc = new jsPDF('p', 'px', [width*size_increase, height*size_increase]);
-                    console.log('Size: ' + width + ' ' + height);
-                    const { } = await this.downloadDialog.open(part.instrument);
-
+                    
                     // Go through the images in the score and add them and a watermark to the PDF
                     for (let i = 0; i < part.pages.length; i++) {
                         if (i > 0) {

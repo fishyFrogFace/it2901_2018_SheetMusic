@@ -17,6 +17,8 @@ import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Add, ArrowBack, Edit, FileDownload } from "material-ui-icons";
 
+import jsPDF from 'jspdf';
+
 const styles = {
     root: {},
 
@@ -86,7 +88,7 @@ class Setlist extends Component {
         const { band, setlist } = this.state;
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
 
-        try {
+        // try {
             switch (type) {
                 case 'addScore':
                     const selectedScoreIds = await this.addScoreDialog.open();
@@ -116,31 +118,85 @@ class Setlist extends Component {
                     await setlistRef.update({ title: title, date: date });
                     break;
                 case 'download':
-                        console.log(score);
+                        console.log("ABC");
+                        console.log("State");
                         console.log(this.state);
-                        const setlist = this.state.setlist;
-                    //     const { selectedPart, score } = this.state;
-
-                    //     const part = score.parts[selectedPart];
-                    //     const { } = await this.downloadDialog.open(part.instrument);
-
+                        const items = this.state.setlist.items;
                         const dateString = new Date().toLocaleDateString();
+                        // console.log("Items v")
+                        // console.log(setlist);
+                        // console.log(setlist.items);
+                        // console.log(setlist.items.length);
+
+                        // console.log("Props");
+                        // console.log(this.props);
+
+                        console.log(items[0].scoreRef.id);
+                        console.log("props");
+                        console.log(this.props);
+                        const bandRef = firebase.firestore().doc(`bands/${this.props.detail}`);
+                        console.log(bandRef);   
+                        console.log("1");
+                        // const setlistDoc = bandRef.collection('scores').doc(items[0].scoreRef.id);
+                        const setlistDoc = await bandRef.collection('scores')//.doc("nod0f4HEJnJOPxrsgcE8").collection('parts')
+                        .get().then(function(querySnapshot) {
+                            console.log("2");
+                            console.log(querySnapshot.docs);
+                            querySnapshot.forEach(function(doc) {
+                                
+                                console.log("3");
+                                // doc.data() is never undefined for query doc snapshots
+                                console.log(doc.id, " => ", doc.data());
+                            });
+                        })
+                        .catch(function(error) {
+                            console.log("Error getting documents: ", error);
+                        });
+
+                        //     .doc("5noP5kYFBg3YsEZPT0oe").get().then(function(doc) {
+                        //     console.log(doc.exists);
+                        //     console.log("Docdata");
+                        //     console.log(doc);
+                        //     console.log(doc.data());
+                        // });
+                        console.log("Doc");
+                        console.log(setlistDoc);
+                        // console.log(tes);
 
                         // Get image
                         const { width, height } = await new Promise(resolve => {
                             const img = new Image();
                             img.onload = () => resolve(img);
+                            for(let i = 0; i < items.length; i++) {
+                                if(items[i].type == "score") {
+                                    console.log("Score");
+                                    console.log(items[i].scoreRef);
+                                    console.log(items[i].scoreRef.id);
+                                }
+                            }
                             img.src = part.pages[0].originalURL;
                         });
                         
-                    //     // Make PDF
-                    //     const size_increase = 1.33334;
-                    //     const doc = new jsPDF('p', 'px', [width*size_increase, height*size_increase]);
 
-                    //     for (let i = 0; i < part.pages.length; i++) {
-                    //         if (i > 0) {
-                    //             doc.addPage();
-                    //         }
+
+                        // Make PDF
+                        const size_increase = 1.33334;
+                        const doc = new jsPDF('p', 'px', [width*size_increase, height*size_increase]);
+
+                        for (let i = 0; i < items.length; i++) {
+                            if (i > 0) {
+                                doc.addPage();
+                            }
+
+                            if(typeof items[i] == "score") {
+                                console.log("score")
+                            } 
+                            else if (typeof items[i] == "event") {
+                                console.log("event")
+                            }
+                            else {
+                                console.log("Something weird happened");
+                            }
 
                     //         const url = part.pages[i].originalURL;
                     //         const response = await fetch(url);
@@ -155,13 +211,13 @@ class Setlist extends Component {
 
                     //         doc.addImage(imageData, 'PNG', 0, 0, width, height);
                     //         doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
-                    //     }
-                    //     doc.save(`${score.title}.pdf`);
+                        }
+                        doc.save(`${score.title}.pdf`);
                         break;
                 }
-            } catch (err) {
-                console.log(err);
-            }
+            // } catch (err) {
+            //     console.log(err);
+            // }
 
         this.setState({ anchorEl: null });
     }
