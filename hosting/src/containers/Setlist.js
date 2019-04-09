@@ -42,7 +42,12 @@ class Setlist extends Component {
         updatedItems: null,
         setlist: {},
         band: {},
-        message: 'Looks like your setlist is empty, add some!'
+        message: 'Looks like your setlist is empty, add some!',
+        isAdmin: false,
+        isLeader: false,
+        checkedAdmin: false,
+        checkedSupervisor: false,
+        checkedMembers: false
     };
 
     addScoreDialog;
@@ -201,7 +206,70 @@ class Setlist extends Component {
                     this.setState({band: {...this.state.band, scores: scores}});
                 })
             );
+
+            const { currentUser } = firebase.auth();
+            console.log("Current user uid is " + currentUser.uid);
+
+            this.setState({
+                user: currentUser.uid,
+                isAdmin: false,
+                isLeader: false,
+            });
+
+            firebase.firestore().doc(`bands/${bandId}`).get().then(snapshot => {
+            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+            console.log("admins are " + admins);
+            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+            console.log("leader is " + leader);
+
+            for (let i in admins) {
+                if (currentUser.uid === admins[i]) {
+                    this.setState({
+                        isAdmin: true
+                    })
+                }
+            }
+
+            if (currentUser.uid === leader) {
+                this.setState({
+                    isLeader: true
+                })
+                return;
+            }
+            });
         }
+
+        /*
+        const { band } = this.props;
+        console.log("Band is " + band);
+        if (band.id !== prevProp.band.id) {
+            const { currentUser } = firebase.auth();
+            this.setState({
+                user: currentUser.uid,
+                isAdmin: false,
+                isLeader: false,
+            });
+
+            firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+
+            for (let i in admins) {
+                if (currentUser.uid === admins[i]) {
+                    this.setState({
+                        isAdmin: true
+                    })
+                }
+            }
+
+            if (currentUser.uid === leader) {
+                this.setState({
+                    isLeader: true
+                })
+                return;
+            }
+            });
+        }*/
     }
 
     //This function checks that setlistDate is a string, if so returns it and a space
@@ -225,6 +293,9 @@ class Setlist extends Component {
     _onEventDeleteClick = async (eventId, eventTitle) => {
         //console.log("Event index: " + eventIndex);
         //console.log("Event title: " + eventTitle);
+        //console.log('this.state.isLeader is ' + this.state.isLeader);
+        //console.log(' this.state.user is ' + this.state.user);
+        
         
         this.setState({
             title: "Deleting event",
@@ -233,23 +304,31 @@ class Setlist extends Component {
 
         if (!await this.open()) return;
 
-        const {detail} = this.props;
+        const {detail, band} = this.props;
+        console.log("detail is " + detail);
+        console.log("Band is " + this.props.band);
         
         const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
-        //console.log("bandId: " + bandId);
-        //console.log("setlistId: " + setlistId);
+        console.log("bandId: " + bandId);
+        console.log("setlistId: " + setlistId);
 
         const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
         //console.log("setlistRef: " + setlistRef);
+        const bandCreatorRefId = firebase.firestore().doc(`bands/${bandId}`).creatorRef.value;
+        console.log('bandCreatorRefId is' + bandCreatorRefId);
 
         let itemBandRef = (await setlistRef.get()).data().items || [];
 
         const filteredItems = await itemBandRef.filter(i => i.id !== eventId);
-
-        await setlistRef.update({
-            items: filteredItems
-        });
-
+        //const creatorRef = setlistRef.
+        console.log('creatorRef is ' + bandId.creatorRef);
+        
+        /*
+        if (this.state.isLeader && setlistRef.creatorRef === this.state.user) {
+            await setlistRef.update({
+                items: filteredItems
+            });
+        }*/
     }
 
     //This function takes in a score id and it's title,
@@ -333,6 +412,11 @@ class Setlist extends Component {
     //TODO: make it possible to edit a score?
     _onScoreEditClick = async() => {
         
+    }
+
+    //This function returns if a user is a admin or leader
+    _hasRights = () => {
+        return this.state.isAdmin || this.state.isLeader;
     }
 
 
