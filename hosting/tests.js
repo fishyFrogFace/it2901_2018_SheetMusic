@@ -5,8 +5,8 @@ const serviceAccount = require('./service-account-key');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://scores-butler.firebaseio.com',
-    storageBucket: 'scoresbutler-9ff30.appspot.com'
+    databaseURL: 'https://scores-bc679.firebaseio.com',
+    storageBucket: 'scores-bc679.appspot.com'
 });
 
 /*
@@ -63,10 +63,10 @@ async function deleteUser(email) {
     await deleteUser('test_user_2@gmail.com');
     await deleteUser('scoresbutler1@gmail.com'); // real one
 
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
-    await page.goto('http://scores-butler.firebaseapp.com', {waitUntil: 'networkidle0'});
+    await page.goto('http://scores-bc679.firebaseapp.com', { waitUntil: 'networkidle0' });
 
     // #1 As a band member I want to sign in with my Google account.
     await userStory1(browser, page);
@@ -143,10 +143,10 @@ async function userStory2(browser, page) {
         document.querySelectorAll('div[role="dialog"] button')[1].click();
     });
 
-    await page.waitForFunction(bandName => document.querySelector('#select-band-button').textContent === bandName, {polling: 'mutation'}, bandName);
+    await page.waitForFunction(bandName => document.querySelector('#select-band-button').textContent === bandName, { polling: 'mutation' }, bandName);
 
     await page.evaluate(() => {
-       document.querySelector('ul > div:nth-of-type(3)').click();
+        document.querySelector('ul > div:nth-of-type(3)').click();
     });
 
     await page.waitForSelector('li');
@@ -159,7 +159,7 @@ async function userStory2(browser, page) {
 async function userStory3(browser, page, bandCode) {
     const context = await browser.createIncognitoBrowserContext();
     const newPage = await context.newPage();
-    await newPage.goto('http://scores-butler.firebaseapp.com', {waitUntil: 'networkidle0'});
+    await newPage.goto('http://scores-bc679.firebaseapp.com', { waitUntil: 'networkidle0' });
 
     newPage.evaluate(() => document.querySelector('#test_user_2_signin').click());
 
@@ -177,7 +177,7 @@ async function userStory3(browser, page, bandCode) {
         document.querySelectorAll('div[role="dialog"] button')[1].click();
     });
 
-    await newPage.waitForFunction(() => Boolean(document.querySelector('#select-band-button').textContent), {polling: 'mutation'});
+    await newPage.waitForFunction(() => Boolean(document.querySelector('#select-band-button').textContent), { polling: 'mutation' });
 }
 
 async function userStory4(browser, page) {

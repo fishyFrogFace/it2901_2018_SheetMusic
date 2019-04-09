@@ -7,7 +7,7 @@ import Typography from 'material-ui/Typography';
 
 import {
     Button, CircularProgress, IconButton, List, ListItem, ListItemText, Menu, MenuItem,
-    Snackbar
+    Snackbar, Badge
 } from "material-ui";
 
 import ExitToApp from 'material-ui-icons/ExitToApp';
@@ -24,7 +24,7 @@ import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
 import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
-import { async } from '@firebase/util';
+
 
 
 const styles = {
@@ -68,7 +68,17 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column'
+    },
+
+    alertBadge: {
+        backgroundColor: "rgb(222, 53, 53)",
+        color: "white",
+        padding: '0px',
+        margin: '5px',
+        width: '16px',
+        height: '16px',
     }
+
 };
 
 class Home extends React.Component {
@@ -85,7 +95,7 @@ class Home extends React.Component {
 
         userData: {},
 
-        pdfSelected: false
+        pdfSelected: false,
     };
 
     unsubs = [];
@@ -107,7 +117,6 @@ class Home extends React.Component {
     async createScoreDoc(band, scoreData) {
         const data = {};
         data.title = scoreData.title || 'Untitled Score';
-
 
         if (scoreData.composer) {
             data.composer = scoreData.composer;
@@ -134,7 +143,6 @@ class Home extends React.Component {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         })
     }
-
 
     _onAddFullScore = async (scoreData, parts, pdf) => {
         const { band } = this.state;
@@ -196,8 +204,7 @@ class Home extends React.Component {
         this.setState({ message: null });
     };
 
-
-
+    // REMOVING UPLOADED PDF FROM UNSORTED PDFS
     _onRemoveUnsortedPdf = async (pdf) => {
         const { band } = this.state;
         this.setState({ message: 'Removing PDF...' });
@@ -230,16 +237,15 @@ class Home extends React.Component {
         this.setState({ message: null });
     }
 
-
-
     _onBandClick = e => {
         this.setState({ bandAnchorEl: e.currentTarget })
     };
 
+    // Creating a band
     _onCreateBand = async () => {
         this.setState({ bandAnchorEl: null });
 
-        const { name } = await this.createDialog.open();
+        const { name, } = await this.createDialog.open();
 
         this.setState({ message: 'Creating band...' });
 
@@ -255,14 +261,17 @@ class Home extends React.Component {
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`),
                 code: Math.random().toString(36).substring(2, 7),
                 admins: [user.uid],
+                bandtype: null,
+                description: null,
             });
 
-            await bandRef.collection('members').add({
+            await bandRef.collection('leader').add({
                 ref: userRef,
                 uid: user.uid,
                 status: "member",
                 admin: true,
                 supervisor: true,
+                leader: true,
             });
 
             await firebase.firestore().doc(`users/${user.uid}`).update({
@@ -276,38 +285,7 @@ class Home extends React.Component {
         this.setState({ message: null })
     };
 
-    // _onJoinBand = async () => {
-    //     this.setState({ bandAnchorEl: null });
-
-    //     const { code } = await this.joinDialog.open();
-
-    //     const user = firebase.auth().currentUser;
-
-    //     const userRef = firebase.firestore().doc(`users/${user.uid}`);
-
-    //     let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
-
-    //     if (bandSnapshot.docs.length > 0) {
-    //         const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
-
-    //         let userBandRefs = (await userRef.get()).data().bandRefs || [];
-
-    //         if (userBandRefs.some(ref => ref.id === bandRef.id)) {
-    //             this.setState({ message: 'Band already joined!' });
-    //         } else {
-    //             this.setState({ message: 'Sending request to join band...' });
-
-    //             await bandRef.collection('members').add({ ref: userRef, uid: user.uid, status: "pending" });
-    //         }
-    //     } else {
-    //         this.setState({ message: 'Band does not exist!' });
-    //         await new Promise(resolve => setTimeout(resolve, 2000));
-    //         this.setState({ message: null });
-    //     }
-
-    //     this.setState({ message: null });
-    // };
-
+    // Joining a band
     _onJoinBand = async () => {
         this.setState({ bandAnchorEl: null });
 
@@ -320,7 +298,7 @@ class Home extends React.Component {
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
-            const bandRef = firebase.firestore().doc(`bands / ${bandSnapshot.docs[0].id}`);
+            const bandRef = firebase.firestore().doc(`bands/${bandSnapshot.docs[0].id}`);
 
             let userBandRefs = (await userRef.get()).data().bandRefs || [];
 
@@ -344,7 +322,9 @@ class Home extends React.Component {
         this.setState({ message: null });
     };
 
+    _onDeleteBand = async () => {
 
+    }
 
     _onBandSelect = async bandId => {
         this.setState({ bandAnchorEl: null });
@@ -386,6 +366,8 @@ class Home extends React.Component {
         this.setState({ uploadAnchorEl: e.currentTarget });
     };
 
+
+    // UPLOADING PDF 
     _onUploadMenuClick = async type => {
         const { files, path, accessToken } = await this.uploadDialog.open(type);
 
@@ -395,21 +377,50 @@ class Home extends React.Component {
 
         switch (type) {
             case 'computer':
+
+                let fileNames = [];
+
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     this.setState({ message: `Uploading file ${i + 1}/${files.length}...` });
+                    fileNames.push(file.name.replace(/\.[^/.]+$/, ""));
                     await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
-                }
+                    console.log(`File ${file.name} uploaded`);
+                };
+
+                // firebase.firestore().collection(`bands/${band.id}/pdfs/`).onSnapshot(async snap => {
+                //     let items = await Promise.all(
+                //         snap.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                //     );
+
+                //     this.setState({message: `Preparing files...`});
+                //     // setTimeout(this.setState({ message: `Preparing files...` }), 30000)
+                //     setTimeout(this.setState({ message: `Uploading files failed...` }), 30000)
+                //     // this.setState({message: `Uploading files failed...`});
+
+
+                //     for (let item of items) {
+                //         console.log(fileNames.includes(item.name));
+                //         if (fileNames.includes(item.name)) {
+                //             setTimeout(this.setState({ message: `Files successfully uploaded` }), 2000)
+                //             this.setState({ message: null });
+                //         };
+                //     };
+                // });
+
                 this.setState({ message: null });
                 break;
-            case 'dropbox':
-                const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
-                console.log(response.status);
-                break;
+
+            // case 'dropbox':
+            //     const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
+            //     console.log(response.status);
+            //     break;
+
             case 'drive':
                 break;
         }
     };
+
 
     _onMenuClose = () => {
         this.setState({ bandAnchorEl: null, uploadAnchorEl: null, accountAnchorEl: null });
@@ -465,76 +476,178 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating list with the band leader
                     this.unsubs.push(
-                        data.defaultBandRef.collection(page).onSnapshot(async snapshot => {
+                        data.defaultBandRef.collection('leader').onSnapshot(async snapshot => {
+                            let bandLeader = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of bandLeader) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, leader: bandLeader } });
+                        })
+                    );
+
+                    // Creating list with pending
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('pending').onSnapshot(async snapshot => {
+                            let pendings = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of pendings) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, pending: pendings } });
+                        })
+                    );
+
+                    // Creating list with members
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').onSnapshot(async snapshot => {
+                            let member = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of member) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, members: member } });
+                        })
+                    );
+
+                    // Creating list with admins
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("admin", "==", true).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, admins: items } });
+                        })
+                    );
+
+                    // Creating list with conductors
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("supervisor", "==", true).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, supervisors: items } });
+                        })
+                    );
+
+                    // Creating list with no roles
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("supervisor", "==", false).where("admin", "==", false).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, onlymembers: items } });
+                        })
+                    );
+
+                    // Creating list with members with all roles
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('members').where("supervisor", "==", true).where("admin", "==", true).onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            for (let item of items) {
+                                item.user = (await item.ref.get()).data();
+                            }
+                            this.setState({ band: { ...this.state.band, allroles: items } });
+                        })
+                    );
+
+                    // Creating list with scores
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('scores').onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            this.setState({ band: { ...this.state.band, scores: items } });
+                        })
+                    );
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('setlists').onSnapshot(async snapshot => {
+                            let items = await Promise.all(
+                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                            );
+                            this.setState({ band: { ...this.state.band, setlists: items } });
+                        })
+                    );
+
+
+                    this.unsubs.push(
+                        data.defaultBandRef.collection('pdfs').onSnapshot(async snapshot => {
                             let items = await Promise.all(
                                 snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                             );
 
-                            if (page === 'pdfs') {
-                                const groups = [];
-                                const visited = [];
+                            const groups = [];
+                            const visited = [];
 
-                                for (let item of items) {
-                                    console.log(item);
-                                    if (item.pageCount > 10) {
-                                        if (item.parts) {
-                                            item.parts = await Promise.all(
-                                                item.parts.map(async part => ({
-                                                    ...part,
-                                                    instruments: await Promise.all(
-                                                        part.instruments.map(async instr => {
-                                                            const doc = await instr.get();
-
-                                                            return { ...doc.data(), id: doc.id };
-                                                        })
-                                                    )
-                                                }))
-                                            );
-                                        }
-
-                                        groups.push({
-                                            name: item.name.split('-')[0].trimRight(),
-                                            pdf: item,
-                                            type: 'full'
-                                        });
-                                    } else {
-                                        const similarPdfs = [];
-
-                                        if (visited.includes(item.id)) continue;
-
-                                        for (let _item of items) {
-                                            if (_item.id !== item.id &&
-                                                !visited.includes(_item.id) &&
-                                                levenshtein.get(item.name, _item.name) < 5) {
-                                                similarPdfs.push(_item);
-                                                visited.push(_item.id);
-                                            }
-                                        }
-
-                                        groups.push({
-                                            name: item.name.split('-')[0].trimRight(),
-                                            pdfs: [item, ...similarPdfs],
-                                            type: 'part'
-                                        })
+                            for (let item of items) {
+                                if (item.pageCount > 10) {
+                                    if (item.parts) {
+                                        item.parts = await Promise.all(
+                                            item.parts.map(async part => ({
+                                                ...part,
+                                                instruments: await Promise.all(
+                                                    part.instruments.map(async instr => {
+                                                        const doc = await instr.get();
+                                                        return { ...doc.data(), id: doc.id };
+                                                    })
+                                                )
+                                            }))
+                                        );
                                     }
-                                }
 
-                                items = groups
-                                    .map(group => ({
-                                        ...group,
-                                        name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`
-                                    }))
-                                    .sort((a, b) => a.name.localeCompare(b.name));
+                                    groups.push({
+                                        name: item.name.split('-')[0].trimRight(),
+                                        pdf: item,
+                                        type: 'full'
+                                    });
+                                } else {
+                                    const similarPdfs = [];
+
+                                    if (visited.includes(item.id)) continue;
+
+                                    for (let _item of items) {
+                                        if (_item.id !== item.id &&
+                                            !visited.includes(_item.id) &&
+                                            levenshtein.get(item.name, _item.name) < 5) {
+                                            similarPdfs.push(_item);
+                                            visited.push(_item.id);
+                                        }
+                                    }
+
+                                    groups.push({
+                                        name: item.name.split('-')[0].trimRight(),
+                                        pdfs: [item, ...similarPdfs],
+                                        type: 'part'
+                                    })
+                                }
                             }
 
-                            if (page === "members") {
-                                for (let item of items) {
-                                    item.user = (await item.ref.get()).data();
-                                }
-                            }
+                            items = groups
+                                .map(group => ({
+                                    ...group,
+                                    name: `${group.name[0].toUpperCase()}${group.name.slice(1)}`
+                                }))
+                                .sort((a, b) => a.name.localeCompare(b.name));
 
-                            this.setState({ band: { ...this.state.band, [page]: items } });
+
+                            this.setState({ band: { ...this.state.band, pdfs: items } });
                         })
                     );
 
@@ -548,8 +661,6 @@ class Home extends React.Component {
                 })
             );
         }
-
-
 
         const options = {
             duration: 200,
@@ -587,13 +698,13 @@ class Home extends React.Component {
     };
 
     render() {
-        const { bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData, instruments } = this.state;
+        const { bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData } = this.state;
 
         const user = firebase.auth().currentUser;
 
         const { classes, page, loaded } = this.props;
 
-        const pages = [['Scores', 'scores'], ['Setlists', 'setlists'], ['Members', 'members'], ['Unsorted PDFs', 'pdfs']];
+        let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
 
         return <div className={classes.root}>
             {
@@ -747,13 +858,22 @@ class Home extends React.Component {
                                 onClick={() => this._onNavClick(nameShort)}>
                                 {nameShort === 'scores' && <LibraryMusic style={{ color: color }} />}
                                 {nameShort === 'setlists' && <QueueMusic style={{ color: color }} />}
-                                {nameShort === 'members' && <SupervisorAccount style={{ color: color }} />}
+                                {nameShort === 'members' && this.state.userData.isAdmin && band.pending && band.pending.length > 0 &&
+                                    <Badge classes={{ badge: classes.alertBadge }} badgeContent={band.pending.length}>
+                                        <SupervisorAccount style={{ color: color }} />
+                                    </Badge>
+                                }
+                                {nameShort === 'members' && this.state.userData.isAdmin && band.pending && band.pending.length == 0 &&
+                                    <SupervisorAccount style={{ color: color }} />
+                                }
+                                {nameShort === 'members' && !this.state.userData.isAdmin && <SupervisorAccount style={{ color: color }} />}
                                 {nameShort === 'pdfs' && <LibraryBooks style={{ color: color }} />}
                                 <ListItemText
                                     disableTypography
                                     inset
-                                    primary={<Typography type="body2"
-                                        style={{ color: color }}>{nameLong}</Typography>}
+                                    primary={
+                                        <Typography type="body2" style={{ color: color }}>{nameLong}</Typography>
+                                    }
                                 />
                             </ListItem>
                         })}
@@ -800,10 +920,8 @@ class Home extends React.Component {
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
-
                     />
                 }
-
                 {
                     page === 'setlists' &&
                     <Setlists
