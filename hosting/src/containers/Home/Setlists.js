@@ -31,6 +31,11 @@ class Setlists extends React.Component {
         sortedAlphabetically: false,
         title: "",
         message: "",
+        isAdmin: false,
+        isLeader: false,
+        checkedAdmin: false,
+        checkedSupervisor: false,
+        checkedMembers: false,
     };
 
     
@@ -46,6 +51,38 @@ class Setlists extends React.Component {
     componentWillMount() {
         if (window.localStorage.getItem('setlistsListView')) {
             this.setState({listView: true});
+        }
+    }
+
+    componentDidUpdate(prevProp, prevState){
+        const { band } = this.props;
+        if (band.id !== prevProp.band.id) {
+            const { currentUser } = firebase.auth();
+            this.setState({
+            user: currentUser.uid,
+            isAdmin: false,
+            isLeader: false,
+            });
+
+            firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+
+            for (let i in admins) {
+                if (currentUser.uid === admins[i]) {
+                    this.setState({
+                        isAdmin: true
+                    })
+                }
+            }
+
+            if (currentUser.uid === leader) {
+                this.setState({
+                    isLeader: true
+                })
+                return;
+            }
+            });
         }
     }
 
@@ -82,15 +119,15 @@ class Setlists extends React.Component {
         const {band} = this.props;
         //Fetching setlist reference from firestore
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
+        if (this.state.isLeader && band.creatorRef.id === this.state.user) {
         
-        
-        setlistRef.delete().then(() => {
-            console.log("Document succesfully removed");
-            //location.reload();
-        }).catch((err) => {
-            console.error("Error removing document", err);
-        });
-
+            setlistRef.delete().then(() => {
+                console.log("Document succesfully removed");
+                //location.reload();
+            }).catch((err) => {
+                console.error("Error removing document", err);
+            });
+        }
         
     }
 
@@ -117,6 +154,10 @@ class Setlists extends React.Component {
             console.log("setlist time: " + setlistTime);
             return setlistTime;
         }
+    }
+
+    _hasRights = () => {
+        return this.state.isAdmin || this.state.isLeader;
     }
 
     render() {
@@ -192,9 +233,10 @@ class Setlists extends React.Component {
                                 <CardContent style={{position: 'relative'}}>
                                     <Typography variant="headline" component="h2">
                                         {setlist.title}
+                                        {this._hasRights &&
                                         <IconButton style={{position: 'absolute', right: '15px'}}>
                                             <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)}/>
-                                        </IconButton>
+                                        </IconButton>}
                                     </Typography>
                                     <Typography component="p">
                                         {/*Checking for date setlist.date, if that does not exist, then we don't display anything*/}
@@ -209,14 +251,14 @@ class Setlists extends React.Component {
                     </div>
                 }
             </div>
-            <Button
+            {this._hasRights && <Button
                 onClick={this._onSetlistCreateClick}
                 variant="fab"
                 color="secondary"
                 style={{position: 'absolute', bottom: 32, right: 32}}
             >
                 <PlaylistAdd/>
-            </Button>
+            </Button> }
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
                 <Typography variant="body1" >{this.state.message}</Typography>
             </AsyncDialog>
