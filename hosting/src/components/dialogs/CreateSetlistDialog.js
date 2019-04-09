@@ -37,7 +37,7 @@ class CreateSetlistDialog extends React.Component {
     }
 
     _onTitleInputChange = e => {
-        this.setState({title: e.target.value});
+        this.setState({ title: e.target.value });
     };
 
     _onDateChange = e => {

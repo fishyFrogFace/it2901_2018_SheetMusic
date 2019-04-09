@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import {withStyles} from 'material-ui/styles';
+import React, { Component } from 'react';
+import { withStyles } from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
@@ -43,11 +43,7 @@ class Setlist extends Component {
         setlist: {},
         band: {},
         message: 'Looks like your setlist is empty, add some!',
-        isAdmin: false,
-        isLeader: false,
-        checkedAdmin: false,
-        checkedSupervisor: false,
-        checkedMembers: false
+        hasRights: false,
     };
 
     addScoreDialog;
@@ -66,11 +62,11 @@ class Setlist extends Component {
     }
 
     _onAddButtonClick(e) {
-        this.setState({anchorEl: e.currentTarget});
+        this.setState({ anchorEl: e.currentTarget });
     }
 
     _onMenuClose() {
-        this.setState({anchorEl: null});
+        this.setState({ anchorEl: null });
     }
 
     _onDragEnd = async result => {
@@ -87,7 +83,7 @@ class Setlist extends Component {
             return result;
         };
 
-        const {band, setlist} = this.state;
+        const { band, setlist } = this.state;
 
         const newItems = reorder(
             setlist.items,
@@ -95,7 +91,7 @@ class Setlist extends Component {
             result.destination.index
         );
 
-        this.setState({updatedItems: newItems});
+        this.setState({ updatedItems: newItems });
 
         await firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`).update({
             items: newItems
@@ -103,7 +99,7 @@ class Setlist extends Component {
     };
 
     async _onMenuClick(type) {
-        const {band, setlist} = this.state;
+        const { band, setlist } = this.state;
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
 
         try {
@@ -122,7 +118,7 @@ class Setlist extends Component {
                     });
                     break;
                 case 'addEvent':
-                    const {eventTitle, description, time} = await this.addEventDialog.open();
+                    const { eventTitle, description, time } = await this.addEventDialog.open();
                     await setlistRef.update({
                         items: [...(setlist.items || []), {
                             type: 'event',
@@ -143,7 +139,7 @@ class Setlist extends Component {
             console.log(err);
         }
 
-        this.setState({anchorEl: null});
+        this.setState({ anchorEl: null });
     }
 
     _onArrowBackButtonClick = () => {
@@ -153,7 +149,7 @@ class Setlist extends Component {
     //Remark: this function has some issues that need to be looked at
     //See the workaround
     componentDidUpdate(prevProps, prevState) {
-        const {page, detail} = this.props;
+        const { page, detail } = this.props;
 
         if (page !== prevProps.page) {
             const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
@@ -180,96 +176,61 @@ class Setlist extends Component {
                     data.items = await Promise.all(
                         (data.items || []).map(async item => {
                             if (item.type === 'score') {
-                                return {...item, score: (await item.scoreRef.get()).data()};
+                                return { ...item, score: (await item.scoreRef.get()).data() };
                             }
 
-                            return {...item};
+                            return { ...item };
                         })
                     );
 
-                    this.setState({setlist: {...this.state.setlist, ...data, id: snapshot.id}});
+                    this.setState({ setlist: { ...this.state.setlist, ...data, id: snapshot.id } });
                 })
             );
 
             this.unsubs.push(
                 bandRef.onSnapshot(async snapshot => {
-                    this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                    this.setState({ band: { ...this.state.band, ...snapshot.data(), id: snapshot.id } });
                 })
             );
 
             this.unsubs.push(
                 bandRef.collection('scores').onSnapshot(async snapshot => {
                     let scores = await Promise.all(
-                        snapshot.docs.map(async doc => ({...doc.data(), id: doc.id}))
+                        snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                     );
 
-                    this.setState({band: {...this.state.band, scores: scores}});
+                    this.setState({ band: { ...this.state.band, scores: scores } });
                 })
             );
 
             const { currentUser } = firebase.auth();
-            console.log("Current user uid is " + currentUser.uid);
-
             this.setState({
                 user: currentUser.uid,
-                isAdmin: false,
-                isLeader: false,
+                hasRights: false,
             });
 
             firebase.firestore().doc(`bands/${bandId}`).get().then(snapshot => {
-            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
-            console.log("admins are " + admins);
+            const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
             const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-            console.log("leader is " + leader);
 
-            for (let i in admins) {
-                if (currentUser.uid === admins[i]) {
-                    this.setState({
-                        isAdmin: true
-                    })
+            for (let i in members) {
+                if (currentUser.uid === members[i].uid) {
+                    if(members[i].admin || members[i].supervisor){
+                        this.setState({
+                            hasRights: true
+                        });
+                    }
                 }
             }
 
             if (currentUser.uid === leader) {
                 this.setState({
-                    isLeader: true
+                    hasRights: true
                 })
                 return;
             }
             });
         }
-
-        /*
-        const { band } = this.props;
-        console.log("Band is " + band);
-        if (band.id !== prevProp.band.id) {
-            const { currentUser } = firebase.auth();
-            this.setState({
-                user: currentUser.uid,
-                isAdmin: false,
-                isLeader: false,
-            });
-
-            firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
-            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-
-            for (let i in admins) {
-                if (currentUser.uid === admins[i]) {
-                    this.setState({
-                        isAdmin: true
-                    })
-                }
-            }
-
-            if (currentUser.uid === leader) {
-                this.setState({
-                    isLeader: true
-                })
-                return;
-            }
-            });
-        }*/
     }
 
     //This function checks that setlistDate is a string, if so returns it and a space
@@ -305,17 +266,15 @@ class Setlist extends Component {
         if (!await this.open()) return;
 
         const {detail, band} = this.props;
-        console.log("detail is " + detail);
-        console.log("Band is " + this.props.band);
+        //console.log("detail is " + detail);
+        //console.log("Band is " + this.props.band);
         
         const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
-        console.log("bandId: " + bandId);
-        console.log("setlistId: " + setlistId);
+        //console.log("bandId: " + bandId);
+        //console.log("setlistId: " + setlistId);
 
         const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
         //console.log("setlistRef: " + setlistRef);
-        const bandCreatorRefId = firebase.firestore().doc(`bands/${bandId}`).creatorRef.value;
-        console.log('bandCreatorRefId is' + bandCreatorRefId);
 
         let itemBandRef = (await setlistRef.get()).data().items || [];
 
@@ -323,12 +282,12 @@ class Setlist extends Component {
         //const creatorRef = setlistRef.
         console.log('creatorRef is ' + bandId.creatorRef);
         
-        /*
-        if (this.state.isLeader && setlistRef.creatorRef === this.state.user) {
+        
+        if (this.state.hasRights) {
             await setlistRef.update({
                 items: filteredItems
             });
-        }*/
+        }
     }
 
     //This function takes in a score id and it's title,
@@ -358,10 +317,12 @@ class Setlist extends Component {
 
         const filteredItems = await itemBandRef.filter(i => i.id !== scoreId);
 
-        await setlistRef.update({
-            items: filteredItems
-        });
-        this.render();
+        if (this.state.hasRights) {
+            await setlistRef.update({
+                items: filteredItems
+            });
+        }  
+        
     }
 
     //TODO: make it possible to edit an event
@@ -401,22 +362,17 @@ class Setlist extends Component {
         //Splice is inserting item into filteredlist at index
         filteredItems.splice(index, 0, item[0]);
         //console.log(filteredItems);
-    
-        await setlistRef.update({
-            items: filteredItems
-        });
-        this.render();
+        if (this.state.hasRights) {
+            await setlistRef.update({
+                items: filteredItems
+            });
+        }
     }
 
 
     //TODO: make it possible to edit a score?
     _onScoreEditClick = async() => {
         
-    }
-
-    //This function returns if a user is a admin or leader
-    _hasRights = () => {
-        return this.state.isAdmin || this.state.isLeader;
     }
 
 
@@ -440,9 +396,9 @@ class Setlist extends Component {
                     <AppBar>
                         <Toolbar>
                             <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                                <ArrowBack/>
+                                <ArrowBack />
                             </IconButton>
-                            <div style={{marginLeft: 10}}>
+                            <div style={{ marginLeft: 10 }}>
                                 <Typography variant="title" color="inherit" className={classes.flex}>
                                     {setlist.title}
                                 </Typography>
@@ -452,12 +408,12 @@ class Setlist extends Component {
                                     {setlist.time && this._formatedTime(setlist.time)}
                                 </Typography>
                             </div>
-                            <div className={classes.flex}/>
-                            <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
-                                <Edit/>
-                            </IconButton>
+                            <div className={classes.flex} />
+                            {this.state.hasRights &&<IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
+                                <Edit />
+                            </IconButton>}
                             <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                                <Add/>
+                                <Add />
                             </IconButton>
                             <Menu
                                 anchorEl={anchorEl}
@@ -497,12 +453,12 @@ class Setlist extends Component {
                                                                             <MusicNote style={{paddingRight:'10px'}}/>
                                                                             {item.score.title}
                                                                             
-                                                                            <IconButton style={{position: 'absolute', right: '70px'}}>
+                                                                            {/*<IconButton style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onScoreEditClick()}/>
-                                                                            </IconButton>
-                                                                            <IconButton style={{position: 'absolute', right: '25px'}}>
+                                                                            </IconButton>*/}
+                                                                            {this.state.hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
-                                                                            </IconButton>
+                                                                            </IconButton>}
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
                                                                             by {item.score.composer}
@@ -517,12 +473,12 @@ class Setlist extends Component {
                                                                             {eventIcon}
                                                                             {item.title} | {item.time} minutes
                                                                         
-                                                                            <IconButton style={{position: 'absolute', right: '70px'}}>
+                                                                            {this.state.hasRights && <IconButton style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onEventEditClick(item.id, index)}/>
-                                                                            </IconButton>
-                                                                            <IconButton style={{position: 'absolute', right: '25px'}}>
+                                                                            </IconButton>}
+                                                                            {this.state.hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
-                                                                            </IconButton>
+                                                                            </IconButton>}
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
                                                                             {item.description}

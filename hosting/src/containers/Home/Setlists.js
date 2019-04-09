@@ -1,7 +1,7 @@
 import React from 'react';
 import firebase from 'firebase';
 
-import {withStyles} from "material-ui/styles";
+import { withStyles } from "material-ui/styles";
 import {
     Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper,
     Typography 
@@ -31,11 +31,7 @@ class Setlists extends React.Component {
         sortedAlphabetically: false,
         title: "",
         message: "",
-        isAdmin: false,
-        isLeader: false,
-        checkedAdmin: false,
-        checkedSupervisor: false,
-        checkedMembers: false,
+        hasRights: false,
     };
 
     
@@ -50,7 +46,7 @@ class Setlists extends React.Component {
 
     componentWillMount() {
         if (window.localStorage.getItem('setlistsListView')) {
-            this.setState({listView: true});
+            this.setState({ listView: true });
         }
     }
 
@@ -59,26 +55,27 @@ class Setlists extends React.Component {
         if (band.id !== prevProp.band.id) {
             const { currentUser } = firebase.auth();
             this.setState({
-            user: currentUser.uid,
-            isAdmin: false,
-            isLeader: false,
+                user: currentUser.uid,
+                hasRights: false,
             });
 
             firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+            const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
             const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
-            for (let i in admins) {
-                if (currentUser.uid === admins[i]) {
-                    this.setState({
-                        isAdmin: true
-                    })
+            for (let i in members) {
+                if (currentUser.uid === members[i].uid) {
+                    if(members[i].admin || members[i].supervisor){
+                        this.setState({
+                            hasRights: true
+                        });
+                    }
                 }
             }
 
             if (currentUser.uid === leader) {
                 this.setState({
-                    isLeader: true
+                    hasRights: true
                 })
                 return;
             }
@@ -90,13 +87,13 @@ class Setlists extends React.Component {
     //Is called by the moduleView parent tag
     _onViewModuleClick = () => {
         window.localStorage.removeItem('setlistsListView');
-        this.setState({listView: false});
+        this.setState({ listView: false });
     };
 
     //Is called by the viewList parent tag
     _onViewListClick = () => {
         window.localStorage.setItem('setlistsListView', 'true');
-        this.setState({listView: true});
+        this.setState({ listView: true });
     };
 
     //This function call the function onCreateSetlist with
@@ -119,7 +116,7 @@ class Setlists extends React.Component {
         const {band} = this.props;
         //Fetching setlist reference from firestore
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
-        if (this.state.isLeader && band.creatorRef.id === this.state.user) {
+        if (this.state.hasRights) {
         
             setlistRef.delete().then(() => {
                 console.log("Document succesfully removed");
@@ -156,10 +153,6 @@ class Setlists extends React.Component {
         }
     }
 
-    _hasRights = () => {
-        return this.state.isAdmin || this.state.isLeader;
-    }
-
     render() {
         
         const {classes, band} = this.props;
@@ -181,8 +174,8 @@ class Setlists extends React.Component {
         }
 
         return <div>
-            <div style={{display: 'flex', alignItems: 'center', padding: '0 24px', height: 56}}>
-                <div className={classes.flex}/>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}>
+                <div className={classes.flex} />
 
                 <IconButton>
                     <SortByAlpha onClick={this._onSortByAlphaClick}/>
@@ -191,17 +184,17 @@ class Setlists extends React.Component {
                 {
                     listView &&
                     <IconButton onClick={this._onViewModuleClick}>
-                        <ViewModule/>
+                        <ViewModule />
                     </IconButton>
                 }
                 {
                     !listView &&
                     <IconButton onClick={this._onViewListClick}>
-                        <ViewList/>
+                        <ViewList />
                     </IconButton>
                 }
             </div>
-            <div style={{padding: '0 24px'}}>
+            <div style={{ padding: '0 24px' }}>
                 {
                     listView && hasSetlists &&
                     <Paper>
@@ -233,7 +226,7 @@ class Setlists extends React.Component {
                                 <CardContent style={{position: 'relative'}}>
                                     <Typography variant="headline" component="h2">
                                         {setlist.title}
-                                        {this._hasRights &&
+                                        {this.state.hasRights &&
                                         <IconButton style={{position: 'absolute', right: '15px'}}>
                                             <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)}/>
                                         </IconButton>}
@@ -251,11 +244,11 @@ class Setlists extends React.Component {
                     </div>
                 }
             </div>
-            {this._hasRights && <Button
+            {this.state.hasRights && <Button
                 onClick={this._onSetlistCreateClick}
                 variant="fab"
                 color="secondary"
-                style={{position: 'absolute', bottom: 32, right: 32}}
+                style={{ position: 'absolute', bottom: 32, right: 32 }}
             >
                 <PlaylistAdd/>
             </Button> }

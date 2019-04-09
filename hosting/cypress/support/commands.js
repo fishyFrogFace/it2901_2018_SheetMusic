@@ -23,6 +23,10 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+<<<<<<< HEAD
+=======
+
+>>>>>>> 214440952f3f87c04a685ad2c1fe9eb65bf663d4
 import firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
@@ -44,4 +48,8 @@ const fbConfig = {
 
 firebase.initializeApp(fbConfig);
 
+<<<<<<< HEAD
 attachCustomCommands({ Cypress, cy, firebase })
+=======
+attachCustomCommands({ Cypress, cy, firebase })
+>>>>>>> 214440952f3f87c04a685ad2c1fe9eb65bf663d4

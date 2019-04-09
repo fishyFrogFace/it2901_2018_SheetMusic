@@ -19,4 +19,8 @@ module.exports = (on, config) => {
 
   // Return extended config (with settings from .firebaserc)
   return cypressFirebasePlugin(config)
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 214440952f3f87c04a685ad2c1fe9eb65bf663d4
