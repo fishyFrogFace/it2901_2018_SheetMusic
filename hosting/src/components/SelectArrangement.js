@@ -40,7 +40,7 @@ class SelectArrangements extends React.Component {
               instruments: this.props.instruments
             }}
             className={classes.selecter}
-            renderValue={() => this.props.bandtype}
+            renderValue={() => this.props.bandtype == 'default' ? this.props.defaultBandtype : this.props.bandtype}
           >
             {/* map over the arrangment and instrument options declared in state in Scores.js */}
             {

@@ -2,11 +2,11 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, CircularProgress,
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, CircularProgress, Tooltip,
 } from "material-ui";
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 import DeleteIcon from 'material-ui-icons/Delete'
-import { LibraryMusic, SortByAlpha, ViewList, ViewModule } from "material-ui-icons";
+import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote, Error } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import FavoriteIcon from 'material-ui-icons/Favorite';
@@ -47,7 +47,12 @@ const styles = theme => ({
 
   flex: {
     display: 'inline-flex',
-    padding: '0px'
+    padding: '0px',
+    position: 'sticky',
+    top: 0,
+    backgroundColor: '#f1f1f1',
+    width: '100%',
+    zIndex: 1
   },
 
   ellipsis: {
@@ -128,6 +133,10 @@ const styles = theme => ({
     height: '50px',
   },
 
+  checked: {
+    color: 'green',
+  },
+
   cardHeader: {
     cursor: 'default'
   },
@@ -141,11 +150,13 @@ class Scores extends React.Component {
       instruments: [],
       selected: false,
       bandtypes: [],
-      bandtype: '',
+      bandtype: 'default',
       band: {},
       isLoaded: false,
       matchingInstruments: [],
       expansionIsClicked: false,
+      scoreInstruments: [],
+      activeScore: ''
     };
   }
 
@@ -177,6 +188,12 @@ class Scores extends React.Component {
     var bandtypeInstruments = this.state.bandtypes.filter(function (item) {
       return item.name == event.target.value
     })
+    setTimeout(() => {
+      if (this.state.activeScore) {
+        this.onGetMatchnigScores()
+        // get matching scores when changing ensemble, timeout because waiting for state.instruments in onExpansionClick
+      }
+    }, 700);
     this.setState({ bandtype: event.target.value, selected: true, instruments: bandtypeInstruments[0].instruments });
   };
 
@@ -227,12 +244,9 @@ class Scores extends React.Component {
         }
       }.bind(this), 500);  // wait 0.5 seconds, then isLoaded: true
     }
-
   }
 
   onExpansionClick = (e) => {
-    console.log('e.target.id', e.target.id)
-
     const types = [];
     let instr = [];
     const tst = [];
@@ -240,7 +254,6 @@ class Scores extends React.Component {
     const bandtypeRef = firebase.firestore().collection('bandtype');
     bandtypeRef.get()
       .then(docs => {
-
         docs.forEach(doc => {
           types.push(doc.data())
         });
@@ -261,31 +274,21 @@ class Scores extends React.Component {
         console.log('Error getting bandtypes', err);
       });
 
-    setTimeout(() => {
-      // setting insstrument state in this function, will therefore wait a second to retrieve it for checking mathcing instruments
-      const test = ['Drum', 'Piano', 'Sax', 'Trombone']
-      const intersection = this.state.instruments.filter(element => test.includes(element));
-      this.setState({
-        matchingInstruments: intersection
-      })
-    }, 1000);
-
-
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
+      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
         for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
           let data = this.props.band.scores[i].parts[k].instrumentRef
           data.get().then(function (documentSnapshot) {
             const partsInstruments = documentSnapshot.data()
-            console.log('partsInstruments', partsInstruments)
-            tada.push(partsInstruments)
-            console.log('tada', tada)
+            tada.push(partsInstruments.name)
           });
-
-
         }
       }
     }
+    this.setState({
+      activeScore: e.target.id
+    })
+
     const instrumentRef = firebase.firestore().collection('instruments');
 
     instrumentRef.get()
@@ -299,15 +302,22 @@ class Scores extends React.Component {
 
         }
       })
-    var blab = tada.filter(function (item) {
-      console.log('item', item)
-      return item.name == event.target.id
-    })
-    console.log('blab', blab)
 
+    setTimeout(() => {
+      this.state.isLoaded && this.setState({
+        scoreInstruments: tada
+      })
+      this.onGetMatchnigScores()
+    }, 500);
   }
 
-
+  onGetMatchnigScores = () => {
+    const tada = this.state.scoreInstruments
+    const intersection = this.state.isLoaded && this.state.instruments.filter(element => tada.includes(element));
+    this.setState({
+      matchingInstruments: intersection
+    })
+  }
 
   // mounting the orchestra alternatives
   componentDidMount = () => {
@@ -322,8 +332,7 @@ class Scores extends React.Component {
       .catch(err => {
         console.log('Error getting bandtypes', err);
       });
-    this.setState({ bandtypes: types })
-
+    this.setState({ bandtypes: types, })
   }
 
   // get matching instruments from parts and bandtypes-instrument from db
@@ -339,7 +348,9 @@ class Scores extends React.Component {
 
 
     //{ this.state.instruments && this.state.instruments.length > 0 ? console.log('this.state.instruments', this.state.instruments) : '' }
-    //{ matchingInstruments && matchingInstruments.length > 0 ? console.log('matchingInstruments', matchingInstruments) : '' }
+    { matchingInstruments.length < 1 ? '' : console.log('matchingInstruments', matchingInstruments) }
+    { (this.state.scoreInstruments).length < 1 ? '' : console.log('scoreInstruments', this.state.scoreInstruments) }
+    // console.log('this.state.activeScore', this.state.activeScore)
 
 
     return <div className={this.state.hidden}>
@@ -367,7 +378,8 @@ class Scores extends React.Component {
           <div className={classes.selectArrangement}>
             <SelectArrangement
               bandtypes={this.state.bandtypes}
-              bandtype={band.bandtype}
+              bandtype={this.state.bandtype}
+              defaultBandtype={band.bandtype}
               band={band}
               onChange={this._onSelectChange}
               instruments={this.state.instruments}
@@ -442,7 +454,7 @@ class Scores extends React.Component {
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}
                           onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                          Composer:  {score.composer}
+                          {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
                         </Typography>
                         <Typography variant='subheading'
                           onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
@@ -463,7 +475,6 @@ class Scores extends React.Component {
                   {band.bandtype ?
                     // If bandtype is not chosen yet, the expandion panel is hidden
                     <div onClick={this.onExpansionClick} id={index}>
-
                       <ExpansionPanel id={index}>
                         <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon id={index} />}
                           id={index} >
@@ -475,7 +486,16 @@ class Scores extends React.Component {
                               {
                                 this.state.instruments.map((instruments, index) =>
                                   <ListItem key={index} className={classes.expandedListItems}>
-                                    <LibraryMusic color='action' />
+                                    {/* Checking for matching instruments in each scores,
+                                   then displaying an error or music note icon based on the result  */}
+                                    {instruments == matchingInstruments ?
+                                      <Tooltip >
+                                        <MusicNote color='action' />
+                                      </Tooltip> :
+                                      <Tooltip title='Instrument not found in this score' aria-label="error">
+                                        <Error color='action' />
+                                      </Tooltip>
+                                    }
                                     <ListItemText primary={`${instruments}: `} />
                                     <List>
                                       <InstrumentScores
