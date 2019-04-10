@@ -4,9 +4,9 @@ import firebase from 'firebase';
 import { withStyles } from "material-ui/styles";
 import {
     Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper,
-    Typography 
+    Typography
 } from "material-ui";
-import {PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule} from "material-ui-icons";
+import { PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule } from "material-ui-icons";
 import DeleteIcon from 'material-ui-icons/Delete';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 const styles = {
@@ -35,13 +35,13 @@ class Setlists extends React.Component {
         isLoaded: true,
     };
 
-    
+
     open = async () => {
         try {
-           await this.dialog.open();
-           return true;
+            await this.dialog.open();
+            return true;
         } catch (error) {
-           return false;
+            return false;
         }
     }
 
@@ -51,7 +51,7 @@ class Setlists extends React.Component {
         }
     }
 
-    componentDidMount(){
+    componentDidMount() {
         const { band } = this.props;
         const { currentUser } = firebase.auth();
         this.setState({
@@ -59,13 +59,11 @@ class Setlists extends React.Component {
             hasRights: false,
         });
 
-        firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-        const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
-        const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-
+        const members = band.members;
+        console.log(members)
         for (let i in members) {
             if (currentUser.uid === members[i].uid) {
-                if(members[i].admin || members[i].supervisor){
+                if (members[i].admin || members[i].supervisor) {
                     this.setState({
                         hasRights: true
                     });
@@ -73,17 +71,19 @@ class Setlists extends React.Component {
             }
         }
 
-        if (currentUser.uid === leader) {
-            this.setState({
-                hasRights: true
-            })
-            return;
-        }
+        firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+
+            if (currentUser.uid === leader) {
+                this.setState({
+                    hasRights: true
+                })
+                return;
+            }
         });
-        
     }
-    
-    componentDidUpdate(prevProp, prevState){
+
+    componentDidUpdate(prevProp, prevState) {
         const { band } = this.props;
         if (band.id !== prevProp.band.id) {
             const { currentUser } = firebase.auth();
@@ -92,13 +92,12 @@ class Setlists extends React.Component {
                 hasRights: false,
             });
 
-            firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-            const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
-            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+            let members = band.members;
+            console.log('update', members)
 
             for (let i in members) {
                 if (currentUser.uid === members[i].uid) {
-                    if(members[i].admin || members[i].supervisor){
+                    if (members[i].admin || members[i].supervisor) {
                         this.setState({
                             hasRights: true
                         });
@@ -106,12 +105,16 @@ class Setlists extends React.Component {
                 }
             }
 
-            if (currentUser.uid === leader) {
-                this.setState({
-                    hasRights: true
-                })
-                return;
-            }
+
+            firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+                const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+                console.log('leader', leader)
+                if (currentUser.uid === leader) {
+                    this.setState({
+                        hasRights: true
+                    })
+                    return;
+                }
             });
         }
     }
@@ -192,11 +195,11 @@ class Setlists extends React.Component {
         if (!await this.open()) return;
 
         //console.log(setlistId);
-        const {band} = this.props;
+        const { band } = this.props;
         //Fetching setlist reference from firestore
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
         if (this.state.hasRights) {
-        
+
             setlistRef.delete().then(() => {
                 console.log("Document succesfully removed");
                 //location.reload();
@@ -204,7 +207,7 @@ class Setlists extends React.Component {
                 console.error("Error removing document", err);
             });
         }
-        
+
     }
 
     //This function changes the boolean value of sortedAlphabetically
@@ -213,29 +216,29 @@ class Setlists extends React.Component {
         let alpha = this.state.sortedAlphabetically;
         //Inverts the alpha
         alpha = !alpha;
-        this.setState({sortedAlphabetically: alpha});
-      };
+        this.setState({ sortedAlphabetically: alpha });
+    };
 
     //This function checks that setlistDate is a string, if so returns it and a space
     _formatedDate = (setlistDate) => {
-        if(typeof setlistDate === 'string'){
-            console.log('Setlist date: ' + setlistDate);
+        if (typeof setlistDate === 'string') {
+            //console.log('Setlist date: ' + setlistDate);
             return setlistDate + " ";
         }
     }
 
     //This function checks that setlistTime is a string, if so returns it
     _formatedTime = (setlistTime) => {
-        if(typeof setlistTime === 'string'){
-            console.log("setlist time: " + setlistTime);
+        if (typeof setlistTime === 'string') {
+            //console.log("setlist time: " + setlistTime);
             return setlistTime;
         }
     }
 
     render() {
-        
-        const {classes, band} = this.props;
-        const {listView, isLoaded} = this.state;
+
+        const { classes, band } = this.props;
+        const { listView, isLoaded } = this.state;
         //isLoaded should be removed when the rendering problem is solved
         const hasSetlists = band.setlists && band.setlists.length > 0;
         //this.onHandleFallback();
@@ -247,7 +250,7 @@ class Setlists extends React.Component {
             setlists = setlists.sort((a, b) => a.title.localeCompare(b.title)).slice();
             //console.log("Scores: ", setlists)
         }
-        else if (hasSetlists){
+        else if (hasSetlists) {
             setlists = band.setlists.slice();
             //console.log("Scores: ", setlists)
         }
@@ -257,7 +260,7 @@ class Setlists extends React.Component {
                 <div className={classes.flex} />
 
                 <IconButton id="sortByAlphaButton">
-                    <SortByAlpha onClick={this._onSortByAlphaClick}/>
+                    <SortByAlpha onClick={this._onSortByAlphaClick} />
                 </IconButton>
 
                 {
@@ -279,45 +282,45 @@ class Setlists extends React.Component {
                     <Paper>
                         <List>
                             {
-                                 setlists.map((setlist, index) =>
+                                setlists.map((setlist, index) =>
                                     <ListItem key={index} dense button onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}>
-                                        <QueueMusic color='action'/>
-                                        <ListItemText primary={setlist.title}/>
+                                        <QueueMusic color='action' />
+                                        <ListItemText primary={setlist.title} />
                                     </ListItem>
-                                    )
+                                )
                             }
                         </List>
                     </Paper>
                 }
                 {
                     !listView && hasSetlists &&
-                    <div style={{display: 'flex', flexWrap: 'wrap'}}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                         {setlists.map((setlist, index) =>
-                            <Card key={index} className={classes.card} 
-                                  elevation={1}>
-                                {isLoaded &&<CardMedia
+                            <Card key={index} className={classes.card}
+                                elevation={1}>
+                                {isLoaded && <CardMedia
                                     className={classes.media}
                                     onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
                                     image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
                                     title=""
-                                    
+
                                 />}
-                                {isLoaded && <CardContent style={{position: 'relative'}}>
+                                {isLoaded && <CardContent style={{ position: 'relative' }}>
                                     <Typography variant="headline" component="h2">
                                         {setlist.title}
                                         {this.state.hasRights &&
-                                        <IconButton style={{position: 'absolute', right: '15px'}}>
-                                            <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)}/>
-                                        </IconButton>}
+                                            <IconButton style={{ position: 'absolute', right: '15px' }}>
+                                                <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)} />
+                                            </IconButton>}
                                     </Typography>
                                     <Typography component="p">
                                         {/*Checking for date setlist.date, if that does not exist, then we don't display anything*/}
                                         {setlist.date && this._formatedDate(setlist.date)}
                                         {setlist.time && this._formatedTime(setlist.time)}
                                     </Typography>
-                                    
+
                                 </CardContent>}
-                                
+
                             </Card>
                         )}
                     </div>
@@ -330,13 +333,13 @@ class Setlists extends React.Component {
                 style={{ position: 'absolute', bottom: 32, right: 32 }}
                 id="playlistAddButton"
             >
-                <PlaylistAdd/>
-            </Button> }
+                <PlaylistAdd />
+            </Button>}
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
                 <Typography variant="body1" >{this.state.message}</Typography>
             </AsyncDialog>
         </div>
-        
+
     }
 }
 

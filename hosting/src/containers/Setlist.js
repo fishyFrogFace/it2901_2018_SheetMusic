@@ -43,7 +43,7 @@ class Setlist extends Component {
         setlist: {},
         band: {},
         message: 'Looks like your setlist is empty, add some!',
-        hasRights: false,
+        hasRights: true,
     };
 
     addScoreDialog;
@@ -384,7 +384,7 @@ class Setlist extends Component {
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
             </svg>
         </IconButton>;
-
+        const { hasRights } = this.state;
         let items;
         if(setlist.items){
             items = updatedItems || (setlist.items || []);
@@ -409,12 +409,12 @@ class Setlist extends Component {
                                 </Typography>
                             </div>
                             <div className={classes.flex} />
-                            {this.state.hasRights &&<IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
+                            {hasRights && <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
                                 <Edit />
                             </IconButton>}
-                            <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
+                            {hasRights && <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
                                 <Add />
-                            </IconButton>
+                            </IconButton>}
                             <Menu
                                 anchorEl={anchorEl}
                                 open={Boolean(anchorEl)}
@@ -437,6 +437,7 @@ class Setlist extends Component {
                                                 key={index}
                                                 draggableId={index}
                                                 index={index}
+                                                isDragDisabled={!hasRights}
                                             >
                                                 {(provided, snapshot) =>
                                                     <div>
@@ -456,7 +457,7 @@ class Setlist extends Component {
                                                                             {/*<IconButton style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onScoreEditClick()}/>
                                                                             </IconButton>*/}
-                                                                            {this.state.hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
+                                                                            {hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
                                                                             </IconButton>}
                                                                         </Typography>
@@ -473,10 +474,10 @@ class Setlist extends Component {
                                                                             {eventIcon}
                                                                             {item.title} | {item.time} minutes
                                                                         
-                                                                            {this.state.hasRights && <IconButton style={{position: 'absolute', right: '70px'}}>
+                                                                            {hasRights && <IconButton style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onEventEditClick(item.id, index)}/>
                                                                             </IconButton>}
-                                                                            {this.state.hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
+                                                                            {hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
                                                                             </IconButton>}
                                                                         </Typography>
