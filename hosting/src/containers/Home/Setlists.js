@@ -51,6 +51,37 @@ class Setlists extends React.Component {
         }
     }
 
+    componentDidMount(){
+        const { band } = this.props;
+        const { currentUser } = firebase.auth();
+        this.setState({
+            user: currentUser.uid,
+            hasRights: false,
+        });
+
+        firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+        const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
+        const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+
+        for (let i in members) {
+            if (currentUser.uid === members[i].uid) {
+                if(members[i].admin || members[i].supervisor){
+                    this.setState({
+                        hasRights: true
+                    });
+                }
+            }
+        }
+
+        if (currentUser.uid === leader) {
+            this.setState({
+                hasRights: true
+            })
+            return;
+        }
+        });
+        
+    }
     
     componentDidUpdate(prevProp, prevState){
         const { band } = this.props;
@@ -225,19 +256,19 @@ class Setlists extends React.Component {
             <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}>
                 <div className={classes.flex} />
 
-                <IconButton>
+                <IconButton id="sortByAlphaButton">
                     <SortByAlpha onClick={this._onSortByAlphaClick}/>
                 </IconButton>
 
                 {
                     listView &&
-                    <IconButton onClick={this._onViewModuleClick}>
+                    <IconButton onClick={this._onViewModuleClick} id="viewModuleButton">
                         <ViewModule />
                     </IconButton>
                 }
                 {
                     !listView &&
-                    <IconButton onClick={this._onViewListClick}>
+                    <IconButton onClick={this._onViewListClick} id="wiewListButton">
                         <ViewList />
                     </IconButton>
                 }
@@ -297,6 +328,7 @@ class Setlists extends React.Component {
                 variant="fab"
                 color="secondary"
                 style={{ position: 'absolute', bottom: 32, right: 32 }}
+                id="playlistAddButton"
             >
                 <PlaylistAdd/>
             </Button> }

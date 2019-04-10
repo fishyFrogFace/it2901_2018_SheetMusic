@@ -7,5 +7,8 @@ describe('Loggin into website', function(){
     it('Logging in', () => {
         cy.login();
         cy.visit('/setlist');
+    });
+    it('creating a setlist', ()=> {
+        cy.get('button[id=playlistAddButton]').click();
     })
 });
