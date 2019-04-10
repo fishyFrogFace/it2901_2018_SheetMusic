@@ -33,12 +33,14 @@ const styles = {
 };
 
 class Setlist extends Component {
+
     state = {
         anchorEl: null,
         updatedItems: null,
         setlist: {},
         band: {}
     };
+
 
     addScoreDialog;
     addEventDialog;
@@ -180,6 +182,9 @@ class Setlist extends Component {
         const { classes } = this.props;
 
         const items = updatedItems || (setlist.items || []);
+
+        console.log('this.state.band', this.state.band)
+        console.log('this.props', this.props)
 
         return (
             <div className={classes.root}>

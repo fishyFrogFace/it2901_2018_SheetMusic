@@ -22,6 +22,7 @@ import SearchBar from '../components/SearchBar';
 import Members from "./Home/Members";
 import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
+import Setlist from './Setlist';
 import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
 
@@ -89,7 +90,7 @@ class Home extends React.Component {
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null,
-
+        bandtypes: [],
         band: {},
         bands: null,
 
@@ -447,11 +448,14 @@ class Home extends React.Component {
         return firebase.auth().signOut();
     }
 
+
+
     async componentDidUpdate(prevProps, prevState) {
         const user = firebase.auth().currentUser;
 
         const { page, loaded } = this.props;
         const { bands, band, windowSize } = this.state;
+
 
         if (page !== prevProps.page) {
             this.unsubs.forEach(unsub => unsub());
@@ -596,8 +600,8 @@ class Home extends React.Component {
                                         snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                                     );
                                     item.parts = parts;
-                                    let instr = 
-                                    item.instruments 
+                                    let instr =
+                                        item.instruments
                                 });
                             }
                             this.setState({ band: { ...this.state.band, scores: items } });
@@ -689,6 +693,9 @@ class Home extends React.Component {
 
         }
 
+
+
+
         const options = {
             duration: 200,
             fill: 'both',
@@ -720,6 +727,8 @@ class Home extends React.Component {
         }
     }
 
+
+
     _onPDFSelect = selectedPDFs => {
         this.setState({ pdfSelected: selectedPDFs.size > 0 });
     };
@@ -745,6 +754,9 @@ class Home extends React.Component {
                 ref={ref => this.appBarContainerEl = ref}>
                 {
                     !pdfSelected &&
+
+
+
                     <AppBar position='static'>
                         <Toolbar style={{ minHeight: 56 }}>
                             {
@@ -853,6 +865,7 @@ class Home extends React.Component {
                             </Menu>
                         </Toolbar>
                     </AppBar>
+
                 }
             </div>
             <div
@@ -943,9 +956,10 @@ class Home extends React.Component {
                     ...(windowSize === 'desktop' ? { gridRow: '2/-1', gridColumn: 2 } : { gridRow: 2, gridColumn: '1/-1' })
                 }} ref={ref => this.contentEl = ref}
             >
+
                 {
-                    
-                    page === 'scores' && 
+
+                    page === 'scores' &&
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
@@ -957,6 +971,7 @@ class Home extends React.Component {
                     <Setlists
                         band={band}
                         onCreateSetlist={this._onCreateSetlist}
+                        bandtypes={this.state.bandtypes}
                     />
                 }
                 {
@@ -973,6 +988,7 @@ class Home extends React.Component {
                         onRemoveUnsortedPdf={this._onRemoveUnsortedPdf}
                     />
                 }
+
             </div>
             {
                 bands && bands.length === 0 &&

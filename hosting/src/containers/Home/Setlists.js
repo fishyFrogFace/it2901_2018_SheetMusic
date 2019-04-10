@@ -54,6 +54,7 @@ class Setlists extends React.Component {
 
         const hasSetlists = band.setlists && band.setlists.length > 0;
 
+
         return <div>
             <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}>
                 <div className={classes.flex} />

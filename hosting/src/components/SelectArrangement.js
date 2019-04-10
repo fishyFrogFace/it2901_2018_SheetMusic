@@ -36,7 +36,8 @@ class SelectArrangements extends React.Component {
             value={this.props.bandtype}
             onChange={this.props.onChange}
             inputProps={{
-              name: 'bandtype'
+              name: 'bandtype',
+              instruments: this.props.instruments
             }}
             className={classes.selecter}
             renderValue={() => this.props.bandtype}
