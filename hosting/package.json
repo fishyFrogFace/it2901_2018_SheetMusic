@@ -22,6 +22,9 @@
     "react-beautiful-dnd": "^7.1.3",
     "react-dom": "^16.2.0",
     "react-event-listener": "^0.6.6",
+    "react-hover-image": "^1.0.0",
+    "react-modal-image": "^2.3.2",
+    "react-pdf-preview": "^1.0.0",
     "react-scripts": "^2.1.5",
     "typeface-roboto": "^0.0.54"
   },

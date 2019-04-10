@@ -7,6 +7,9 @@ import {
 import {Add, Close} from "material-ui-icons";
 import CreateScoreStep from "./CreateScoreStep";
 import firebase from 'firebase';
+import ModalImage from 'react-modal-image'
+
+
 
 const styles = {
     selectable: {
@@ -246,7 +249,14 @@ class AddFullScoreDialog extends React.Component {
                                     overflow: 'hidden',
                                     borderRight: '1px solid #E8E8E8'
                                 }}>
-                                    <img width="300%" src={page.croppedURL}/>
+                                    <div width='300%'>
+                                        <ModalImage
+                                            small={page.croppedURL}
+                                            large={page.originalURL}
+                                            hideDownload
+                                            hideZoom
+                                        />
+                                    </div>
                                 </div>
                                 <div style={{flex: 1, height: '100%', overflowY: 'auto'}}>
                                     {
