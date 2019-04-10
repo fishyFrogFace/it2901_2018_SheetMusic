@@ -18,6 +18,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Add, ArrowBack, Edit, FileDownload } from "material-ui-icons";
 
 import jsPDF from 'jspdf';
+import { async } from '@firebase/util';
 
 const styles = {
     root: {},
@@ -118,101 +119,137 @@ class Setlist extends Component {
                     await setlistRef.update({ title: title, date: date });
                     break;
                 case 'download':
-                        console.log("ABC");
-                        console.log("State");
-                        console.log(this.state);
+                        // console.log("State");
+                        // console.log(this.state);
                         const items = this.state.setlist.items;
                         const dateString = new Date().toLocaleDateString();
-                        // console.log("Items v")
-                        // console.log(setlist);
-                        // console.log(setlist.items);
-                        // console.log(setlist.items.length);
-
-                        // console.log("Props");
-                        // console.log(this.props);
-
-                        console.log(items[0].scoreRef.id);
-                        console.log("props");
-                        console.log(this.props);
-                        const bandRef = firebase.firestore().doc(`bands/${this.props.detail}`);
-                        console.log(bandRef);   
-                        console.log("1");
-                        // const setlistDoc = bandRef.collection('scores').doc(items[0].scoreRef.id);
-                        const setlistDoc = await bandRef.collection('scores')//.doc("nod0f4HEJnJOPxrsgcE8").collection('parts')
-                        .get().then(function(querySnapshot) {
-                            console.log("2");
-                            console.log(querySnapshot.docs);
-                            querySnapshot.forEach(function(doc) {
-                                
-                                console.log("3");
-                                // doc.data() is never undefined for query doc snapshots
-                                console.log(doc.id, " => ", doc.data());
-                            });
-                        })
-                        .catch(function(error) {
-                            console.log("Error getting documents: ", error);
-                        });
-
-                        //     .doc("5noP5kYFBg3YsEZPT0oe").get().then(function(doc) {
-                        //     console.log(doc.exists);
-                        //     console.log("Docdata");
-                        //     console.log(doc);
-                        //     console.log(doc.data());
-                        // });
-                        console.log("Doc");
-                        console.log(setlistDoc);
-                        // console.log(tes);
 
                         // Get image
-                        const { width, height } = await new Promise(resolve => {
+                        const { width, height } = await new Promise(async resolve => {
                             const img = new Image();
-                            img.onload = () => resolve(img);
+                            let src;
                             for(let i = 0; i < items.length; i++) {
                                 if(items[i].type == "score") {
-                                    console.log("Score");
-                                    console.log(items[i].scoreRef);
-                                    console.log(items[i].scoreRef.id);
+                                    await items[i].scoreRef.collection('parts').get().then(function(querySnapshot) {
+                                        src = querySnapshot.docs[0].data().pages[0].originalURL;
+                                    });
+                                    break;
                                 }
                             }
-                            img.src = part.pages[0].originalURL;
+                            img.onload = () => resolve(img);
+                            img.src = src;
                         });
-                        
 
+                        var array = [];
+                        items.forEach((item) => {
+                            switch(item.type) {
+                                case('event'):
+                                    array.push(new Promise(resolve => {
+                                        resolve([[item.title, item.description, item.time]]);
+                                    }));
+                                    console.log(item);
+                                    break;
 
-                        // Make PDF
-                        const size_increase = 1.33334;
-                        const doc = new jsPDF('p', 'px', [width*size_increase, height*size_increase]);
-
-                        for (let i = 0; i < items.length; i++) {
-                            if (i > 0) {
-                                doc.addPage();
+                                case('score'):
+                                    array.push(new Promise(resolve => {
+                                        item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
+                                            let ar = [];
+                                            let arOfAr = [];
+                                            // Iterate through parts
+                                            for (const part of querySnapshot.docs) {
+                                                for (const page of part.data().pages) {
+                                                    
+                                                    const url = page.originalURL;
+                                                    const response = await fetch(url);
+                                                    const blob = await response.blob();
+    
+                                                    const imageData = await new Promise((resolve, reject) => {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => resolve(reader.result);
+                                                        reader.onerror = reject;
+                                                        reader.readAsDataURL(blob);
+                                                    });
+                                                    ar.push(imageData);
+                                                };
+                                                arOfAr.push(ar);
+                                                ar = [];
+                                            };
+                                            resolve(arOfAr);
+                                        })
+                                    }));
+                                    break;
                             }
+                        });
+                        Promise.all(array).then(function(values) {
+                            let firstpage = true;
 
-                            if(typeof items[i] == "score") {
-                                console.log("score")
-                            } 
-                            else if (typeof items[i] == "event") {
-                                console.log("event")
-                            }
-                            else {
-                                console.log("Something weird happened");
-                            }
+                            // Make PDF
+                            const size_increase = 1.33334;
+                            const doc = new jsPDF('p', 'px', 'a4');
+                            const titleSize = 26;
+                            const normalSize = 12;
+                            const linelen = 80;     //In characters
+                            const leftmargin = 70;  //In pixels
+                            doc.setFont('arial');
+                            doc.setFontSize(normalSize);
+                            const a4_size = [595.28, 841.89];
 
-                    //         const url = part.pages[i].originalURL;
-                    //         const response = await fetch(url);
-                    //         const blob = await response.blob();
+                            values.forEach(array => {
+                                array.forEach(items => {
 
-                    //         const imageData = await new Promise((resolve, reject) => {
-                    //             const reader = new FileReader();
-                    //             reader.onloadend = () => resolve(reader.result);
-                    //             reader.onerror = reject;
-                    //             reader.readAsDataURL(blob);
-                    //         });
+                                    if(items[0].startsWith("data:image/png;base64,")) {
+                                        console.log("Image");
+                                        items.forEach(item => {
+                                            if(firstpage) firstpage = false;
+                                            else doc.addPage();
 
-                    //         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                    //         doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
-                        }
-                        doc.save(`${score.title}.pdf`);
+                                            doc.addImage(item, 'PNG', 0, 0, a4_size[0]/size_increase, a4_size[1]/size_increase);
+                                            doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: something`, 20, 625);
+                                            // doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: ssssthing`, 20, a4_size[1]-250);
+                                        });
+                                    } else {
+                                        if(firstpage) firstpage = false;
+                                        else doc.addPage();
+
+                                        let y = 80;             //Pixels
+                                        const dy = 12;          //Pixels
+
+                                        console.log("string");
+                                        var desc = items[1];
+                                        desc = "Based on your input, get a random alpha numeric string. The random string generator creates a series of numbers and letters that have no pattern. These can be helpful for creating security codes. With this utility you generate a 16 character output based on your input of numbers and upper and lower case letters.  Random strings can be unique. Used in computing, a random string generator can also be called a random character string generator. This is an important tool if you want to generate a unique set of strings. The utility generates a sequence that lacks a pattern and is random. Throughout time, randomness was generated through mechanical devices such as dice, coin flips, and playing cards. A mechanical method of achieving randomness can be more time and resource consuming especially when a large number of randomized strings are needed as they could be in statistical applications.  Computational random string generators replace the traditional mechanical devices. ";
+                                        desc = desc + desc + desc + desc + desc + desc + desc;
+                                        //Title
+                                        doc.setFontSize(titleSize);
+                                        doc.text(items[0], leftmargin, 50); 
+
+                                        doc.setFontSize(normalSize);
+
+                                        //Description
+                                        while (desc.length > 0) {
+                                            //Remove start of line space
+                                            if(desc[0] == " ") {
+                                                desc = desc.substring(1, desc.length);
+                                            }
+                                            let lineToBeAdded = desc.substring(0, linelen);
+                                            desc = desc.substring(linelen, desc.length);
+
+                                            //Test if line-break is in the middle of a word
+                                            if(lineToBeAdded[lineToBeAdded.length-1] != " " && desc[0] != " ") {
+                                                lineToBeAdded += "-";
+                                            }
+                                            doc.text(lineToBeAdded, leftmargin, y); 
+                                            y += dy;
+                                        }
+
+                                        //Time
+                                        doc.text(items[2] + " minutes", leftmargin, 600);
+                                    }       
+                                });
+                            });
+                            console.log("Download");
+                            doc.save(`${setlist.title}.pdf`);
+                            // console.log(values);
+                        });
                         break;
                 }
             // } catch (err) {
