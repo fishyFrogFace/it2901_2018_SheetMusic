@@ -32,6 +32,7 @@ class Setlists extends React.Component {
         title: "",
         message: "",
         hasRights: false,
+        isLoaded: true,
     };
 
     
@@ -50,6 +51,7 @@ class Setlists extends React.Component {
         }
     }
 
+    
     componentDidUpdate(prevProp, prevState){
         const { band } = this.props;
         if (band.id !== prevProp.band.id) {
@@ -82,6 +84,52 @@ class Setlists extends React.Component {
             });
         }
     }
+
+    /*Used in the workaround
+    componentWillReceiveProps(props){
+        for (let i = 0; i < (props.band.setlist &&(Object.keys(props.band.setlist)).length); i++){
+            if (props.band.setlist !== undefined && Object.keys(props.band).length > 10){
+                this.setState({
+                    isLoaded: true,
+                    band: this.props.band
+                });
+            }
+            else{
+                this.setState({
+                    isLoaded: false,
+                })
+            }
+        }
+    }
+
+    //This is a workaround
+    onHandleFallback = () => {
+        if (this.state.isLoaded == false
+          //&& this.props.band.bandtype
+        ) {
+          setTimeout(function () {
+            for (let i = 0; i < (this.props.band.setlist && (Object.keys(this.props.band.setlist)).length); i++) {
+              if (this.props.band.setlist !== undefined && Object.keys(this.props.setlist).length > 10) {
+                this.setState({
+                  isLoaded: true
+                })
+              }
+              else {
+                // if not able to retrieve props, wait another 4 seconds
+                setTimeout(function () {
+                  for (let i = 0; i < (this.props.band.setlist && (Object.keys(this.props.band.setlist)).length); i++) {
+                    if (this.props.band.setlist !== undefined && Object.keys(this.props.band).length > 10) {
+                      this.setState({
+                        isLoaded: true
+                      })
+                    }
+                  }
+                }.bind(this), 4000);  // wait 4 seconds, then isLoaded: true
+              }
+            }
+          }.bind(this), 500);  // wait 0.5 seconds, then isLoaded: true
+        }
+      }*/
 
 
     //Is called by the moduleView parent tag
@@ -156,10 +204,10 @@ class Setlists extends React.Component {
     render() {
         
         const {classes, band} = this.props;
-        const {listView} = this.state;
-
+        const {listView, isLoaded} = this.state;
+        //isLoaded should be removed when the rendering problem is solved
         const hasSetlists = band.setlists && band.setlists.length > 0;
-
+        //this.onHandleFallback();
         let setlists = [];
 
         if (this.state.sortedAlphabetically && hasSetlists) {
@@ -216,14 +264,14 @@ class Setlists extends React.Component {
                         {setlists.map((setlist, index) =>
                             <Card key={index} className={classes.card} 
                                   elevation={1}>
-                                <CardMedia
+                                {isLoaded &&<CardMedia
                                     className={classes.media}
                                     onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
                                     image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
                                     title=""
                                     
-                                />
-                                <CardContent style={{position: 'relative'}}>
+                                />}
+                                {isLoaded && <CardContent style={{position: 'relative'}}>
                                     <Typography variant="headline" component="h2">
                                         {setlist.title}
                                         {this.state.hasRights &&
@@ -237,7 +285,7 @@ class Setlists extends React.Component {
                                         {setlist.time && this._formatedTime(setlist.time)}
                                     </Typography>
                                     
-                                </CardContent>
+                                </CardContent>}
                                 
                             </Card>
                         )}
