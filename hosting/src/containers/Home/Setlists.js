@@ -53,7 +53,7 @@ class Setlists extends React.Component {
 
     componentDidMount() {
         const { band } = this.props;
-        console.log("DidMount band: " + band);
+        //console.log("DidMount band: " + band);
         const { currentUser } = firebase.auth();
         const bandRef = firebase.firestore().doc(`bands/${band.id}`);
         this.setState({
@@ -76,7 +76,7 @@ class Setlists extends React.Component {
             const members = await Promise.all(
                 snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
             );
-            console.log("setlist members: " + members);
+            //console.log("setlist members: " + members);
             for (let i in members) {
                 if (currentUser.uid === members[i].uid) {
                     if(members[i].admin || members[i].supervisor){
@@ -102,7 +102,7 @@ class Setlists extends React.Component {
 
     componentDidUpdate(prevProp, prevState) {
         const { band } = this.props;
-        console.log("Band DidUpdate: " + band);
+        //console.log("Band DidUpdate: " + band);
         if (band.id !== prevProp.band.id) {
             const { currentUser } = firebase.auth();
             this.setState({
@@ -128,7 +128,7 @@ class Setlists extends React.Component {
                 const members = await Promise.all(
                     snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
                 );
-                console.log("setlist members: " + members);
+                //console.log("setlist members: " + members);
                 for (let i in members) {
                     if (currentUser.uid === members[i].uid) {
                         if(members[i].admin || members[i].supervisor){
@@ -143,7 +143,7 @@ class Setlists extends React.Component {
 
             bandRef.get().then(snapshot => {
                 const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-                console.log('leader', leader);
+                //console.log('leader', leader);
                 if (currentUser.uid === leader) {
                     this.setState({
                         hasRights: true
@@ -294,19 +294,19 @@ class Setlists extends React.Component {
             <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}>
                 <div className={classes.flex} />
 
-                <IconButton id="sortByAlphaButton">
+                <IconButton id="sort-by-alpha-button">
                     <SortByAlpha onClick={this._onSortByAlphaClick} />
                 </IconButton>
 
                 {
                     listView &&
-                    <IconButton onClick={this._onViewModuleClick} id="viewModuleButton">
+                    <IconButton onClick={this._onViewModuleClick} id="view-module-button">
                         <ViewModule />
                     </IconButton>
                 }
                 {
                     !listView &&
-                    <IconButton onClick={this._onViewListClick} id="wiewListButton">
+                    <IconButton onClick={this._onViewListClick} id="wiew-list-button">
                         <ViewList />
                     </IconButton>
                 }
@@ -331,7 +331,7 @@ class Setlists extends React.Component {
                     !listView && hasSetlists &&
                     <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                         {setlists.map((setlist, index) =>
-                            <Card key={index} className={classes.card}
+                            <Card key={index} className={classes.card} id={"setlist-card"}
                                 elevation={1}>
                                 {isLoaded && <CardMedia
                                     className={classes.media}
@@ -340,12 +340,12 @@ class Setlists extends React.Component {
                                     title=""
 
                                 />}
-                                {isLoaded && <CardContent style={{ position: 'relative' }}>
-                                    <Typography variant="headline" component="h2">
+                                {isLoaded && <CardContent style={{ position: 'relative' }} id="setlist-card-content">
+                                    <Typography variant="headline" component="h2" id="setlist-card-typography">
                                         {setlist.title}
                                         {this.state.hasRights &&
-                                            <IconButton style={{ position: 'absolute', right: '15px' }}>
-                                                <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)} />
+                                            <IconButton style={{ position: 'absolute', right: '15px' }} id="setlist-delete-button">
+                                                <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)}/>
                                             </IconButton>}
                                     </Typography>
                                     <Typography component="p">
@@ -366,9 +366,9 @@ class Setlists extends React.Component {
                 variant="fab"
                 color="secondary"
                 style={{ position: 'absolute', bottom: 32, right: 32 }}
-                id="playlistAddButton"
+                
             >
-                <PlaylistAdd />
+                <PlaylistAdd id="playlist-add-button"/>
             </Button>}
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
                 <Typography variant="body1" >{this.state.message}</Typography>

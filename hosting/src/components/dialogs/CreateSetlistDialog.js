@@ -56,10 +56,16 @@ class CreateSetlistDialog extends React.Component {
         //console.log(date);
         
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} required />
+            <TextField 
+                id="create-setlist-title"
+                label='Title' 
+                onChange={this._onTitleInputChange} 
+                style={{marginBottom: 20}} 
+                required 
+                />
             <form className={classes.container} noValidate>
                 <TextField onChange={this._onDateChange}
-                    id="date"
+                    id="create-setlist-date"
                     label="Date"
                     type="date"
                     defaultValue={this.date}
@@ -69,7 +75,7 @@ class CreateSetlistDialog extends React.Component {
                     }}
                 />
                 <TextField onChange={this._onTimeChange}
-                    id="time"
+                    id="create-setlist-time"
                     label="Time"
                     type="time"
                     defaultValue={this.date}

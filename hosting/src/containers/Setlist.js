@@ -70,7 +70,7 @@ class Setlist extends Component {
     }
 
     _onDragEnd = async result => {
-        console.log("Result: " + JSON.stringify(result));
+        //console.log("Result: " + JSON.stringify(result));
         // dropped outside the list
         if (!result.destination) {
             return;
@@ -131,7 +131,7 @@ class Setlist extends Component {
                     break;
                 case 'editSetlist':
                     const {title, date, setlistTime} = await this.editSetlistDialog.open(setlist);
-                    console.log('setlistTime: ' + setlistTime);
+                    //console.log('setlistTime: ' + setlistTime);
                     await setlistRef.update({title: title, date: date, time: setlistTime});
                     break;
             }
@@ -228,7 +228,7 @@ class Setlist extends Component {
                 const members = await Promise.all(
                     snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
                 );
-                console.log("setlist members: " + members);
+                //console.log("setlist members: " + members);
                 for (let i in members) {
                     if (currentUser.uid === members[i].uid) {
                         if(members[i].admin || members[i].supervisor){
@@ -410,7 +410,7 @@ class Setlist extends Component {
                     <AppBar>
                         <Toolbar>
                             <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                                <ArrowBack />
+                                <ArrowBack id="arrow-back-button"/>
                             </IconButton>
                             <div style={{ marginLeft: 10 }}>
                                 <Typography variant="title" color="inherit" className={classes.flex}>
