@@ -23,4 +23,6 @@ yarn-error.log*
 
 .idea
 
+hosting/build/
 package-lock.json
+

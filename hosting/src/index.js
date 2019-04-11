@@ -35,16 +35,6 @@ class App extends React.Component {
     constructor(props) {
         super(props);
 
-        // firebase.initializeApp({
-        //     apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
-        //     authDomain: "scores-butler.firebaseapp.com",
-        //     databaseURL: "https://scores-butler.firebaseio.com",
-        //     projectId: "scores-butler",
-        //     storageBucket: "scoresbutler-9ff30.appspot.com",
-        //     messagingSenderId: "124262758995"
-        // });
-
-
         // Initialize Firebase
         var config = {
             apiKey: "AIzaSyCBHe8CK4uabfrJeS-GwyQ3phiQQ2Q73cE",

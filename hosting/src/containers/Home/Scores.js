@@ -2,7 +2,7 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, CircularProgress, Tooltip,
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, CircularProgress, Tooltip, InputLabel,
 } from "material-ui";
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 import DeleteIcon from 'material-ui-icons/Delete'
@@ -156,7 +156,14 @@ class Scores extends React.Component {
       matchingInstruments: [],
       expansionIsClicked: false,
       scoreInstruments: [],
-      activeScore: ''
+      activeScore: '',
+      sortedAlphabetically: false,
+      defaultComposer: 'All Composers',
+      chosenComposer: 'All Composers',
+      defaultInstrument: 'All Instruments',
+      chosenInstrument: 'All Instruments',
+      allInstruments: [],
+      allPartsInstrument: [],
     };
   }
 
@@ -219,7 +226,7 @@ class Scores extends React.Component {
   }
 
   onHandleFallback = () => {
-    if (this.state.isLoaded == false
+    if (this.state.isLoaded === false
       //&& this.props.band.bandtype
     ) {
       setTimeout(function () {
@@ -244,6 +251,27 @@ class Scores extends React.Component {
         }
       }.bind(this), 500);  // wait 0.5 seconds, then isLoaded: true
     }
+  }
+
+  onGetAllInstruments = () => {
+    let allPartsInstruments = []
+    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
+      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
+        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
+          let data = this.props.band.scores[i].parts[k].instrumentRef
+          data.get().then(function (documentSnapshot) {
+            const partsInstruments = documentSnapshot.data()
+            allPartsInstruments.push(partsInstruments.name)
+
+          });
+        }
+      }
+    }
+    setTimeout(() => {
+      this.setState({
+        allPartsInstruments: allPartsInstruments
+      })
+    }, 500);
   }
 
   onExpansionClick = (e) => {
@@ -289,22 +317,8 @@ class Scores extends React.Component {
       activeScore: e.target.id
     })
 
-    const instrumentRef = firebase.firestore().collection('instruments');
-
-    instrumentRef.get()
-      .then(dok => {
-        dok.forEach(item => {
-
-          tst.push(item.data())
-        })
-        for (let elem of tst) {
-          //console.log('elem', elem.name)
-
-        }
-      })
-
     setTimeout(() => {
-      this.state.isLoaded && this.setState({
+      this.setState({
         scoreInstruments: tada
       })
       this.onGetMatchnigScores()
@@ -313,15 +327,43 @@ class Scores extends React.Component {
 
   onGetMatchnigScores = () => {
     const tada = this.state.scoreInstruments
+
     const intersection = this.state.isLoaded && this.state.instruments.filter(element => tada.includes(element));
     this.setState({
       matchingInstruments: intersection
     })
   }
 
+  _onSortByAlphaClick = () => {
+    let alpha = this.state.sortedAlphabetically;
+    alpha = !alpha; // Changed between alphabetically and not
+    this.setState({ sortedAlphabetically: alpha });
+  };
+
+  _changeComposer = (e) => {
+    this.setState({ chosenComposer: e.target.value })
+  };
+
+  _changeInstrument = (e) => {
+    this.setState({ chosenInstrument: e.target.value })
+
+  };
+
+  _instrumentInScore(instrument, score) {
+    let inScore = false;
+    this.state.allInstruments.map(instrumentInScore => {
+      if (instrumentInScore === instrument) {
+        inScore = true;
+      }
+    });
+    return inScore;
+  }
+
   // mounting the orchestra alternatives
   componentDidMount = () => {
     const types = [];
+    const ball = [];
+    const allInstruments = [];
     const bandtypeRef = firebase.firestore().collection('bandtype');
     bandtypeRef.get()
       .then(docs => {
@@ -333,7 +375,24 @@ class Scores extends React.Component {
         console.log('Error getting bandtypes', err);
       });
     this.setState({ bandtypes: types, })
-  }
+
+    const instrumentRef = firebase.firestore().collection('instruments');
+    instrumentRef.get()
+      .then(dok => {
+        dok.forEach(item => {
+          console.log('item.data()', item.data())
+          ball.push(item.data())
+        })
+        for (let elem of ball) {
+          //console.log('elem', elem.name)
+          allInstruments.push(elem.name)
+          
+        }
+      })
+      this.setState({
+        allInstruments: allInstruments
+      })
+    }
 
   // get matching instruments from parts and bandtypes-instrument from db
   //TODO: get instruments from parts and use it instead of test-list
@@ -341,16 +400,80 @@ class Scores extends React.Component {
     const { classes, band } = this.props;
     const { listView, isLoaded, matchingInstruments, timeout } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
-    this.onHandleFallback()
+    //this.onHandleFallback()
+
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
     }
 
+    console.log('this.state.allPartsInstruments', this.state.allPartsInstruments)
+    console.log('this.state', this.state)
 
-    //{ this.state.instruments && this.state.instruments.length > 0 ? console.log('this.state.instruments', this.state.instruments) : '' }
-    { matchingInstruments.length < 1 ? '' : console.log('matchingInstruments', matchingInstruments) }
-    { (this.state.scoreInstruments).length < 1 ? '' : console.log('scoreInstruments', this.state.scoreInstruments) }
-    // console.log('this.state.activeScore', this.state.activeScore)
+    let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
+    let composers = []; // --||--
+    let instruments = []; // --||--
+    if (hasScores) { // Should not fetch band.scores if empty
+      if (this.state.sortedAlphabetically) { // If alphabetically is chosen
+        scores = band.scores.slice(); // Get default
+        scores = scores.sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
+      } else {
+        scores = band.scores.slice(); // Use default
+      }
+
+      if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
+        scores = scores.filter(score => score.composer === this.state.chosenComposer) // The scores are filtered on composer
+      }
+
+      let chosenInstrument = this.state.chosenInstrument;
+      if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
+        scores = scores.filter(score => this._instrumentInScore(chosenInstrument, score)) // The scores are filtered on instrument
+      }
+
+      // Make list of all available composers
+
+      /*.push(this.state.defaultComposer); // Get default (All composers)
+      band.scores.map(score => {
+          if (!composers.includes(score.composer)) { // And all unique composer
+              composers.push(score.composer)
+          }
+      });*/
+
+      // Make list of all available composers
+      composers.push(this.state.defaultComposer); // Get default
+
+      band.scores.map(score => {
+        if (!composers.includes(score.composer)) { // And all unique composer
+          composers.push(score.composer)
+        }
+      });
+
+
+      // With instruments from scores:
+
+      // Make list of all available instruments
+      if (band.scores.parts) {
+        band.scores.map(score => {
+          let parts = this._onGetParts(band, score);
+
+          parts.map(instrument => {
+            if (!instruments.includes(instrument)) { // And all unique instruments
+              instruments.push(instrument)
+            }
+          })
+
+        })
+      }
+
+
+
+
+    }
+
+
+
+
+
+
 
 
     return <div className={this.state.hidden}>
@@ -359,7 +482,7 @@ class Scores extends React.Component {
         <div
         />
         <IconButton>
-          <SortByAlpha />
+          <SortByAlpha onClick={this._onSortByAlphaClick} />
         </IconButton>
         {
           listView &&
@@ -386,6 +509,38 @@ class Scores extends React.Component {
             />
           </div>
         }
+
+        <div>
+          <InputLabel style={{ padding: 5 }} htmlFor="composer">Composer:</InputLabel>
+          <Select
+            onChange={this._changeComposer}
+            autoWidth
+            value={this.state.chosenComposer}
+            renderValue={() => this.state.chosenComposer}
+            inputProps={{ id: 'composer' }}
+          >
+            {composers.map((composer, key) =>
+              <MenuItem key={key} value={composer}>{composer}</MenuItem>)
+            }
+          </Select>
+        </div>
+
+        <div>
+          <InputLabel style={{ padding: 5 }} htmlFor="instrument">Instrument:</InputLabel>
+          <Select
+            onChange={this._changeInstrument}
+            autoWidth
+            value={this.state.chosenInstrument}
+            renderValue={() => this.state.chosenInstrument}
+            inputProps={{ id: 'instrument' }}
+            id="filterInstrument"
+          >
+            {this.state.allInstruments.map((instrument, key) =>
+              <MenuItem key={key} value={instrument}>{instrument}</MenuItem>)
+            }
+          </Select>
+        </div>
+
       </div >
 
       <div>
@@ -395,7 +550,7 @@ class Scores extends React.Component {
           <Paper>
             <List>
               {
-                band.scores.map((score, index) =>
+                scores.map((score, index) =>
                   <ListItem key={index} dense button
                     onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                     <LibraryMusic color='action' />
@@ -420,7 +575,7 @@ class Scores extends React.Component {
           }}>
             {/* map over the scores in the band to get correct database-information */}
             {
-              band.scores.map((score, index) =>
+              scores.map((score, index) =>
                 <Card className={classes.card} key={index}
                   elevation={1}>
                   <CardHeader
@@ -489,7 +644,7 @@ class Scores extends React.Component {
                                     {/* Checking for matching instruments in each scores,
                                    then displaying an error or music note icon based on the result  */}
                                     {instruments == matchingInstruments ?
-                                      <Tooltip >
+                                      <Tooltip title=''>
                                         <MusicNote color='action' />
                                       </Tooltip> :
                                       <Tooltip title='Instrument not found in this score' aria-label="error">
