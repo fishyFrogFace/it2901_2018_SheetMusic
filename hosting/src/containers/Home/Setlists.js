@@ -53,14 +53,16 @@ class Setlists extends React.Component {
 
     componentDidMount() {
         const { band } = this.props;
+        console.log("DidMount band: " + band);
         const { currentUser } = firebase.auth();
+        const bandRef = firebase.firestore().doc(`bands/${band.id}`);
         this.setState({
             user: currentUser.uid,
             hasRights: false,
         });
 
-        const members = band.members;
-        console.log(members)
+        /*const members = band.members;
+        console.log("DidMount members: " + members);
         for (let i in members) {
             if (currentUser.uid === members[i].uid) {
                 if (members[i].admin || members[i].supervisor) {
@@ -69,9 +71,24 @@ class Setlists extends React.Component {
                     });
                 }
             }
-        }
+        }*/
+        bandRef.collection('members').onSnapshot(async snapshot =>{
+            const members = await Promise.all(
+                snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
+            );
+            console.log("setlist members: " + members);
+            for (let i in members) {
+                if (currentUser.uid === members[i].uid) {
+                    if(members[i].admin || members[i].supervisor){
+                        this.setState({
+                            hasRights: true
+                        });
+                    }
+                }
+            }
+        });
 
-        firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+        bandRef.get().then(snapshot => {
             const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
             if (currentUser.uid === leader) {
@@ -85,15 +102,17 @@ class Setlists extends React.Component {
 
     componentDidUpdate(prevProp, prevState) {
         const { band } = this.props;
+        console.log("Band DidUpdate: " + band);
         if (band.id !== prevProp.band.id) {
             const { currentUser } = firebase.auth();
             this.setState({
                 user: currentUser.uid,
                 hasRights: false,
             });
+            const bandRef = firebase.firestore().doc(`bands/${band.id}`);
 
-            let members = band.members;
-            console.log('update', members)
+            /*let members = band.members;
+            console.log('DidUpdate members: ' + members);
 
             for (let i in members) {
                 if (currentUser.uid === members[i].uid) {
@@ -103,12 +122,28 @@ class Setlists extends React.Component {
                         });
                     }
                 }
-            }
+            }*/
+
+            bandRef.collection('members').onSnapshot(async snapshot =>{
+                const members = await Promise.all(
+                    snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
+                );
+                console.log("setlist members: " + members);
+                for (let i in members) {
+                    if (currentUser.uid === members[i].uid) {
+                        if(members[i].admin || members[i].supervisor){
+                            this.setState({
+                                hasRights: true
+                            });
+                        }
+                    }
+                }
+            });
 
 
-            firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
+            bandRef.get().then(snapshot => {
                 const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-                console.log('leader', leader)
+                console.log('leader', leader);
                 if (currentUser.uid === leader) {
                     this.setState({
                         hasRights: true

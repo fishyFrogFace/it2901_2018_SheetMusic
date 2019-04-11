@@ -160,8 +160,6 @@ class Setlist extends Component {
             const setlistDoc = bandRef.collection('setlists').doc(setlistId);
             //console.log("setlistDoc: " + setlistDoc);
 
-            
-
             this.unsubs.forEach(unsub => unsub());
 
             this.unsubs.push(
@@ -209,34 +207,50 @@ class Setlist extends Component {
                 hasRights: false,
             });
 
-            firebase.firestore().doc(`bands/${bandId}`).get().then(snapshot => {
-            const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
-            const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+            //const snapshot = await admin.firestore().collection('instruments').get();
+            //const instruments = snapshot.docs.map(doc => ({ ...doc.data(), ref: doc.ref }));
+            bandRef.get().then(snapshot => {
 
-            for (let i in members) {
-                if (currentUser.uid === members[i].uid) {
-                    if(members[i].admin || members[i].supervisor){
-                        this.setState({
-                            hasRights: true
-                        });
+                const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
+                if (currentUser.uid === leader) {
+                    this.setState({
+                        hasRights: true
+                    })
+                    return;
+                }
+
+            });
+            
+            //const members = await bandRef.collection('members').get();
+            //const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
+
+            bandRef.collection('members').onSnapshot(async snapshot =>{
+                const members = await Promise.all(
+                    snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
+                );
+                console.log("setlist members: " + members);
+                for (let i in members) {
+                    if (currentUser.uid === members[i].uid) {
+                        if(members[i].admin || members[i].supervisor){
+                            this.setState({
+                                hasRights: true
+                            });
+                        }
                     }
                 }
-            }
-
-            if (currentUser.uid === leader) {
-                this.setState({
-                    hasRights: true
-                })
-                return;
-            }
             });
+
+            //const snapshot = await admin.firestore().collection('members').get();
+            
+            
+            
         }
     }
 
     //This function checks that setlistDate is a string, if so returns it and a space
     _formatedDate = (setlistDate) => {
         if(typeof setlistDate === 'string'){
-            console.log('Setlist date: ' + setlistDate);
+            //console.log('Setlist date: ' + setlistDate);
             return setlistDate + " ";
         }
     }
@@ -244,7 +258,7 @@ class Setlist extends Component {
     //This function checks that setlistTime is a string, if so returns it
     _formatedTime = (setlistTime) => {
         if(typeof setlistTime === 'string'){
-            console.log("setlist time: " + setlistTime);
+            //console.log("setlist time: " + setlistTime);
             return setlistTime;
         }
     }
