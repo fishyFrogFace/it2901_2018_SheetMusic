@@ -197,18 +197,6 @@ class AddPartsDialog extends React.Component {
                                                 }
                                             </Select>
                                         </FormControl>
-                                        <FormControl style={{marginRight: 20, width: 100}}>
-                                            <InputLabel htmlFor="instrument-tune">Tune</InputLabel>
-                                            <Select
-                                                value={"1"}
-                                                renderValue={() => this.state.tune}
-                                                onChange={this._onTuneChange}
-                                            >
-                                                <MenuItem value="1">1</MenuItem>
-                                                <MenuItem value="2">2</MenuItem>
-                                                <MenuItem value="3">3</MenuItem>
-                                            </Select>
-                                        </FormControl>
                                     </div>
                                 )
                             }

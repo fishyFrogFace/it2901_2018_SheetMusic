@@ -149,7 +149,7 @@ class PDF extends React.Component {
                 croppedURL: pdf.pages[page].croppedURL,
                 originalURL: pdf.pages[page].originalURL
             }))
-            tune: 1;
+            // tune: 1;
         });
 
         const notSelectedPages = pdf.pages.filter((_, index) => !selectedPages.includes(index));
