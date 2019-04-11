@@ -10,6 +10,7 @@ import { IconButton, Menu, MenuItem, Card, CardContent } from "material-ui";
 import firebase from 'firebase';
 import 'firebase/storage';
 
+import DownloadSetlistDialog from "../components/dialogs/DownloadSetlistDialog";
 import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog";
 import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
@@ -46,6 +47,7 @@ class Setlist extends Component {
     addScoreDialog;
     addEventDialog;
     editSetlistDialog;
+    downloadSetlistDialog;
 
     unsubs = [];
 
@@ -119,105 +121,141 @@ class Setlist extends Component {
                     await setlistRef.update({ title: title, date: date });
                     break;
                 case 'download':
-                        // console.log("State");
-                        // console.log(this.state);
-                        const items = this.state.setlist.items;
-                        const dateString = new Date().toLocaleDateString();
+                
+                    const con = await this.downloadDialog.open("part.instrument");
+                    console.log(con);
+                    // console.log("State");
+                    // console.log(this);
+                    // console.log(this.state);
+                    const items = this.state.setlist.items;
+                    const dateString = new Date().toLocaleDateString();
 
-                        // Get image
-                        const { width, height } = await new Promise(async resolve => {
-                            const img = new Image();
-                            let src;
-                            for(let i = 0; i < items.length; i++) {
-                                if(items[i].type == "score") {
-                                    await items[i].scoreRef.collection('parts').get().then(function(querySnapshot) {
-                                        src = querySnapshot.docs[0].data().pages[0].originalURL;
-                                    });
-                                    break;
-                                }
+                    // Get image
+                    const { width, height } = await new Promise(async resolve => {
+                        const img = new Image();
+                        let src;
+                        for(let i = 0; i < items.length; i++) {
+                            if(items[i].type == "score") {
+                                await items[i].scoreRef.collection('parts').get().then(function(querySnapshot) {
+                                    src = querySnapshot.docs[0].data().pages[0].originalURL;
+                                });
+                                break;
                             }
-                            img.onload = () => resolve(img);
-                            img.src = src;
-                        });
+                        }
+                        img.onload = () => resolve(img);
+                        img.src = src;
+                    });
 
-                        var array = [];
-                        items.forEach((item) => {
-                            switch(item.type) {
-                                case('event'):
-                                    array.push(new Promise(resolve => {
-                                        resolve([[item.title, item.description, item.time]]);
-                                    }));
-                                    console.log(item);
-                                    break;
+                    var array = [];
+                    var instrumentPromiseArray = [];
+                    // var partArray = []; // [[Title, part1, part2...], [Title, part1, part2...]... ]
+                    items.forEach((item) => {
+                        switch(item.type) {
+                            case('event'):
+                                array.push(new Promise(resolve => {
+                                    resolve([[item.title, item.description, item.time]]);
+                                }));
+                                break;
 
-                                case('score'):
-                                    array.push(new Promise(resolve => {
-                                        item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
-                                            let ar = [];
-                                            let arOfAr = [];
-                                            // Iterate through parts
-                                            for (const part of querySnapshot.docs) {
-                                                for (const page of part.data().pages) {
-                                                    
-                                                    const url = page.originalURL;
-                                                    const response = await fetch(url);
-                                                    const blob = await response.blob();
-    
-                                                    const imageData = await new Promise((resolve, reject) => {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => resolve(reader.result);
-                                                        reader.onerror = reject;
-                                                        reader.readAsDataURL(blob);
-                                                    });
-                                                    ar.push(imageData);
-                                                };
-                                                arOfAr.push(ar);
-                                                ar = [];
+                            case('score'):
+                                array.push(new Promise(resolve => {
+                                    // //To get the title, for later use
+                                    // item.scoreRef.get().then(function(documentSnapshot) {
+                                    //     scoreArray.push([documentSnapshot.data().title]);
+                                    //     console.log(documentSnapshot.data().title);
+                                        
+                                    // });
+                                    item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
+                                        console.log("Snapshot");
+                                        console.log(querySnapshot);
+                                        console.log(querySnapshot.docs[0].data());
+                                        let ar = [];
+                                        let arOfAr = [];
+                                        // Iterate through parts
+                                        for (const part of querySnapshot.docs) {
+
+                                            //Get the name of the instrument in an array, for future filtering
+                                            instrumentPromiseArray.push(new Promise(resolve => {
+                                                part.data().instrumentRef.get().then(function(ref) {
+                                                    resolve(ref.get("name"));
+                                                });
+                                            }));
+
+                                            for (const page of part.data().pages) {
+                                                
+                                                const url = page.originalURL;
+                                                const response = await fetch(url);
+                                                const blob = await response.blob();
+
+                                                const imageData = await new Promise((resolve, reject) => {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => resolve(reader.result);
+                                                    reader.onerror = reject;
+                                                    reader.readAsDataURL(blob);
+                                                });
+                                                ar.push(imageData);
                                             };
-                                            resolve(arOfAr);
-                                        })
-                                    }));
-                                    break;
-                            }
-                        });
-                        Promise.all(array).then(function(values) {
-                            let firstpage = true;
+                                            arOfAr.push(ar);
+                                            ar = [];
+                                        };
+                                        resolve(arOfAr);
+                                    })
+                                }));
+                                break;
+                        }
+                    });
+                    Promise.all(array).then(function(values) {
+                        var instrumentArray;
+                        Promise.all(instrumentPromiseArray).then(function(array) {
+                            console.log("Arrat");
+                            instrumentArray = array;
+                            console.log(instrumentArray);
 
                             // Make PDF
-                            const size_increase = 1.33334;
                             const doc = new jsPDF('p', 'px', 'a4');
+                            const size_increase = 1.33334;
                             const titleSize = 26;
                             const normalSize = 12;
-                            const linelen = 80;     //In characters
-                            const leftmargin = 70;  //In pixels
-                            doc.setFont('arial');
+                            const linelen = 80;         // In characters
+                            const leftmargin = 70;      // In pixels
+                            const bottommargin = 550;   // In pixesl, from top
+                            const descspace = 80;       // How much space there is between the top of the page and the description, in pixels
+                            const pageNumberY = 612;    // How far down on the page the page numbe is placed, in pixesl
+                            let pageNumber = 1;
+                            let pageDict = {};
+                            let totalPartIndex = 0;
+                            let scoreIndex = 0;
+                            doc.setFont('Times');       // For a list of fonts, do doc.getFontList()
                             doc.setFontSize(normalSize);
+                            doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
                             const a4_size = [595.28, 841.89];
 
+
                             values.forEach(array => {
+                                // console.log(array);
                                 array.forEach(items => {
 
+                                    //Item is part (array of pages in said part)
                                     if(items[0].startsWith("data:image/png;base64,")) {
-                                        console.log("Image");
-                                        items.forEach(item => {
-                                            if(firstpage) firstpage = false;
-                                            else doc.addPage();
+                                        if(instrumentArray[totalPartIndex] == "Drum") { //Instrument should be included in PDF
+                                            // pageDict[pageNumber] = scoreArray[scoreIndex++];
+                                            items.forEach(item => {
+                                                doc.addPage();
 
-                                            doc.addImage(item, 'PNG', 0, 0, a4_size[0]/size_increase, a4_size[1]/size_increase);
-                                            doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: something`, 20, 625);
-                                            // doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: ssssthing`, 20, a4_size[1]-250);
-                                        });
-                                    } else {
-                                        if(firstpage) firstpage = false;
-                                        else doc.addPage();
+                                                doc.addImage(item, 'PNG', 0, 0, a4_size[0]/size_increase, a4_size[1]/size_increase);
+                                                doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: ${pageNumber++}`, 20, 625);
+                                            });
+                                        }
+                                        totalPartIndex++;
+                                    } else { //Item is event
+                                        doc.addPage();
+                                        doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
 
-                                        let y = 80;             //Pixels
+                                        let y = descspace;
                                         const dy = 12;          //Pixels
-
-                                        console.log("string");
+                                        
                                         var desc = items[1];
-                                        desc = "Based on your input, get a random alpha numeric string. The random string generator creates a series of numbers and letters that have no pattern. These can be helpful for creating security codes. With this utility you generate a 16 character output based on your input of numbers and upper and lower case letters.  Random strings can be unique. Used in computing, a random string generator can also be called a random character string generator. This is an important tool if you want to generate a unique set of strings. The utility generates a sequence that lacks a pattern and is random. Throughout time, randomness was generated through mechanical devices such as dice, coin flips, and playing cards. A mechanical method of achieving randomness can be more time and resource consuming especially when a large number of randomized strings are needed as they could be in statistical applications.  Computational random string generators replace the traditional mechanical devices. ";
-                                        desc = desc + desc + desc + desc + desc + desc + desc;
+
                                         //Title
                                         doc.setFontSize(titleSize);
                                         doc.text(items[0], leftmargin, 50); 
@@ -230,6 +268,7 @@ class Setlist extends Component {
                                             if(desc[0] == " ") {
                                                 desc = desc.substring(1, desc.length);
                                             }
+
                                             let lineToBeAdded = desc.substring(0, linelen);
                                             desc = desc.substring(linelen, desc.length);
 
@@ -237,8 +276,15 @@ class Setlist extends Component {
                                             if(lineToBeAdded[lineToBeAdded.length-1] != " " && desc[0] != " ") {
                                                 lineToBeAdded += "-";
                                             }
+
                                             doc.text(lineToBeAdded, leftmargin, y); 
                                             y += dy;
+
+                                            if(y > bottommargin) {
+                                                y = descspace;
+                                                doc.addPage();
+                                                doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
+                                            }
                                         }
 
                                         //Time
@@ -246,15 +292,20 @@ class Setlist extends Component {
                                     }       
                                 });
                             });
-                            console.log("Download");
+
+                            doc.setPage(1)
+                            doc.text('I am on page 1', 10, 10)
                             doc.save(`${setlist.title}.pdf`);
-                            // console.log(values);
+                            // console.log("Pagedict");
+                            // console.log(pageDict);
+                        
                         });
-                        break;
-                }
-            // } catch (err) {
-            //     console.log(err);
-            // }
+                    });
+                    break;
+            }
+        // } catch (err) {
+        //     console.log(err);
+        // }
 
         this.setState({ anchorEl: null });
     }
@@ -407,6 +458,7 @@ class Setlist extends Component {
                         </Droppable>
                     </div>
                 </DragDropContext>
+                <DownloadSetlistDialog onRef={ref => this.downloadDialog = ref} />
                 <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref} />
                 <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref} />
                 <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref} />
