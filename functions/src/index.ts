@@ -71,13 +71,15 @@ const storage = new Storage({ keyFilename: 'service-account-key.json' });
 // });
 
 
-// 
+// Function made just for updating Firebase instruments collection with instruments
 exports.makeInstrumentList = functions.storage.object().onFinalize(async (object, context) => {
     
-    // 
-    const instCheck = await admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
-    const checked = (await instCheck.get()).data().checked;
-    const instrumentList = ['Tenor Sax', 'Trombone']
+    // This only runs when instrumentCheck is true
+    const instCheckRef = await admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
+    const checked = (await instCheckRef.get()).data().checked;
+    const instrumentList = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax', 
+        'Baryton Sax', 'Piano', 'Drums', 'Guitar', 'Bass', 'Flute', 'Piccolo Flute', 'Clarinet', 
+        'Walthorn', 'Cornet', 'Euphonium', 'Tuba']
     
     if (checked) {
         for (let inst in instrumentList) {
@@ -90,7 +92,9 @@ exports.makeInstrumentList = functions.storage.object().onFinalize(async (object
                 });
             }
         }
-        const instUpdate = instCheck.update({
+
+        // Secures that this function only runs once
+        const instUpdate = instCheckRef.update({
             checked: false
         });
     }
