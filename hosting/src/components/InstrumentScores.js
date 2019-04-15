@@ -26,16 +26,94 @@ class InstrumentScores extends React.Component {
 
 
     render() {
-        const { classes } = this.props;
+        const { instruments, classes, vocalInstruments, matching } = this.props
+        let types = []
+        let finalDict = {}
+
+
+        console.log('matching', matching)
+
+        Object.keys(vocalInstruments).forEach(function (key) {
+            //const matches = vocalInstruments[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
+            //finalDict[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
+            //console.log('finalDict', finalDict)
+        });
+
+        // Object.keys(vocalInstruments).forEach((instr) =>
+
+        //     console.log('vocalInstruments[instr][0]', (vocalInstruments[instr][0]).includes(instr))
+
+
+
+
+        // );
+        // console.log('this.props.test.liste', this.props.test.liste)
+
+        for (var i in vocalInstruments) {
+            vocalInstruments[i].forEach(function (elem, index) {
+                // console.log(elem, index);
+            });
+        }
+
+
+        for (let item in vocalInstruments) {
+            //console.log('item', item)
+            var obj = vocalInstruments[item];
+            //console.log('obj', obj)
+            obj.forEach(element => {
+
+                types.push(element)
+            });
+            if (vocalInstruments.hasOwnProperty(item)) {
+                //console.log('item', item)
+            }
+
+        }
+
+        console.log('types', types)
+
+        types.forEach((instr, index) => {
+
+            //console.log('instruments', instruments)
+            //if (types[index])
+        })
+
+        types.map((item, key) => {
+            console.log('item', item)
+            types[key] !== undefined && types[key].map((instr, index) =>
+                console.log('instr', instr)
+            )
+
+        })
+
+
         return <div>
+
             {
+                // map over parts/tone
+                types.map((item, key) =>
+                    //console.log('key: ', key, 'item:', item, 'instruments: ', instruments)
+
+
+                    <ListItem>
+                        {types[key] !== undefined && types[key].map((instr, index) =>
+
+                            // matching.length > 0 &&
+                            <ListItemText primary={instr} className={classes.instrumentstyle} key={index}>  </ListItemText>)
+                        }
+
+                    </ListItem>
+                )
+            }
+            {/* {
                 // map over parts/tone
                 <ListItem>
                     {this.props.test.liste.map((instr, index) =>
                         <ListItemText primary={instr} className={classes.instrumentstyle} key={index}>  </ListItemText>)}
                     {/* <img src={this.props.band.scores[3].parts[0].pages[0].croppedURL}></img> */}
-                </ListItem>
-            }<div>
+            {/* </ListItem>
+            } */}
+            <div>
             </div>
         </div>
     }

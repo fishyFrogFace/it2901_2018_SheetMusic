@@ -13,6 +13,7 @@ import FavoriteIcon from 'material-ui-icons/Favorite';
 import firebase from 'firebase';
 import InstrumentScores from '../../components/InstrumentScores';
 import SelectArrangement from '../../components/SelectArrangement';
+import { elementType } from 'prop-types';
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -109,7 +110,7 @@ const styles = theme => ({
   expandedListItems: {
     paddingBottom: '0px',
     paddingTop: '0px',
-    marginBottom: '-30px'
+    //marginBottom: '-30px'
   },
 
   metadata: {
@@ -126,7 +127,7 @@ const styles = theme => ({
   },
 
   progress: {
-    margin: theme.spacing.unit * 2,
+    // margin: theme.spacing.unit * 2,
     color: 'black',
     paddingRight: '150px',
     margin: '50px',
@@ -139,6 +140,19 @@ const styles = theme => ({
 
   cardHeader: {
     cursor: 'default'
+  },
+
+  instrumentstyle: {
+    borderStyle: 'groove',
+    borderWidth: '1px',
+    padding: '8px',
+    margin: '5px',
+    cursor: 'pointer',
+    minWidth: '80px',
+    textAlign: 'center',
+    '&:first-child': {
+      paddingLeft: '8px',
+    }
   },
 });
 
@@ -164,6 +178,8 @@ class Scores extends React.Component {
       chosenInstrument: 'All Instruments',
       allInstruments: [],
       allPartsInstrument: [],
+      instrumentParts: [],
+      vocalInstruments: {},
     };
   }
 
@@ -277,8 +293,8 @@ class Scores extends React.Component {
   onExpansionClick = (e) => {
     const types = [];
     let instr = [];
-    const tst = [];
-    const tada = [];
+    const parts = [];
+    const instrumentType = [];
     const bandtypeRef = firebase.firestore().collection('bandtype');
     bandtypeRef.get()
       .then(docs => {
@@ -308,7 +324,8 @@ class Scores extends React.Component {
           let data = this.props.band.scores[i].parts[k].instrumentRef
           data.get().then(function (documentSnapshot) {
             const partsInstruments = documentSnapshot.data()
-            tada.push(partsInstruments.name)
+            instrumentType.push(partsInstruments.type)
+            parts.push(partsInstruments)
           });
         }
       }
@@ -319,18 +336,67 @@ class Scores extends React.Component {
 
     setTimeout(() => {
       this.setState({
-        scoreInstruments: tada
+        scoreInstruments: instrumentType,
+        instrumentParts: parts
       })
       this.onGetMatchnigScores()
+      this.onGetInstrumentParts()
     }, 500);
   }
 
   onGetMatchnigScores = () => {
-    const tada = this.state.scoreInstruments
-
-    const intersection = this.state.isLoaded && this.state.instruments.filter(element => tada.includes(element));
+    const instrumentType = this.state.scoreInstruments
+    const intersection = this.state.isLoaded && this.state.instruments.filter(element => instrumentType.includes(element));
     this.setState({
       matchingInstruments: intersection
+    })
+  }
+
+  onGetInstrumentParts = () => {
+    let instrumentType = this.state.instrumentParts
+    let allp = this.state.scoreInstruments
+    let allParts = []
+    let uniqueNames = []
+    let instr = []
+    let dict = {}
+    let finalDictionary = {}
+    let instrTypes = []
+
+    let uniqeInstruments = (new Set(allp)); // get the uniqe instruments for each score
+
+    for (let elem of instrumentType) {
+      const fil = instrumentType.filter(item => item.type === elem.type) // filter out the parts data
+      allParts.push(fil)
+    }
+    for (let k = 0; k < uniqeInstruments.size; k++) {
+      uniqueNames.push(allParts[k]) // get the uniqe parts to match the uniqe instrument
+
+    }
+    uniqueNames.map((item) => {
+      for (let p = 0; p < item.length; p++) {
+        instrTypes.push(item[p].name) // add all the instrument parts to one array
+        instr.push(item[p].type) // add all the instruments to one array
+      }
+    })
+    let uniqeInstr = [...new Set(instr)]; // exclude duplicates
+    let uniqueVocal = [...new Set(instrTypes)] // exlude duplicates
+    let sortedUniqeVocal = uniqueVocal.sort((a, b) => a.localeCompare(b)) // sort the instruments parts on name
+
+    for (let h = 0; h < uniqeInstr.length; h++) {
+      for (let g = 0; g < sortedUniqeVocal.length; g++) {
+        if (sortedUniqeVocal[g].includes(uniqeInstr[h])) {
+          dict[uniqeInstr[h]] = [...sortedUniqeVocal] // create dictionary with each instrument with all instrument parts
+        }
+      }
+    }
+    Object.keys(dict).forEach(function (key) {
+      const matches = dict[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
+      finalDictionary[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
+    });
+    console.log('finalDictionary', finalDictionary)
+
+    this.setState({
+      vocalInstruments: finalDictionary
     })
   }
 
@@ -380,19 +446,18 @@ class Scores extends React.Component {
     instrumentRef.get()
       .then(dok => {
         dok.forEach(item => {
-          console.log('item.data()', item.data())
           ball.push(item.data())
         })
         for (let elem of ball) {
           //console.log('elem', elem.name)
           allInstruments.push(elem.name)
-          
+
         }
       })
-      this.setState({
-        allInstruments: allInstruments
-      })
-    }
+    this.setState({
+      allInstruments: allInstruments
+    })
+  }
 
   // get matching instruments from parts and bandtypes-instrument from db
   //TODO: get instruments from parts and use it instead of test-list
@@ -400,14 +465,13 @@ class Scores extends React.Component {
     const { classes, band } = this.props;
     const { listView, isLoaded, matchingInstruments, timeout } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
-    //this.onHandleFallback()
 
     let test = {
       liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
     }
 
-    console.log('this.state.allPartsInstruments', this.state.allPartsInstruments)
-    console.log('this.state', this.state)
+
+
 
     let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
     let composers = []; // --||--
@@ -419,37 +483,20 @@ class Scores extends React.Component {
       } else {
         scores = band.scores.slice(); // Use default
       }
-
       if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
         scores = scores.filter(score => score.composer === this.state.chosenComposer) // The scores are filtered on composer
       }
-
       let chosenInstrument = this.state.chosenInstrument;
       if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
         scores = scores.filter(score => this._instrumentInScore(chosenInstrument, score)) // The scores are filtered on instrument
       }
-
-      // Make list of all available composers
-
-      /*.push(this.state.defaultComposer); // Get default (All composers)
-      band.scores.map(score => {
-          if (!composers.includes(score.composer)) { // And all unique composer
-              composers.push(score.composer)
-          }
-      });*/
-
       // Make list of all available composers
       composers.push(this.state.defaultComposer); // Get default
-
       band.scores.map(score => {
         if (!composers.includes(score.composer)) { // And all unique composer
           composers.push(score.composer)
         }
       });
-
-
-      // With instruments from scores:
-
       // Make list of all available instruments
       if (band.scores.parts) {
         band.scores.map(score => {
@@ -460,24 +507,11 @@ class Scores extends React.Component {
               instruments.push(instrument)
             }
           })
-
         })
       }
-
-
-
-
     }
 
-
-
-
-
-
-
-
     return <div className={this.state.hidden}>
-
       < div className={classes.flex} >
         <div
         />
@@ -637,13 +671,17 @@ class Scores extends React.Component {
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails className={classes.expandedPanel}>
                           <Typography variant='subheading'>
-                            <List>
+
+
+                            {/* ORIGINIAL */}
+                            {/* <List>
                               {
                                 this.state.instruments.map((instruments, index) =>
-                                  <ListItem key={index} className={classes.expandedListItems}>
-                                    {/* Checking for matching instruments in each scores,
+                                  <ListItem key={index} className={classes.expandedListItems}> */}
+                            {/* Checking for matching instruments in each scores,
                                    then displaying an error or music note icon based on the result  */}
-                                    {instruments == matchingInstruments ?
+                            {/* 
+                                    {matchingInstruments.includes(instruments) ?
                                       <Tooltip title=''>
                                         <MusicNote color='action' />
                                       </Tooltip> :
@@ -651,22 +689,82 @@ class Scores extends React.Component {
                                         <Error color='action' />
                                       </Tooltip>
                                     }
+
                                     <ListItemText primary={`${instruments}: `} />
                                     <List>
                                       <InstrumentScores
+                                        vocalInstruments={this.state.vocalInstruments}
+                                        instruments={instruments}
                                         test={test}
-                                        testList={this.state.testList}
                                         band={this.props.band}
+                                        matching={matchingInstruments}
                                       />
                                       {
                                         <ListItem>
                                         </ListItem>
                                       }
                                     </List>
+
+
+                                  </ListItem>
+                                )
+                              }
+                            </List> */}
+
+
+
+
+
+                            {/* TESTING */}
+                            <List>
+                              {
+                                Object.keys(this.state.vocalInstruments).map((key, index) =>
+                                  <ListItem key={index} className={classes.expandedListItems}>
+                                
+                                    {
+                                      <Tooltip title=''>
+                                        <MusicNote color='action' />
+                                      </Tooltip>
+                                    }
+
+
+
+                                    <ListItemText primary={`${key}: `} />
+                                    <List>
+
+                                      <ListItem key={index}>
+                                        {this.state.vocalInstruments[key][0].map((item, index) =>
+                                          < ListItemText key={index} className={classes.instrumentstyle} > {item} </ListItemText>
+                                        )
+                                        }
+                                        
+                                      </ListItem>
+                                    </List>
+
+
+
                                   </ListItem>
                                 )
                               }
                             </List>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                           </Typography>
                         </ExpansionPanelDetails>
                       </ExpansionPanel>
