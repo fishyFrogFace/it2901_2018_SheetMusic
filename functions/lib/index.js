@@ -62,12 +62,14 @@ const storage = new Storage({ keyFilename: 'service-account-key.json' });
 //         console.log(err);
 //     }
 // });
-// 
+// Function made just for updating Firebase instruments collection with instruments
 exports.makeInstrumentList = functions.storage.object().onFinalize((object, context) => __awaiter(this, void 0, void 0, function* () {
-    // 
-    const instCheck = yield admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
-    const checked = (yield instCheck.get()).data().checked;
-    const instrumentList = ['Tenor Sax', 'Trombone'];
+    // This only runs when instrumentCheck is true
+    const instCheckRef = yield admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
+    const checked = (yield instCheckRef.get()).data().checked;
+    const instrumentList = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax',
+        'Baryton Sax', 'Piano', 'Drums', 'Guitar', 'Bass', 'Flute', 'Piccolo Flute', 'Clarinet',
+        'Walthorn', 'Cornet', 'Euphonium', 'Tuba'];
     if (checked) {
         for (let inst in instrumentList) {
             for (let i = 1; i <= 4; i++) {
@@ -79,7 +81,8 @@ exports.makeInstrumentList = functions.storage.object().onFinalize((object, cont
                 });
             }
         }
-        const instUpdate = instCheck.update({
+        // Secures that this function only runs once
+        const instUpdate = instCheckRef.update({
             checked: false
         });
     }
@@ -218,81 +221,84 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
                     name: 'Drum Set',
                     expr: /(\w )?drum set/i
                 }];
+            // Pattern for filtering out arranger and composer
+            const arrangerPattern = /[\\n\r]*Arranged by\s*([^\n\r]*)/g;
+            const composerPattern = /[\\n\r]*Words and Music by\s*([^\n\r]*)/g;
             // Splits the pdf into pages with ekstra blank page
             let _pages = pdfText.split('\f');
-            console.log('pages:', _pages);
-            console.log('pageslength', _pages.length);
+            console.log('Pages:', _pages);
+            console.log('PagesLength', _pages.length);
             const snapshot = yield admin.firestore().collection('instrumentList').get();
             const instruments = snapshot.docs.map(doc => ({ name: doc.data().name, ref: doc.ref }));
-            console.log('instruments', instruments);
             const instrmList = [];
             for (let i in instruments) {
                 instrmList.push((instruments[i].name).toUpperCase());
             }
             ;
-            console.log(instrmList);
             const parts = [];
-            // const nameCount = {};
+            let arrangerName;
+            let composerName;
+            // Checks if arranger and composer exists on the pdfs first page
+            const arrangerMatch = arrangerPattern.test(_pages[0]);
+            const composerMatch = composerPattern.test(_pages[0]);
+            if (arrangerMatch && arrangerPattern.test(_pages[0]) !== null) {
+                arrangerName = arrangerPattern.exec(_pages[0])[1];
+                arrangerName = arrangerName.toLowerCase();
+                // arrangerName = arrangerName.charAt(0).toUpperCase() + arrangerName.slice(1)
+                arrangerName = arrangerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+            }
+            ;
+            if (composerMatch && composerPattern.test(_pages[0]) !== null) {
+                composerName = composerPattern.exec(_pages[0])[1];
+                composerName = composerName.toLowerCase();
+                // composerName = composerName.charAt(0).toUpperCase() + composerName.slice(1)
+                composerName = composerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+            }
+            ;
+            console.log('Arranger: ', arrangerName);
+            console.log('Composer: ', composerName);
+            // GOING THROUGH EVERY PAGE IN THE PDF
             for (let i = 0; i < _pages.length - 1; i++) {
                 const page = _pages[i];
                 console.log('page', page);
-                // const mExclude = excludePattern.test(page);
                 const detectedInstrNames = [];
-                // if (!mExclude) {
                 for (let pattern of patterns) {
-                    const isMatch = pattern.expr.test(page);
+                    const patternMatch = pattern.expr.test(page);
                     // Simulate negative lookbehind
-                    if (isMatch && !pattern.expr.exec(page)[1]) {
+                    if (patternMatch && !pattern.expr.exec(page)[1]) {
                         detectedInstrNames.push(pattern.expr.exec(page)[0]);
                     }
                 }
-                // }
                 // IF ANY NAMES WHERE DETECTED
                 if (detectedInstrNames.length > 0) {
-                    // IF THERE IS ONLY ONE INSTRUMENT IN THE FILE
-                    // if (detectedInstrNames.length === 1) {
                     const [name] = detectedInstrNames;
-                    console.log(name);
-                    // IF 
+                    console.log('Instrument: ', name);
+                    // IF THE NAME IS IN THE INSTRUMENT LIST
                     if (instrmList.indexOf(name) > -1) {
-                        // console.log(nameCount[name])
-                        // if (!nameCount[name]) {
-                        //     nameCount[name] = 0;
-                        // }
                         const instrRef = instruments[instrmList.indexOf(name)].ref;
                         parts.push({
                             page: i + 1,
-                            instruments: [instrRef]
+                            instrument: [instrRef]
                         });
-                        // nameCount[name] += 1;
                     }
                     else {
                         parts.push({
                             page: i + 1,
-                            instruments: 'No instruments detected'
+                            instrument: 'No instruments detected'
                         });
                     }
                 }
-                // IF THERE IS MORE INSTRUMENTS PER PAGE
-                // else {
-                //     // const instrRefs = detectedInstrNames.map(name => instrmList.map() );
-                //         // instruments[instrmList.indexOf(name)].ref);
-                //     const instrRefs = admin.firestore().doc('instruments/Y8cS5QcDLdlCAGRjsArx')
-                //     parts.push({
-                //         page: i+1,
-                //         instruments: instrRefs
-                //     });
-                // }
-                // }
                 else {
                     parts.push({
                         page: i + 1,
-                        instruments: 'No instruments detected'
+                        instrument: 'No instruments detected',
                     });
                 }
             }
             data['parts'] = parts;
-            console.log('data', data);
+            data['arranger'] = arrangerName;
+            data['composer'] = composerName;
+            console.log('Data', data);
         }
         yield pdfRef.update(data);
         // Clean up
