@@ -290,27 +290,24 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             };
 
             const parts = [];
-            let arrangerName;
-            let composerName;
+            let arrangerName = 'No arranger detected';
+            let composerName = 'No composer detected';
 
             // Checks if arranger and composer exists on the pdfs first page
             const arrangerMatch = arrangerPattern.test(_pages[0]);
             const composerMatch = composerPattern.test(_pages[0]);
-            
-            if (arrangerMatch && arrangerPattern.test(_pages[0]) !== null) {
+
+            if (arrangerMatch && arrangerPattern.exec(_pages[0]) !== null) {
                 arrangerName = arrangerPattern.exec(_pages[0])[1];
                 arrangerName = arrangerName.toLowerCase()
                 arrangerName = arrangerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')
             };
 
-            if (composerMatch && composerPattern.test(_pages[0]) !== null) {
+            if (composerMatch && composerPattern.exec(_pages[0]) !== null) {
                 composerName = composerPattern.exec(_pages[0])[1];
                 composerName = composerName.toLowerCase()
                 composerName = composerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')
             };
-
-            console.log('Arranger: ', arrangerName)
-            console.log('Composer: ', composerName)
 
             // GOING THROUGH EVERY PAGE IN THE PDF
             for (let i = 0; i < _pages.length - 1; i++) {
