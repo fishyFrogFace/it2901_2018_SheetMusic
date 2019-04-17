@@ -236,19 +236,20 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             }
             ;
             const parts = [];
+            // Checks if arranger exists on the pdfs first page
             let arrangerName = 'No arranger detected';
-            let composerName = 'No composer detected';
-            // Checks if arranger and composer exists on the pdfs first page
-            const arrangerMatch = arrangerPattern.test(_pages[0]);
-            const composerMatch = composerPattern.test(_pages[0]);
-            if (arrangerMatch && arrangerPattern.exec(_pages[0]) !== null) {
-                arrangerName = arrangerPattern.exec(_pages[0])[1];
+            const arrangerResult = arrangerPattern.exec(_pages[0]);
+            if (arrangerResult !== null) {
+                arrangerName = arrangerResult[1];
                 arrangerName = arrangerName.toLowerCase();
                 arrangerName = arrangerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
             }
             ;
-            if (composerMatch && composerPattern.exec(_pages[0]) !== null) {
-                composerName = composerPattern.exec(_pages[0])[1];
+            // Checks if composer exists on the pdfs first page
+            let composerName = 'No composer detected';
+            const composerResult = yield composerPattern.exec(_pages[0]);
+            if (composerResult !== null) {
+                composerName = composerResult[1];
                 composerName = composerName.toLowerCase();
                 composerName = composerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
             }
