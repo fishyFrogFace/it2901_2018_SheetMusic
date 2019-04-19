@@ -145,7 +145,10 @@ const styles = theme => ({
   },
 
   cardHeader: {
-    cursor: 'default'
+    cursor: 'default',
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    paddingRight: '12px',
   },
 
   instrumentName: {
@@ -451,7 +454,7 @@ class Scores extends React.Component {
     const { listView, isLoaded } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
 
-    let partImage = ''
+    //console.log('sortedVocalInstruments', sortedVocalInstruments)
     let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
     let composers = []; // --||--
     let instruments = []; // --||--
@@ -554,24 +557,36 @@ class Scores extends React.Component {
         {/* the simple list view */}
         {
           listView && hasScores &&
-          <Paper>
-            <List>
-              {
-                scores.map((score, index) =>
-                  <ListItem key={index} dense button
-                    onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                    <LibraryMusic color='action' />
-                    <ListItemText primary={score.title} />
-                    <ListItemSecondaryAction onClick={() => this._onMoreClick}>
-                      <IconButton style={{ right: 0 }} onClick={() => this._onMoreClick}>
-                        <MoreVertIcon onClick={() => this._onMoreClick} />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                )
-              }
-            </List>
-          </Paper>
+          <div style={{ width: '65%' }}>
+            <Paper>
+              <List>
+                {
+                  scores.map((score, index) =>
+                    <ListItem key={index} dense button
+                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                      <LibraryMusic color='action' />
+                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      <ListItemSecondaryAction onClick={() => this._onMoreClick}>
+                        <CardActions disableActionSpacing >
+                          <IconButton
+
+                            // TODO: get same styling as member page
+                            onClick={(e) => {
+                              if (window.confirm('Are you sure you wish to delete this item?'))
+                                this._onMoreClick(score, e)
+                            }}
+
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </CardActions>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  )
+                }
+              </List>
+            </Paper>
+          </div>
         }
 
         {/* The detailed list view */}
@@ -627,7 +642,6 @@ class Scores extends React.Component {
                         : this.onHandleFallback()
                     }
                     {/* If band props is not yet loaded, a progress bar is displayed */}
-                    {console.log('score', score)}
                     {
                       isLoaded &&
                         hasScores ?
