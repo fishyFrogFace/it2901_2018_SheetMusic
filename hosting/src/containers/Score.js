@@ -151,7 +151,6 @@ class Score extends React.Component {
                             instrument: (await doc.data().instrumentRef.get()).data()
                         }))
                     );
-                    { console.log('unsubs: ', this.unsubs) }
 
 
                     const partsSorted = parts
@@ -172,7 +171,6 @@ class Score extends React.Component {
 
         const hasParts = Boolean(score.parts && score.parts.length);
 
-        console.log('this.state.score', this.state.score)
         return (
             <div className={classes.root}>
                 <AppBar>
@@ -196,7 +194,6 @@ class Score extends React.Component {
                                         <MenuItem key={index}
                                             value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
 
-                                            {console.log(part.instrument.name)}
                                         </MenuItem>
                                     )
                                 }
@@ -212,6 +209,7 @@ class Score extends React.Component {
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
+
                     {
                         hasParts &&
                         (score.parts[selectedPart].pages || []).map((page, index) =>

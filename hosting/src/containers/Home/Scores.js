@@ -9,11 +9,9 @@ import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote, Error } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
-import FavoriteIcon from 'material-ui-icons/Favorite';
 import firebase from 'firebase';
-import InstrumentScores from '../../components/InstrumentScores';
-import SelectArrangement from '../../components/SelectArrangement';
-import { elementType } from 'prop-types';
+
+
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -37,7 +35,7 @@ function InstrumentIcon(props) {
 const styles = theme => ({
   root: {},
   card: {
-    width: '75%',
+    width: '65%',
     marginBottom: 20,
     cursor: 'pointer',
 
@@ -57,6 +55,8 @@ const styles = theme => ({
   },
 
   ellipsis: {
+    overflowX: 'auto',
+    cursor: 'default',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -88,13 +88,14 @@ const styles = theme => ({
   },
 
   actions: {
-    marginTop: '33px',
+    marginTop: '8px',
     marginLeft: '-30px',
   },
 
   expandedPanel: {
     padding: '0px',
     cursor: 'default',
+    overflowX: 'auto'
   },
 
   expandButton: {
@@ -105,6 +106,11 @@ const styles = theme => ({
     '&:hover': {
       background: '#e2e2e2'
     }
+  },
+
+  hoverImage: {
+    width: '100px',
+    height: '100px',
   },
 
   expandedListItems: {
@@ -123,7 +129,7 @@ const styles = theme => ({
   },
 
   selectArrangement: {
-    display: 'flex'
+    padding: '8px'
   },
 
   progress: {
@@ -142,7 +148,23 @@ const styles = theme => ({
     cursor: 'default'
   },
 
+  instrumentName: {
+    flex: 0,
+    marginRight: '80px',
+
+  },
+
+  partList: {
+    padding: '0px',
+    [theme.breakpoints.down('xs')]: {
+      display: 'grid'
+    },
+
+  },
+
+
   instrumentstyle: {
+
     borderStyle: 'groove',
     borderWidth: '1px',
     padding: '8px',
@@ -152,8 +174,17 @@ const styles = theme => ({
     textAlign: 'center',
     '&:first-child': {
       paddingLeft: '8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      minWidth: '0px',
+    },
+    '&:hover': {
+      background: '#e2e2e2'
     }
+
   },
+
+
 });
 
 class Scores extends React.Component {
@@ -161,16 +192,12 @@ class Scores extends React.Component {
     super(props)
     this.state = {
       listView: false,
-      instruments: [],
-      selected: false,
       bandtypes: [],
       bandtype: 'default',
-      band: {},
       isLoaded: false,
-      matchingInstruments: [],
-      expansionIsClicked: false,
       scoreInstruments: [],
       activeScore: '',
+      nonActiveScore: '',
       sortedAlphabetically: false,
       defaultComposer: 'All Composers',
       chosenComposer: 'All Composers',
@@ -203,6 +230,7 @@ class Scores extends React.Component {
 
   _onMoreClick = (score) => {
     this.props.onRemoveScore(score);
+    score = ''
   };
 
   // used on onChange for the orchestra alternatives, changing the state of instruments in the 
@@ -219,7 +247,6 @@ class Scores extends React.Component {
     }, 700);
     this.setState({ bandtype: event.target.value, selected: true, instruments: bandtypeInstruments[0].instruments });
   };
-
 
   // The props renders too early, therefore this function set a state for isLoaded to correctly render the 
   // image urls for each scrore
@@ -269,6 +296,7 @@ class Scores extends React.Component {
     }
   }
 
+  // get all instruments from db for seleting and filter on instrument
   onGetAllInstruments = () => {
     let allPartsInstruments = []
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
@@ -291,33 +319,8 @@ class Scores extends React.Component {
   }
 
   onExpansionClick = (e) => {
-    const types = [];
-    let instr = [];
     const parts = [];
     const instrumentType = [];
-    const bandtypeRef = firebase.firestore().collection('bandtype');
-    bandtypeRef.get()
-      .then(docs => {
-        docs.forEach(doc => {
-          types.push(doc.data())
-        });
-        for (let elements of types) {
-          if (this.state.expansionIsClicked === false && elements.name.trim() === this.props.band.bandtype.trim()) {
-            instr.push(...elements.instruments)
-            this.setState({
-              instruments: instr,
-              expansionIsClicked: true,
-            })
-          }
-          else {
-            instr = []
-          }
-        }
-      })
-      .catch(err => {
-        console.log('Error getting bandtypes', err);
-      });
-
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
       if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
         for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
@@ -331,7 +334,7 @@ class Scores extends React.Component {
       }
     }
     this.setState({
-      activeScore: e.target.id
+      activeScore: e.target.id,
     })
 
     setTimeout(() => {
@@ -339,37 +342,29 @@ class Scores extends React.Component {
         scoreInstruments: instrumentType,
         instrumentParts: parts
       })
-      this.onGetMatchnigScores()
       this.onGetInstrumentParts()
     }, 500);
   }
 
-  onGetMatchnigScores = () => {
-    const instrumentType = this.state.scoreInstruments
-    const intersection = this.state.isLoaded && this.state.instruments.filter(element => instrumentType.includes(element));
-    this.setState({
-      matchingInstruments: intersection
-    })
-  }
-
   onGetInstrumentParts = () => {
-    let instrumentType = this.state.instrumentParts
-    let allp = this.state.scoreInstruments
-    let allParts = []
-    let uniqueNames = []
-    let instr = []
+    const instrumentType = this.state.instrumentParts
+    const allp = this.state.scoreInstruments
+    const allParts = []
+    const uniqueNames = []
+    const instr = []
     let dict = {}
     let finalDictionary = {}
     let instrTypes = []
 
     let uniqeInstruments = (new Set(allp)); // get the uniqe instruments for each score
-
     for (let elem of instrumentType) {
       const fil = instrumentType.filter(item => item.type === elem.type) // filter out the parts data
       allParts.push(fil)
     }
+    let UniqueallParts = Array.from(new Set(allParts.map(JSON.stringify)), JSON.parse) // remove duplicate arrays inside allParts-array
+
     for (let k = 0; k < uniqeInstruments.size; k++) {
-      uniqueNames.push(allParts[k]) // get the uniqe parts to match the uniqe instrument
+      uniqueNames.push(UniqueallParts[k]) // get the uniqe parts to match the uniqe instrument
 
     }
     uniqueNames.map((item) => {
@@ -393,7 +388,6 @@ class Scores extends React.Component {
       const matches = dict[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
       finalDictionary[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
     });
-    console.log('finalDictionary', finalDictionary)
 
     this.setState({
       vocalInstruments: finalDictionary
@@ -425,31 +419,23 @@ class Scores extends React.Component {
     return inScore;
   }
 
-  // mounting the orchestra alternatives
-  componentDidMount = () => {
-    const types = [];
-    const ball = [];
-    const allInstruments = [];
-    const bandtypeRef = firebase.firestore().collection('bandtype');
-    bandtypeRef.get()
-      .then(docs => {
-        docs.forEach(doc => {
-          types.push(doc.data())
-        });
-      })
-      .catch(err => {
-        console.log('Error getting bandtypes', err);
-      });
-    this.setState({ bandtypes: types, })
+  // TODO: get associated part to link to correct score.id
+  onHover = (id, e) => {
+    console.log('e', e)
+    console.log('id', id)
+  }
 
+  // mounting the instrument alternatives
+  componentDidMount = () => {
+    const instr = [];
+    const allInstruments = [];
     const instrumentRef = firebase.firestore().collection('instruments');
     instrumentRef.get()
-      .then(dok => {
-        dok.forEach(item => {
-          ball.push(item.data())
+      .then(doc => {
+        doc.forEach(item => {
+          instr.push(item.data())
         })
-        for (let elem of ball) {
-          //console.log('elem', elem.name)
+        for (let elem of instr) {
           allInstruments.push(elem.name)
 
         }
@@ -460,19 +446,12 @@ class Scores extends React.Component {
   }
 
   // get matching instruments from parts and bandtypes-instrument from db
-  //TODO: get instruments from parts and use it instead of test-list
   render() {
     const { classes, band } = this.props;
-    const { listView, isLoaded, matchingInstruments, timeout } = this.state;
+    const { listView, isLoaded } = this.state;
     const hasScores = band.scores && band.scores.length > 0;
 
-    let test = {
-      liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
-    }
-
-
-
-
+    let partImage = ''
     let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
     let composers = []; // --||--
     let instruments = []; // --||--
@@ -495,6 +474,9 @@ class Scores extends React.Component {
       band.scores.map(score => {
         if (!composers.includes(score.composer)) { // And all unique composer
           composers.push(score.composer)
+          composers = composers.filter(function (element) {
+            return element !== undefined; // filter out undefined values
+          });
         }
       });
       // Make list of all available instruments
@@ -511,8 +493,10 @@ class Scores extends React.Component {
       }
     }
 
+
     return <div className={this.state.hidden}>
       < div className={classes.flex} >
+
         <div
         />
         <IconButton>
@@ -530,22 +514,10 @@ class Scores extends React.Component {
             <ViewList />
           </IconButton>
         }
-        {
-          !listView && band.bandtype &&
-          <div className={classes.selectArrangement}>
-            <SelectArrangement
-              bandtypes={this.state.bandtypes}
-              bandtype={this.state.bandtype}
-              defaultBandtype={band.bandtype}
-              band={band}
-              onChange={this._onSelectChange}
-              instruments={this.state.instruments}
-            />
-          </div>
-        }
 
-        <div>
-          <InputLabel style={{ padding: 5 }} htmlFor="composer">Composer:</InputLabel>
+        {/* Select the composer */}
+        <div className={classes.selectArrangement}>
+          <InputLabel style={{ padding: 5 }} htmlFor="composer"></InputLabel>
           <Select
             onChange={this._changeComposer}
             autoWidth
@@ -559,8 +531,9 @@ class Scores extends React.Component {
           </Select>
         </div>
 
-        <div>
-          <InputLabel style={{ padding: 5 }} htmlFor="instrument">Instrument:</InputLabel>
+        {/* Select the instrument */}
+        <div className={classes.selectArrangement}>
+          <InputLabel style={{ padding: 5 }} htmlFor="instrument"></InputLabel>
           <Select
             onChange={this._changeInstrument}
             autoWidth
@@ -607,6 +580,7 @@ class Scores extends React.Component {
           <div style={{
             display: 'flex', flexWrap: 'wrap'
           }}>
+
             {/* map over the scores in the band to get correct database-information */}
             {
               scores.map((score, index) =>
@@ -619,168 +593,144 @@ class Scores extends React.Component {
                         <NoteIcon />
                       </Avatar>
                     }
-                    action={
-                      <IconButton>
-                        <MoreVertIcon />
-                      </IconButton>
-                    }
+                    //this._onMoreClick(score, e)}
+
+                    action={<div className={classes.actions}>
+                      <CardActions disableActionSpacing >
+                        <IconButton
+
+                          // TODO: get same styling as member page
+                          onClick={(e) => {
+                            if (window.confirm('Are you sure you wish to delete this item?'))
+                              this._onMoreClick(score, e)
+                          }}
+
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </CardActions>
+                    </div>}
                     title={score.title}
                   />
                   <Divider />
                   <div className={classes.cardContent}>
-                    {isLoaded ?
-                      <CardMedia
-                        className={classes.media}
-                        image={isLoaded ? band.scores[index].parts[0].pages[0].originalURL : 'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'}
-                        title="default-image"
-                        onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-                      />
-                      : this.onHandleFallback()
+                    {
+                      isLoaded && hasScores ?
+                        <CardMedia
+                          className={classes.media}
+                          image={
+                            isLoaded && hasScores ? band.scores[index].parts[0].pages[0].originalURL : // get the part image, else dispaly a default image
+                              'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'}
+                          title={score.title}
+                          onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                        />
+                        : this.onHandleFallback()
                     }
-
                     {/* If band props is not yet loaded, a progress bar is displayed */}
-                    {isLoaded ?
-                      <CardContent className={classes.ellipsis}>
-                        <Typography variant='subheading' className={classes.metadata}
-                          onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                          {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
-                        </Typography>
-                        <Typography variant='subheading'
-                          onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                          Parts: {score.partCount}
-                        </Typography>
-                        <div className={classes.actions}>
-                          <CardActions disableActionSpacing >
-                            <IconButton onClick={(e) => this._onMoreClick(score, e)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </CardActions>
-                        </div>
-                      </CardContent>
-                      : <CircularProgress className={classes.progress} size={40} thickness={2} />}
+                    {console.log('score', score)}
+                    {
+                      isLoaded &&
+                        hasScores ?
+                        <CardContent className={classes.ellipsis}>
+                          <Typography variant='subheading' className={classes.metadata}>
+                            {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
+                          </Typography>
+                          <Typography variant='subheading' className={classes.metadata}>
+                            {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
+                          </Typography>
+                          <Typography variant='subheading'>
+                            Parts: {score.partCount}
+                          </Typography>
+
+                        </CardContent>
+                        : <CircularProgress className={classes.progress} size={40} thickness={2} />
+                    }
                     {/* progress circle while waiting for the correct image to render */}
+
                   </div>
 
-                  {band.bandtype ?
-                    // If bandtype is not chosen yet, the expandion panel is hidden
-                    <div onClick={this.onExpansionClick} id={index}>
-                      <ExpansionPanel id={index}>
-                        <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon id={index} />}
-                          id={index} >
-                          <Typography variant='subheading' className={classes.heading} id={index}>Toggle instruments</Typography>
-                        </ExpansionPanelSummary>
-                        <ExpansionPanelDetails className={classes.expandedPanel}>
-                          <Typography variant='subheading'>
+                  <div onClick={this.onExpansionClick} id={index}>
+                    <ExpansionPanel id={index} >
+                      <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon id={index} />}
+                        id={index} >
+                        <Typography variant='subheading' className={classes.heading} id={index}>Toggle instruments</Typography>
+                      </ExpansionPanelSummary>
+                      <ExpansionPanelDetails className={classes.expandedPanel}>
+                        <Typography variant='subheading'>
 
 
-                            {/* ORIGINIAL */}
-                            {/* <List>
-                              {
-                                this.state.instruments.map((instruments, index) =>
-                                  <ListItem key={index} className={classes.expandedListItems}> */}
-                            {/* Checking for matching instruments in each scores,
-                                   then displaying an error or music note icon based on the result  */}
-                            {/* 
-                                    {matchingInstruments.includes(instruments) ?
-                                      <Tooltip title=''>
-                                        <MusicNote color='action' />
-                                      </Tooltip> :
-                                      <Tooltip title='Instrument not found in this score' aria-label="error">
-                                        <Error color='action' />
-                                      </Tooltip>
-                                    }
-
-                                    <ListItemText primary={`${instruments}: `} />
-                                    <List>
-                                      <InstrumentScores
-                                        vocalInstruments={this.state.vocalInstruments}
-                                        instruments={instruments}
-                                        test={test}
-                                        band={this.props.band}
-                                        matching={matchingInstruments}
-                                      />
-                                      {
-                                        <ListItem>
-                                        </ListItem>
-                                      }
-                                    </List>
-
-
-                                  </ListItem>
-                                )
-                              }
-                            </List> */}
-
-
-
-
-
-                            {/* TESTING */}
+                          {this.state.activeScore == index ?
                             <List>
                               {
-                                Object.keys(this.state.vocalInstruments).map((key, index) =>
-                                  <ListItem key={index} className={classes.expandedListItems}>
-                                
+                                Object.keys(this.state.vocalInstruments).map((instr, i) =>
+                                  <ListItem key={i} className={classes.expandedListItems}>
                                     {
                                       <Tooltip title=''>
                                         <MusicNote color='action' />
                                       </Tooltip>
                                     }
-
-
-
-                                    <ListItemText primary={`${key}: `} />
+                                    <ListItemText className={classes.instrumentName} primary={`${instr}: `} />
                                     <List>
 
-                                      <ListItem key={index}>
-                                        {this.state.vocalInstruments[key][0].map((item, index) =>
-                                          < ListItemText key={index} className={classes.instrumentstyle} > {item} </ListItemText>
+
+                                      {/* {(band.scores[index].parts).map((elem, pindex) => {
+                                      partImage = band.scores[index].parts[pindex].pages[0].croppedURL
+                                      //console.log('partImage', partImage)
+                                    })} */}
+
+                                      <ListItem key={index} className={classes.partList}>
+                                        {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
+                                          < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
+                                            {/* <img
+                                              id={vocalIndex}
+                                              style={{ height: '50', width: '150px' }}
+                                              //hoverSrc={this.props.band.scores[index].parts[0].pages[0].croppedURL}
+                                              src={partImage}
+                                              onMouseOver={(e) => this.onHover(i, e)}
+                                              onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+
+                                            /> */}
+                                            {/* {(band.scores[index].parts).map((test, testindex) =>
+                                              (score.parts[testindex].pages || []).map((page, index) =>
+                                                <img style={{ height: '50', width: '150px' }}
+                                                  key={index}
+                                                  className={classes.sheet}
+                                                  //src={page.croppedURL}
+                                                  id={testindex}
+                                                  //onMouseOver={this.onHover}
+                                                  onMouseOver={(e) => this.onHover(testindex, e)}
+                                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                                                />
+                                              )
+                                            )} */}
+                                            {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}> {item}</div>}
+                                          </ListItemText>
+
                                         )
                                         }
-                                        
+
                                       </ListItem>
                                     </List>
-
-
-
                                   </ListItem>
                                 )
                               }
                             </List>
+                            : "" //Close the prev expansion panel when activating the next 
 
+                          }
+                        </Typography>
+                      </ExpansionPanelDetails>
+                    </ExpansionPanel>
+                  </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                          </Typography>
-                        </ExpansionPanelDetails>
-                      </ExpansionPanel>
-                    </div>
-                    : ""}
-                  {/* Displaying an empty expansion panel */}
                 </Card>
               )}
           </div>
         }
       </div>
+
     </div >
   }
-
-
-
 
 }
 

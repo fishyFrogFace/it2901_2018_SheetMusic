@@ -22,7 +22,6 @@ import SearchBar from '../components/SearchBar';
 import Members from "./Home/Members";
 import Scores from "./Home/Scores";
 import Setlists from "./Home/Setlists";
-import Setlist from './Setlist';
 import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
 
@@ -193,9 +192,9 @@ class Home extends React.Component {
 
         for (let part of parts) {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
-            console.log('pdfDoc', pdfDoc)
-            console.log('pdfDoc.data()', pdfDoc.data())
-            this.setState({ band: { ...this.state.band, scoreInfo: part } });
+            // console.log('pdfDoc', pdfDoc)
+            // console.log('pdfDoc.data()', pdfDoc.data())
+            // this.setState({ band: { ...this.state.band, scoreInfo: part } });
 
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
@@ -741,7 +740,6 @@ class Home extends React.Component {
         const { classes, page, loaded } = this.props;
 
         let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
-
 
         return <div className={classes.root}>
             {

@@ -611,8 +611,6 @@ class Members extends React.Component {
       this.setState({ [name]: event.target.value });
 
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-      console.log('event.target', event.target)
-
       bandRef.update({
          bandtype: event.target.value
       })

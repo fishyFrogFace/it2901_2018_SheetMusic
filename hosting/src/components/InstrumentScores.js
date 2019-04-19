@@ -1,7 +1,6 @@
 import React from 'react';
-import { List, ListItem, ListItemText } from "material-ui";
+import { ListItem, ListItemText } from "material-ui";
 import { withStyles } from "material-ui/styles";
-import firebase from 'firebase';
 
 const styles = {
     instrumentstyle: {
@@ -18,17 +17,19 @@ const styles = {
     },
 }
 
-class InstrumentScores extends React.Component {
-    constructor(props) {
-        super(props)
+// !!!!!!!! TODO: Check if we need this component !!!!!!!!!!!!!!
+// !!!!!!!!!!!! this component is not used at the moment !!!!!!!!!!!
 
-    }
+class InstrumentScores extends React.Component {
+    // constructor(props) {
+    //     super(props)
+
+    // }
 
 
     render() {
-        const { instruments, classes, vocalInstruments, matching } = this.props
+        const { classes, vocalInstruments, matching } = this.props
         let types = []
-        let finalDict = {}
 
 
         console.log('matching', matching)
@@ -70,21 +71,12 @@ class InstrumentScores extends React.Component {
 
         }
 
-        console.log('types', types)
 
-        types.forEach((instr, index) => {
+        // types.map((item, key) => {
+        //         console.log('instr', instr)
+        //     )
 
-            //console.log('instruments', instruments)
-            //if (types[index])
-        })
-
-        types.map((item, key) => {
-            console.log('item', item)
-            types[key] !== undefined && types[key].map((instr, index) =>
-                console.log('instr', instr)
-            )
-
-        })
+        // })
 
 
         return <div>
