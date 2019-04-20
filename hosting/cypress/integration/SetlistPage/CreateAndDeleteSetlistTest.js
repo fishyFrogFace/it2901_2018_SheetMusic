@@ -1,16 +1,16 @@
 const setlistName = "Default Setlist";
 const setlistDate="2019-04-11";
 const setlistTime = "11:00";
-const eventName = "Default Event";
-const eventDescription = "Default Event Description";
-describe('Loggin into website', function(){
-    it('Successfully loads and logins', function () {
+
+
+describe('Loggin into website', () => {
+    it('Successfully loads and logins', () => {
         cy.visit('/')
         cy.login()
         cy.url().should('include', '/localhost')
     });
 
-    it('Switches to your band page', function () {
+    it('Switches to your setlist page', () => {
         cy.contains('Setlists').click()
         cy.url().should('include', '/setlists')
     });
@@ -27,7 +27,7 @@ describe('Loggin into website', function(){
         cy.get("#arrow-back-button").click();
     })
 
-    it('deleting a setlist',() => {
+    it('deleting a setlist', () => {
         cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
         cy.contains("button","Confirm").click();
     });

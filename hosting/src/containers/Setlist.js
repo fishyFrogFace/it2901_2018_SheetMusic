@@ -427,15 +427,15 @@ class Setlist extends Component {
                                 <Edit />
                             </IconButton>}
                             {hasRights && <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                                <Add />
+                                <Add id="menu-button"/>
                             </IconButton>}
-                            <Menu
+                            <Menu 
                                 anchorEl={anchorEl}
                                 open={Boolean(anchorEl)}
                                 onClose={() => this._onMenuClose()}
                             >
-                                <MenuItem onClick={() => this._onMenuClick('addScore')}>Add Score</MenuItem>
-                                <MenuItem onClick={() => this._onMenuClick('addEvent')}>Add Event</MenuItem>
+                                <MenuItem id="add-score-menu-button" onClick={() => this._onMenuClick('addScore')}>Add Score</MenuItem>
+                                <MenuItem id="add-event-menu-button" onClick={() => this._onMenuClick('addEvent')}>Add Event</MenuItem>
                             </Menu>
                         </Toolbar>
                     </AppBar>
@@ -483,16 +483,16 @@ class Setlist extends Component {
                                                                 }
                                                                 {
                                                                     item.type === 'event' &&
-                                                                    <CardContent style={{position: 'relative'}}>
-                                                                        <Typography variant='headline'>
+                                                                    <CardContent style={{position: 'relative'}} >
+                                                                        <Typography variant='headline' id="event-card-typography">
                                                                             {eventIcon}
                                                                             {item.title} | {item.time} minutes
                                                                         
-                                                                            {hasRights && <IconButton style={{position: 'absolute', right: '70px'}}>
+                                                                            {hasRights && <IconButton id="event-edit-button" style={{position: 'absolute', right: '70px'}}>
                                                                                 <Edit onClick={() => this._onEventEditClick(item.id, index)}/>
                                                                             </IconButton>}
-                                                                            {hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
-                                                                                <DeleteIcon onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
+                                                                            {hasRights && <IconButton id="event-delete-button" style={{position: 'absolute', right: '25px'}}>
+                                                                                <DeleteIcon  onClick={() => this._onEventDeleteClick(item.id, item.title)}/>
                                                                             </IconButton>}
                                                                         </Typography>
                                                                         <Typography variant='subheading'>
