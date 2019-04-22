@@ -26,7 +26,7 @@ describe('Creating events and scores', () => {
     });
 
     it('Creates an event', () => {
-        cy.get("#menu-button").click();
+        cy.get("#menu-add-button").click();
         cy.get("#add-event-menu-button").click();
         cy.get("#create-event-name").type(eventName);
         cy.get("#create-event-description").type(eventDescription);
@@ -38,4 +38,4 @@ describe('Creating events and scores', () => {
         cy.contains(eventName).get("#event-card-typography").children("#event-delete-button").click();
         cy.contains("button","Confirm").click();
     });
-})
+});

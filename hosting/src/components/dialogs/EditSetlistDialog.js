@@ -59,10 +59,10 @@ class EditSetlistDialog extends React.Component {
         //console.log('time: ' + time)
 
         return <AsyncDialog title='Edit Setlist' confirmText='Save' onRef={ref => this.dialog = ref}>
-            <TextField label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} defaultValue={title}/>
+            <TextField id="edit-setlist-title" label='Title' onChange={this._onTitleInputChange} style={{marginBottom: 20}} defaultValue={title}/>
             <form className={classes.container} noValidate>
                 <TextField onChange={this._onDateChange}
-                    id="date"
+                    id="edit-setlist-date"
                     label="Date"
                     type="date"
                     defaultValue={date}
@@ -72,7 +72,7 @@ class EditSetlistDialog extends React.Component {
                     }}
                 />
                 <TextField onChange={this._onTimeChange}
-                    id="time"
+                    id="edit-setlist-time"
                     label="Time"
                     type="time"
                     defaultValue={time}

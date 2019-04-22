@@ -424,10 +424,10 @@ class Setlist extends Component {
                             </div>
                             <div className={classes.flex} />
                             {hasRights && <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
-                                <Edit />
+                                <Edit id="menu-edit-button"/>
                             </IconButton>}
                             {hasRights && <IconButton color="inherit" aria-label="Menu" onClick={e => this._onAddButtonClick(e)}>
-                                <Add id="menu-button"/>
+                                <Add id="menu-add-button"/>
                             </IconButton>}
                             <Menu 
                                 anchorEl={anchorEl}

@@ -47,11 +47,11 @@ class EditSetlistEventDialog extends React.Component {
         //console.log("description: " + description);
         //console.log("time: " + time);
         return <AsyncDialog title='Edit Event' confirmText='Save' onRef={ref => this.dialog = ref}>
-            <TextField defaultValue={title} label='Name' onChange={this._onTitleInputChange}/>
-            <TextField defaultValue={description} label='Description' onChange={this._onDescriptionInputChange}/>
+            <TextField id="edit-event-title" defaultValue={title} label='Name' onChange={this._onTitleInputChange}/>
+            <TextField id="edit-event-description" defaultValue={description} label='Description' onChange={this._onDescriptionInputChange}/>
             <FormControl>
                 <InputLabel> Time </InputLabel>
-                <Input defaultValue={time} type='number' label='Time' onChange={this._onTimeInputChange} endAdornment={<InputAdornment position="end">Min</InputAdornment>}/>
+                <Input id="edit-event-time" defaultValue={time} type='number' label='Time' onChange={this._onTimeInputChange} endAdornment={<InputAdornment position="end">Min</InputAdornment>}/>
             </FormControl>            
         </AsyncDialog>
     }
