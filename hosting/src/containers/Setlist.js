@@ -464,7 +464,7 @@ class Setlist extends Component {
                                                                 {
                                                                     item.type === 'score' &&
                                                                     <CardContent style={{position: 'relative'}}>
-                                                                        <Typography variant='headline'>
+                                                                        <Typography variant='headline' id="event-card-typography">
                                                                             <MusicNote style={{paddingRight:'10px'}}/>
                                                                             {item.score.title}
                                                                             
@@ -472,7 +472,7 @@ class Setlist extends Component {
                                                                                 <Edit onClick={() => this._onScoreEditClick()}/>
                                                                             </IconButton>*/}
                                                                             {hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
-                                                                                <DeleteIcon onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
+                                                                                <DeleteIcon id="score-delete-button" onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
                                                                             </IconButton>}
                                                                         </Typography>
                                                                         <Typography variant='subheading'>

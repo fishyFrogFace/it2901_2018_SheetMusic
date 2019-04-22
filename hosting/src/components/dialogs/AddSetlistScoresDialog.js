@@ -56,7 +56,7 @@ class AddSetlistScoresDialog extends React.Component {
             <List dense>
             {band && band.scores && band.scores.map((score, index) =>
                 <ListItem style={{padding: 0}} key={index} onClick={e => this._onSelectableClick(index)}>
-                    <Checkbox classes={{checked: classes.checkbox__checked}} checked={selectedScores.has(index)}/>
+                    <Checkbox id="scores-checkbox-button" classes={{checked: classes.checkbox__checked}} checked={selectedScores.has(index)}/>
                     <ListItemText primary={`${score.title} - ${score.composer}`}/>
                 </ListItem>
             )}
