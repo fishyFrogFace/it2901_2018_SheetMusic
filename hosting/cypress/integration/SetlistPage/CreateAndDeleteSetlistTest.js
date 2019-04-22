@@ -27,7 +27,7 @@ describe('Loggin into website', () => {
         cy.get("#arrow-back-button").click();
     })
 
-    it('deleting a setlist', () => {
+    it('deleting the setlist', () => {
         cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
         cy.contains("button","Confirm").click();
     });

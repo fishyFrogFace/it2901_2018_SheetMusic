@@ -54,12 +54,12 @@ describe('Creating events and scores', () => {
         cy.contains(newEventTime);
     });
 
-    it('clears event', () => {
+    it('clears the event', () => {
         cy.contains(newEventName).get("#event-card-typography").children("#event-delete-button").click();
         cy.contains("button","Confirm").click();
     });
 
-    it('clears setlist', () => {
+    it('clears the setlist', () => {
         cy.get("#arrow-back-button").click();
         cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
         cy.contains("button","Confirm").click();

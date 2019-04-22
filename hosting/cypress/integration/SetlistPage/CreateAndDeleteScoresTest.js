@@ -1,5 +1,3 @@
-import { Button } from "material-ui";
-
 const setlistName = "Default Setlist";
 const setlistDate="2019-04-11";
 const setlistTime = "11:00";
@@ -26,7 +24,7 @@ describe('Loggin into website', () => {
 
     //Should be implemented differently for more than one score
     it('adds a score', () => {
-        cy.get("#menu-button").click();
+        cy.get("#menu-add-button").click();
         cy.get("#add-score-menu-button").click();
         cy.get("#scores-checkbox-button").click();
         cy.contains('button','Add').click();
@@ -38,5 +36,10 @@ describe('Loggin into website', () => {
         cy.contains("button","Confirm").click();
     });
 
-    
+    it('clears the setlist', () => {
+        cy.get("#arrow-back-button").click();
+        cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
+        cy.contains("button","Confirm").click();
+    });
+
 });

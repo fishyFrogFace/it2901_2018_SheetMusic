@@ -40,4 +40,10 @@ describe('Loggin into website', () => {
         cy.contains(newSetlistDate);
         cy.contains(newSetlistTime);
     });
+
+    it('clears the setlist', () => {
+        cy.get("#arrow-back-button").click();
+        cy.contains(newSetlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
+        cy.contains("button","Confirm").click();
+    });
 });
