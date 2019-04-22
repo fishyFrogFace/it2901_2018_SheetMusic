@@ -1,7 +1,7 @@
-const setlistName = "Default Setlist";
+const setlistTitle = "Default Setlist";
 const setlistDate="2019-04-11";
 const setlistTime = "11:00";
-const newSetlistName = "Updated Setlist";
+const newSetlistTitle = "Updated Setlist";
 const newSetlistDate = "2019-04-22";
 const newSetlistTime = "11:30";
 
@@ -18,32 +18,32 @@ describe('Loggin into website', () => {
         cy.url().should('include', '/setlists')
     });
 
-    it('creating a setlist', () => {
+    it('Creating a setlist', () => {
         cy.get('#playlist-add-button').click();
-        cy.get("#create-setlist-title").type(setlistName);
+        cy.get("#create-setlist-title").type(setlistTitle);
         cy.get("#create-setlist-date").type(setlistDate);
         cy.get("#create-setlist-time").type(setlistTime);
         cy.contains('button', 'Create').click();
     });
 
-    it('edits that setlist', () => {
+    it('Edits that setlist', () => {
         cy.get("#menu-edit-button").click();
         cy.get('#edit-setlist-title').clear();
-        cy.get("#edit-setlist-title").type(newSetlistName);
+        cy.get("#edit-setlist-title").type(newSetlistTitle);
         cy.get("#edit-setlist-date").type(newSetlistDate);
         cy.get("#edit-setlist-time").type(newSetlistTime);
         cy.contains('button', 'Save').click();
     });
 
-    it('checks for correct data', () => {
-        cy.contains(newSetlistName);
+    it('Checks for correct data', () => {
+        cy.contains(newSetlistTitle);
         cy.contains(newSetlistDate);
         cy.contains(newSetlistTime);
     });
 
-    it('clears the setlist', () => {
+    it('Clears the setlist', () => {
         cy.get("#arrow-back-button").click();
-        cy.contains(newSetlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains(newSetlistTitle).get("#setlist-card-typography").children("#setlist-delete-button").click();
+        cy.contains('button', 'Confirm').click();
     });
 });

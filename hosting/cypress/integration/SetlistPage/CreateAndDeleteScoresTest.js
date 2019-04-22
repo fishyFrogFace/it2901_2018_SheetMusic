@@ -1,4 +1,4 @@
-const setlistName = "Default Setlist";
+const setlistTitle = "Default Setlist";
 const setlistDate="2019-04-11";
 const setlistTime = "11:00";
 
@@ -14,16 +14,16 @@ describe('Loggin into website', () => {
         cy.url().should('include', '/setlists')
     });
 
-    it('creating a setlist', () => {
+    it('Creating a setlist', () => {
         cy.get('#playlist-add-button').click();
-        cy.get("#create-setlist-title").type(setlistName);
+        cy.get("#create-setlist-title").type(setlistTitle);
         cy.get("#create-setlist-date").type(setlistDate);
         cy.get("#create-setlist-time").type(setlistTime);
         cy.contains('button', 'Create').click();
     });
 
     //Should be implemented differently for more than one score
-    it('adds a score', () => {
+    it('Adds a score', () => {
         cy.get("#menu-add-button").click();
         cy.get("#add-score-menu-button").click();
         cy.get("#scores-checkbox-button").click();
@@ -31,15 +31,15 @@ describe('Loggin into website', () => {
     });
 
     //Should be implemented differently for more than one score
-    it('deletes that score', () => {
+    it('Deletes that score', () => {
         cy.get("#score-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains('button', 'Confirm').click();
     });
 
-    it('clears the setlist', () => {
+    it('Clears the setlist', () => {
         cy.get("#arrow-back-button").click();
-        cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains(setlistTitle).get("#setlist-card-typography").children("#setlist-delete-button").click();
+        cy.contains('button', 'Confirm').click();
     });
 
 });

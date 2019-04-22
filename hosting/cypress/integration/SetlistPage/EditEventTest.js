@@ -1,4 +1,4 @@
-const setlistName = "Default Setlist";
+const setlistTitle = "Default Setlist";
 const setlistDate="2019-04-20";
 const setlistTime = "11:00";
 const eventName = "Default Event";
@@ -20,9 +20,9 @@ describe('Creating events and scores', () => {
         cy.url().should('include', '/setlists')
     });
 
-    it('creating a default setlist', () => {
+    it('Creating a default setlist', () => {
         cy.get('#playlist-add-button').click();
-        cy.get("#create-setlist-title").type(setlistName);
+        cy.get("#create-setlist-title").type(setlistTitle);
         cy.get("#create-setlist-date").type(setlistDate);
         cy.get("#create-setlist-time").type(setlistTime);
         cy.contains('button', 'Create').click();
@@ -37,7 +37,7 @@ describe('Creating events and scores', () => {
         cy.contains('button', 'Create').click();
     });
 
-    it('edits that event', () => {
+    it('Edits that event', () => {
         cy.contains(eventName).get("#event-card-typography").children("#event-edit-button").click();
         cy.get("#edit-event-title").clear();
         cy.get("#edit-event-description").clear();
@@ -48,20 +48,20 @@ describe('Creating events and scores', () => {
         cy.contains('button', 'Save').click();
     });
 
-    it('checks for right data', ()=> {
+    it('Checks for right data', ()=> {
         cy.contains(newEventName);
         cy.contains(newEventDescription);
         cy.contains(newEventTime);
     });
 
-    it('clears the event', () => {
+    it('Clears the event', () => {
         cy.contains(newEventName).get("#event-card-typography").children("#event-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains('button', 'Confirm').click();
     });
 
-    it('clears the setlist', () => {
+    it('Clears the setlist', () => {
         cy.get("#arrow-back-button").click();
-        cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains(setlistTitle).get("#setlist-card-typography").children("#setlist-delete-button").click();
+        cy.contains('button', 'Confirm').click();
     });
 });

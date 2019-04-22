@@ -1,4 +1,4 @@
-const setlistName = "Default Setlist";
+const setlistTitle = "Default Setlist";
 const setlistDate="2019-04-20";
 const setlistTime = "11:00";
 const eventName = "Default Event";
@@ -17,9 +17,9 @@ describe('Creating events and scores', () => {
         cy.url().should('include', '/setlists')
     });
 
-    it('creating a default setlist', () => {
+    it('Creating a default setlist', () => {
         cy.get('#playlist-add-button').click();
-        cy.get("#create-setlist-title").type(setlistName);
+        cy.get("#create-setlist-title").type(setlistTitle);
         cy.get("#create-setlist-date").type(setlistDate);
         cy.get("#create-setlist-time").type(setlistTime);
         cy.contains('button', 'Create').click();
@@ -36,12 +36,12 @@ describe('Creating events and scores', () => {
 
     it('Deleted an event', () => {
         cy.contains(eventName).get("#event-card-typography").children("#event-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains('button', 'Confirm').click();
     });
 
-    it('clears the setlist', () => {
+    it('Clears the setlist', () => {
         cy.get("#arrow-back-button").click();
-        cy.contains(setlistName).get("#setlist-card-typography").children("#setlist-delete-button").click();
-        cy.contains("button","Confirm").click();
+        cy.contains(setlistTitle).get("#setlist-card-typography").children("#setlist-delete-button").click();
+        cy.contains('button', 'Confirm').click();
     });
 });
