@@ -13,6 +13,7 @@ import { Dropbox } from 'dropbox';
 import * as cors from 'cors';
 import * as request from 'request-promise-native';
 
+
 admin.initializeApp();
 
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
@@ -291,7 +292,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             };
 
             const parts = [];
-            
+
             // Checks if arranger exists on the pdfs first page
             let arrangerName = 'No arranger detected';
             const arrangerResult = arrangerPattern.exec(_pages[0])
@@ -301,7 +302,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                 arrangerName = arrangerName.toLowerCase()
                 arrangerName = arrangerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')
             };
-            
+
             // Checks if composer exists on the pdfs first page
             let composerName = 'No composer detected';
             const composerResult = await composerPattern.exec(_pages[0])

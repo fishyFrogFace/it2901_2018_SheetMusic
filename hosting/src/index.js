@@ -35,16 +35,6 @@ class App extends React.Component {
     constructor(props) {
         super(props);
 
-        // firebase.initializeApp({
-        //     apiKey: "AIzaSyC1C3bHfQnCea25zRBCabhkahtYLhTTHyg",
-        //     authDomain: "scores-butler.firebaseapp.com",
-        //     databaseURL: "https://scores-butler.firebaseio.com",
-        //     projectId: "scores-butler",
-        //     storageBucket: "scoresbutler-9ff30.appspot.com",
-        //     messagingSenderId: "124262758995"
-        // });
-
-
         // Initialize Firebase
         var config = {
             apiKey: "AIzaSyCBHe8CK4uabfrJeS-GwyQ3phiQQ2Q73cE",
@@ -102,6 +92,7 @@ class App extends React.Component {
         try {
             const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
+
             this.setState({ Component: component }, () => {
                 this.setState({ page: page, detail: detail, componentLoaded: this._componentLoaded }, () => {
                     this._componentLoaded[this.page2Component[page]] = true;
@@ -112,6 +103,14 @@ class App extends React.Component {
             // Already imported or doesn't exists
         }
     }
+
+    componentDidMount() {
+        setTimeout(() => {
+
+            this._onHashChange()
+        }, 1000);
+    }
+
 
     render() {
         const { page, detail, Component, componentLoaded } = this.state;

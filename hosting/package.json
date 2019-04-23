@@ -7,6 +7,7 @@
     "@material-ui/icons": "^3.0.2",
     "date-fns": "2.0.0-alpha.7",
     "dropbox": "^4.0.1",
+    "fast-crc32c": "^1.0.4",
     "fast-levenshtein": "^2.0.6",
     "firebase": "^5.0.2",
     "fuse.js": "^3.2.0",
@@ -26,7 +27,9 @@
     "react-modal-image": "^2.3.2",
     "react-pdf-preview": "^1.0.0",
     "react-scripts": "^2.1.5",
-    "typeface-roboto": "^0.0.54"
+    "react-scroll-up-button": "^1.6.4",
+    "typeface-roboto": "^0.0.54",
+    "v-scroll-to-top": "^1.0.2"
   },
   "scripts": {
     "start": "node_modules/.bin/react-scripts start",

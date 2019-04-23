@@ -89,13 +89,13 @@ class Home extends React.Component {
         uploadSheetsDialogOpen: false,
         message: null,
         windowSize: null,
-
+        bandtypes: [],
         band: {},
         bands: null,
 
         userData: {},
-
         pdfSelected: false,
+        scoreInfo: []
     };
 
     unsubs = [];
@@ -116,7 +116,7 @@ class Home extends React.Component {
 
     async createScoreDoc(band, scoreData) {
         const data = {};
-        console.log(data);
+
         data.title = scoreData.title || 'Untitled Score';
 
         if (scoreData.composer) {
@@ -179,8 +179,9 @@ class Home extends React.Component {
 
     _onAddParts = async (scoreData, parts, tune) => {
         const { band } = this.state;
-        console.log(this.state);
         this.setState({ message: 'Adding parts...' });
+
+
 
         let scoreRef;
         if (scoreData.id) {
@@ -198,13 +199,17 @@ class Home extends React.Component {
                 tune: tune,
             });
 
+
             await pdfDoc.ref.delete();
 
             console.log("Depeted");
         }
 
-        this.setState({ message: null });
+        this.setState({ message: null, });
+
     };
+
+
 
     // REMOVING UPLOADED PDF FROM UNSORTED PDFS
     _onRemoveUnsortedPdf = async (pdf) => {
@@ -242,6 +247,7 @@ class Home extends React.Component {
     _onBandClick = e => {
         this.setState({ bandAnchorEl: e.currentTarget })
     };
+
 
     // Creating a band
     _onCreateBand = async () => {
@@ -329,19 +335,21 @@ class Home extends React.Component {
     }
 
     _onBandSelect = async bandId => {
+
         this.setState({ bandAnchorEl: null });
         const user = firebase.auth().currentUser;
         await firebase.firestore().doc(`users/${user.uid}`).update({
-            defaultBandRef: firebase.firestore().doc(`bands/${bandId}`)
+            defaultBandRef: firebase.firestore().doc(`bands/${bandId}`),
         });
     };
+
 
     _onCreateSetlist = async () => {
         const user = firebase.auth().currentUser;
 
         const { band } = this.state;
 
-        const {title, date, time} = await this.setlistDialog.open();
+        const { title, date, time } = await this.setlistDialog.open();
 
         this.setState({ message: 'Creating setlist...' });
 
@@ -437,11 +445,14 @@ class Home extends React.Component {
         return firebase.auth().signOut();
     }
 
+
+
     async componentDidUpdate(prevProps, prevState) {
         const user = firebase.auth().currentUser;
 
         const { page, loaded } = this.props;
         const { bands, band, windowSize } = this.state;
+
 
         if (page !== prevProps.page) {
             this.unsubs.forEach(unsub => unsub());
@@ -574,10 +585,25 @@ class Home extends React.Component {
                     this.unsubs.push(
                         data.defaultBandRef.collection('scores').onSnapshot(async snapshot => {
                             let items = await Promise.all(
-                                snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                                snapshot.docs.map(async doc => ({
+                                    ...doc.data(),
+                                    id: doc.id,
+                                }))
                             );
+                            // getting information for each part for each score
+                            for (let item of items) {
+                                data.defaultBandRef.collection(`scores/${item.id}/parts`).onSnapshot(async snapshot => {
+                                    let parts = await Promise.all(
+                                        snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                                    );
+                                    item.parts = parts;
+                                    let instr =
+                                        item.instruments
+                                });
+                            }
                             this.setState({ band: { ...this.state.band, scores: items } });
                         })
+
                     );
 
                     this.unsubs.push(
@@ -588,7 +614,6 @@ class Home extends React.Component {
                             this.setState({ band: { ...this.state.band, setlists: items } });
                         })
                     );
-
 
                     this.unsubs.push(
                         data.defaultBandRef.collection('pdfs').onSnapshot(async snapshot => {
@@ -659,11 +684,14 @@ class Home extends React.Component {
                             ({ ...(await bandRef.get()).data(), id: bandRef.id })
                         )
                     );
-
                     this.setState({ bands: bands });
                 })
             );
+
         }
+
+
+
 
         const options = {
             duration: 200,
@@ -696,6 +724,10 @@ class Home extends React.Component {
         }
     }
 
+
+
+
+
     _onPDFSelect = selectedPDFs => {
         this.setState({ pdfSelected: selectedPDFs.size > 0 });
     };
@@ -707,12 +739,13 @@ class Home extends React.Component {
 
         const { classes, page, loaded } = this.props;
 
+
         let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
 
         return <div className={classes.root}>
             {
                 !bands && !loaded &&
-                <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref}>
+                <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref} >
                     <CircularProgress color='secondary' size={50} />
                 </div>
             }
@@ -720,6 +753,9 @@ class Home extends React.Component {
                 ref={ref => this.appBarContainerEl = ref}>
                 {
                     !pdfSelected &&
+
+
+
                     <AppBar position='static'>
                         <Toolbar style={{ minHeight: 56 }}>
                             {
@@ -781,12 +817,13 @@ class Home extends React.Component {
                             </Menu>
 
                             <IconButton onClick={this._onAccountCircleClick}>
-                                <img src={user.photoURL} style={{
-                                    width: "32px",
-                                    height: "32px",
-                                    borderRadius: '50%',
-                                }}>
-                                </img>
+                                {loaded &&
+                                    <img src={user.photoURL} style={{
+                                        width: "32px",
+                                        height: "32px",
+                                        borderRadius: '50%',
+                                    }}>
+                                    </img>}
                             </IconButton>
                             <Menu
                                 anchorEl={accountAnchorEl}
@@ -828,6 +865,7 @@ class Home extends React.Component {
                             </Menu>
                         </Toolbar>
                     </AppBar>
+
                 }
             </div>
             <div
@@ -918,11 +956,16 @@ class Home extends React.Component {
                     ...(windowSize === 'desktop' ? { gridRow: '2/-1', gridColumn: 2 } : { gridRow: 2, gridColumn: '1/-1' })
                 }} ref={ref => this.contentEl = ref}
             >
+
                 {
+
                     page === 'scores' &&
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
+                        scoreInfo={this.state.scoreInfo}
+                        loaded={loaded}
+                        bands={bands}
                     />
                 }
                 {
@@ -930,6 +973,7 @@ class Home extends React.Component {
                     <Setlists
                         band={band}
                         onCreateSetlist={this._onCreateSetlist}
+                        bandtypes={this.state.bandtypes}
                     />
                 }
                 {
@@ -946,6 +990,7 @@ class Home extends React.Component {
                         onRemoveUnsortedPdf={this._onRemoveUnsortedPdf}
                     />
                 }
+
             </div>
             {
                 bands && bands.length === 0 &&

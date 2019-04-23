@@ -2,17 +2,13 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress
 } from "material-ui";
-import MoreVertIcon from 'material-ui-icons/MoreVert';
 import DeleteIcon from 'material-ui-icons/Delete'
-import { LibraryMusic, SortByAlpha, ViewList, ViewModule } from "material-ui-icons";
+import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
-import FavoriteIcon from 'material-ui-icons/Favorite';
 import firebase from 'firebase';
-import InstrumentScores from '../../components/InstrumentScores';
-import SelectArrangement from '../../components/SelectArrangement';
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -33,13 +29,15 @@ function InstrumentIcon(props) {
 
   </SvgIcon>;
 }
-const styles = {
-  root: {},
+const styles = theme => ({
+  root: {
+    flexGrow: 1,
+  },
   card: {
-    width: '100%',
-    marginRight: 20,
+    width: '65%',
     marginBottom: 20,
-    cursor: 'pointer'
+    cursor: 'pointer',
+
   },
   media: {
     flex: 2
@@ -47,16 +45,27 @@ const styles = {
 
   flex: {
     display: 'inline-flex',
-    padding: '0px'
+    padding: '0px',
+    position: 'sticky',
+    top: 0,
+    backgroundColor: '#f1f1f1',
+    width: '100%',
+    zIndex: 1
   },
 
   ellipsis: {
+    overflowX: 'auto',
+    cursor: 'default',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     display: 'block',
     width: '100%',
-    flex: 1,
+    flex: 0.8,
+    '&:last-child': {
+      paddingBottom: '0px',
+
+    }
   },
 
   instrumentstyle: {
@@ -78,66 +87,122 @@ const styles = {
   },
 
   actions: {
-    marginBottom: '-30px',
+    marginTop: '8px',
     marginLeft: '-30px',
   },
 
   expandedPanel: {
     padding: '0px',
     cursor: 'default',
+    overflowX: 'auto'
   },
 
   expandButton: {
+    display: 'grid',
+    padding: '0px',
+    flexGrow: 'inherit',
+    margin: '0px',
     '&:hover': {
       background: '#e2e2e2'
-    }
+    },
+    transitions: '1000ms'
   },
+
 
   expandedListItems: {
     paddingBottom: '0px',
     paddingTop: '0px',
-    marginBottom: '-30px'
   },
 
   metadata: {
   },
 
-  selectArrangement: {
-    display: 'flex'
+  media: {
+    flex: 1,
+    backgroundPosition: 'top',
+    height: '160px'
   },
 
+  media2: {
+    flex: 1
+  },
+
+  selectArrangement: {
+    padding: '8px'
+  },
+
+  progress: {
+    color: 'black',
+    paddingRight: '150px',
+    margin: '50px',
+    height: '50px',
+  },
+
+  checked: {
+    color: 'green',
+  },
 
   cardHeader: {
-    cursor: 'default'
+    cursor: 'default',
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    paddingRight: '12px',
   },
-};
+
+  instrumentName: {
+    flex: 0,
+    marginRight: '80px',
+  },
+
+  partList: {
+    padding: '0px',
+    [theme.breakpoints.down('xs')]: {
+      display: 'grid'
+    },
+  },
+
+  instrumentstyle: {
+    borderStyle: 'groove',
+    borderWidth: '1px',
+    padding: '8px',
+    margin: '5px',
+    cursor: 'pointer',
+    minWidth: '80px',
+    textAlign: 'center',
+    '&:first-child': {
+      paddingLeft: '8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      minWidth: '0px',
+    },
+    '&:hover': {
+      background: '#e2e2e2'
+    }
+  },
+
+
+});
 
 class Scores extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      props,
       listView: false,
-      expanded: false,
-      //expanded: [],
-      selected: false,
-      cardIds: [],
       bandtypes: [],
-      bandtype: 'loo',
-      parts: {},
-      score: {},
-      vocal: '',
-      activeName: "" + 0,
-      activeInstrument: 'default',
-      tempActiveInstrument: '',
-      tempActiveInstrumentList: [],
-      activeInstrumentList: ['Trombone', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'],
-      optionsdata: [
-        { key: '101', value: 'Default', instruments: ['Trumpet', 'Flute', 'Cello', 'Piano', 'Sax', 'Drum'] },
-        { key: '102', value: 'Jazz Orchestra', instruments: ['Banjo', 'Bass', 'Drums', 'Guitar', 'Piano', 'Clarinet', 'Sax', 'Trombone', 'Trumpet', 'Tuba', 'Violin', 'Cello'] },
-        { key: '103', value: 'Chamber Orchestra', instruments: ['Trombone', 'Trumpet'] },
-        { key: '104', value: 'Symphony Orchestra', instruments: ['Piano', 'Clarinet', 'Sax'] },
-      ]
+      bandtype: 'default',
+      isLoaded: false,
+      scoreInstruments: [],
+      activeScore: '',
+      sortedAlphabetically: false,
+      defaultComposer: 'All Composers',
+      chosenComposer: 'All Composers',
+      defaultInstrument: 'All Instruments',
+      chosenInstrument: 'All Instruments',
+      allInstruments: [],
+      allPartsInstrument: [],
+      instrumentParts: [],
+      vocalInstruments: {},
+      expanded: null,
     };
   }
 
@@ -145,9 +210,8 @@ class Scores extends React.Component {
 
   componentWillMount() {
     if (window.localStorage.getItem('scoresListView')) {
-      this.setState({ listView: true });
+      this.setState({ listView: true, });
     }
-
   }
 
   _onViewModuleClick = () => {
@@ -162,186 +226,222 @@ class Scores extends React.Component {
 
   _onMoreClick = (score) => {
     this.props.onRemoveScore(score);
+    score = ''
   };
 
 
-  _onGetParts = (band, score) => {
-    const bandRef = firebase.firestore().doc(`bands/${band.id}`);
-    const scoreDoc = bandRef.collection('scores').doc(score.id);
-    let testList = []
-    this.unsubs.forEach(unsub => unsub());
-    this.unsubs.push(
-      scoreDoc.collection('parts').onSnapshot(async snapshot => {
-        const parts = await Promise.all(
-          snapshot.docs.map(async doc => ({
-            ...doc.data(),
-            id: doc.id,
-            instrument: (await doc.data().instrumentRef.get()).data()
-          }))
-        );
-        const partsSorted = parts
-          .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
-        this.setState({ score: { ...this.state.score, parts: partsSorted } });
-        parts.forEach(element => {
-          testList.push(element.instrument.name)
-        })
-        this.setState({
-          testList: testList,
-        })
+  // closes the active expanded panel when next is activated
+  handleChange = panel => (event, expanded) => {
+    this.setState({
+      expanded: expanded ? panel : false,
+    });
+  };
 
-      })
-    );
-    return testList
-  }
+  // get all instruments from db for seleting and filter on instrument
+  onGetAllInstruments = () => {
+    let allPartsInstruments = []
+    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
+      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
+        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
+          let data = this.props.band.scores[i].parts[k].instrumentRef
+          data.get().then(function (documentSnapshot) {
+            const partsInstruments = documentSnapshot.data()
+            allPartsInstruments.push(partsInstruments.name)
 
-  _onGetAllScores = async (band) => {
-    let allscoresList = [];
-    let tList = [];
-    var bandRef = firebase.firestore().doc(`bands/${band.id}`);
-    var citiesRef = bandRef.collection('scores');
-    citiesRef.get()
-      .then(async snapshot => {
-        snapshot.forEach(async doc => {
-          tList.push(doc.data())
-          const scoreDoc = await bandRef.collection('scores').doc(doc.id);
-          const partsRef = scoreDoc.collection('parts');
-          var allScores = partsRef.get()
-            .then(snapshot => {
-              snapshot.forEach(doc => {
-                allscoresList.push(doc.data().instrumentRef.id);
-                // this.setState((prevallscoreList, allscoresList) => {
-                //   allscoresList: prevallscoreList.allscoresList + allscoresList.allscoresList
-                // })
-                return allscoresList
-              });
-            })
-            .catch(err => {
-              console.log('Error getting documents', err);
-            });
-        })
-      });
+          });
+        }
+      }
+    }
     setTimeout(() => {
-      console.log('allscoresList', allscoresList)
-      return allscoresList
-    }, 3000);
-  }
-
-  _onGetScores = (band) => {
-    let scoreList = [];
-    let partList = [];
-    // let partList = [ {"score": {"scoreId": "JAFSASF", "parts": {"instrument1": "trumpet", "instrument2": "bass"} } } ];
-    const bandRef = firebase.firestore().doc(`bands/${band.id}`);
-    const scoreRef = bandRef.collection('scores');
-    console.log('scoreRef', scoreRef)
-    const scores = scoreRef.get()
-      .then(snapshot => {
-        snapshot.forEach(doc => {
-          scoreList.push(doc)
-          const scoreDoc = bandRef.collection('scores').doc(doc.id);
-          const partsRef = scoreDoc.collection('parts');
-          let parts = partsRef.get()
-            .then(async snapshot => {
-              const nextUser = { ...doc.data() };
-              const parts = await Promise.all(
-                snapshot.docs.map(async doc => ({
-                  //partList.push(doc.data().instrumentRef.id))
-                  ...doc.data(),
-                  id: doc.id,
-                  instrument: (await doc.data().instrumentRef.get()).data(),
-                }
-                )
-                )
-              );
-
-              parts.forEach(element => {
-
-                partList.push(element.instrument.name)
-              })
-              // .catch(err => {
-              //   console.log('Error getting documents', err);
-              // });
-            });
-        })
-        // .catch(err => {
-        //   console.log('Error getting documents', err);
-        // });
+      this.setState({
+        allPartsInstruments: allPartsInstruments
       })
-
-    setTimeout(() => {
-      console.log('partList', partList)
-      // this.setState({
-      //   partListState: partList
-      // })
-      return partList
-    }, 3000);
+    }, 500);
   }
 
-  // handlechange the value of the onChange in <select /> in selectArrangement.js
-  handleChange = async (e) => {
-    var value = this.state.bandtypes.filter(function (item) {
-      return item.key == e.target.value
+  onExpansionClick = (e) => {
+    const parts = [];
+    const instrumentType = [];
+    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
+      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
+        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
+          let data = this.props.band.scores[i].parts[k].instrumentRef
+          data.get().then(function (documentSnapshot) {
+            const partsInstruments = documentSnapshot.data()
+            instrumentType.push(partsInstruments.type)
+            parts.push(partsInstruments)
+          });
+        }
+      }
+    }
+    this.setState({
+      activeScore: e.target.id,
     })
-    var name = e.target.name
-    this.setState({ activeInstrument: value[0].value, activeInstrumentList: value[0].instruments, activeName: name })
-    // this.setState({
-    //   activeInstrument:
-    // })
-    console.log('e.target', e.target)
+
+    // TODO: should use a callback on state or componentDidMount instead of setTimeout,
+    // setting a timeout because we have to wait for the async calls to get instrument data
+    setTimeout(() => {
+      this.setState({
+        scoreInstruments: instrumentType,
+        instrumentParts: parts,
+      })
+      this.onGetInstrumentParts()
+    }, 800);
   }
 
-  _onSelectChange = event => {
-    this.setState({ bandtype: event.target.value, selected: true });
+  onGetInstrumentParts = () => {
+    const instrumentType = this.state.instrumentParts
+    const allp = this.state.scoreInstruments
+    const allParts = []
+    const uniqueNames = []
+    const instr = []
+    let dict = {}
+    let finalDictionary = {}
+    let instrTypes = []
 
-    const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+    let uniqeInstruments = (new Set(allp)); // get the uniqe instruments for each score
+    for (let elem of instrumentType) {
+      const fil = instrumentType.filter(item => item.type === elem.type) // filter out the parts data
+      allParts.push(fil)
+    }
+    let UniqueallParts = Array.from(new Set(allParts.map(JSON.stringify)), JSON.parse) // remove duplicate arrays inside allParts-array
 
-    // bandRef.update({
-    //   bandtype: event.target.value
-    // })
-    console.log('event.target', event.target)
+    for (let k = 0; k < uniqeInstruments.size; k++) {
+      uniqueNames.push(UniqueallParts[k]) // get the uniqe parts to match the uniqe instrument
+
+    }
+    uniqueNames.map((item) => {
+      for (let p = 0; p < item.length; p++) {
+        instrTypes.push(item[p].name) // add all the instrument parts to one array
+        instr.push(item[p].type) // add all the instruments to one array
+      }
+    })
+    let uniqeInstr = [...new Set(instr)]; // exclude duplicates
+    let uniqueVocal = [...new Set(instrTypes)] // exlude duplicates
+    let sortedUniqeVocal = uniqueVocal.sort((a, b) => a.localeCompare(b)) // sort the instruments parts on name
+
+    for (let h = 0; h < uniqeInstr.length; h++) {
+      for (let g = 0; g < sortedUniqeVocal.length; g++) {
+        if (sortedUniqeVocal[g].includes(uniqeInstr[h])) {
+          dict[uniqeInstr[h]] = [...sortedUniqeVocal] // create dictionary with each instrument with all instrument parts
+        }
+      }
+    }
+    Object.keys(dict).forEach(function (key) {
+      const matches = dict[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
+      finalDictionary[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
+    });
+
+    this.setState({
+      vocalInstruments: finalDictionary
+    })
+  }
+
+  _onSortByAlphaClick = () => {
+    let alpha = this.state.sortedAlphabetically;
+    alpha = !alpha; // Changed between alphabetically and not
+    this.setState({ sortedAlphabetically: alpha });
   };
 
+  _changeComposer = (e) => {
+    this.setState({ chosenComposer: e.target.value })
+  };
 
-  componentDidMount = () => {
-    const types = [];
-    const bandtypeRef = firebase.firestore().collection('bandtype');
+  _changeInstrument = (e) => {
+    this.setState({ chosenInstrument: e.target.value })
 
+  };
 
-    bandtypeRef.get()
-      .then(docs => {
-        docs.forEach(doc => {
-          types.push(doc.data());
-        });
-      })
-      .catch(err => {
-        console.log('Error getting bandtypes', err);
-      });
-
-
-
-    //console.log('band.bandtype', band.bandtype)
-    this.setState({ bandtypes: types });
-
+  _instrumentInScore(instrument, score) {
+    let inScore = false;
+    this.state.allInstruments.map(instrumentInScore => {
+      if (instrumentInScore === instrument) {
+        inScore = true;
+      }
+    });
+    return inScore;
   }
 
 
+  // mounting the instrument alternatives
+  componentDidMount = () => {
+    const instr = [];
+    const allInstruments = [];
+    const instrumentRef = firebase.firestore().collection('instruments');
+    instrumentRef.get()
+      .then(doc => {
+        doc.forEach(item => {
+          instr.push(item.data())
+        })
+        for (let elem of instr) {
+          allInstruments.push(elem.name)
+
+        }
+      })
+    this.setState({
+      allInstruments: allInstruments,
+    })
+
+    setTimeout(() => {
+      this.setState({
+        isLoaded: true
+      })
+    }, 7000);
+  }
+
+  // get matching instruments from parts and bandtypes-instrument from db
   render() {
-    const { classes, band } = this.props;
-    const { listView } = this.state;
-    const hasScores = band.scores && band.scores.length > 0;
-    let test = {
-      liste: ['instrument-tone1', 'instrument-tone2', 'instrument-tone3', 'instrument-tone4',] // midlertidig deklarasjon av toner
+    const { classes, band, bands, loaded } = this.props;
+    const { listView, isLoaded, expanded } = this.state;
+    const hasScores = band.scores && band.scores.length > 0 && this.props.band.scores !== undefined;
+
+    let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
+    let composers = []; // --||--
+    let instruments = []; // --||--
+    if (hasScores) { // Should not fetch band.scores if empty
+      if (this.state.sortedAlphabetically) { // If alphabetically is chosen
+        scores = band.scores.slice(); // Get default
+        scores = scores.sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
+      } else {
+        scores = band.scores.slice(); // Use default
+      }
+      if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
+        scores = scores.filter(score => score.composer === this.state.chosenComposer) // The scores are filtered on composer
+      }
+      let chosenInstrument = this.state.chosenInstrument;
+      if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
+        scores = scores.filter(score => this._instrumentInScore(chosenInstrument, score)) // The scores are filtered on instrument
+      }
+      // Make list of all available composers
+      composers.push(this.state.defaultComposer); // Get default
+      band.scores.map(score => {
+        if (!composers.includes(score.composer)) { // And all unique composer
+          composers.push(score.composer)
+          composers = composers.filter(function (element) {
+            return element !== undefined; // filter out undefined values
+          });
+        }
+      });
+      // Make list of all available instruments
+      if (band.scores.parts) {
+        band.scores.map(score => {
+          let parts = this._onGetParts(band, score);
+
+          parts.map(instrument => {
+            if (!instruments.includes(instrument)) { // And all unique instruments
+              instruments.push(instrument)
+            }
+          })
+        })
+      }
     }
 
-
-
-
-
-    return <div>
-      <div className={classes.flex}>
+    return <div className={this.state.hidden}>
+      < div className={classes.flex} >
         <div
         />
         <IconButton>
-          <SortByAlpha />
+          <SortByAlpha onClick={this._onSortByAlphaClick} />
         </IconButton>
         {
           listView &&
@@ -355,51 +455,74 @@ class Scores extends React.Component {
             <ViewList />
           </IconButton>
         }
-        {
-          !listView &&
-          <div className={classes.selectArrangement}>
-            <SelectArrangement
-              bandtypes={this.state.bandtypes}
-              bandtype={this.state.bandtype}
-              band={band}
-              instruments={band.instruments}
-              vocalValue={this.state.vocal}
-              ensemble={this.state.ensemble}
-              //onChange={this.handleChange}
-              onChange={this._onSelectChange}
-              optionsdata={this.state.optionsdata}
-              activeInstrument={this.state.activeInstrument}
-              //index={index}
-              activeName={this.state.activeName}
-              isSelected={this.state.selected}
-            />
 
-          </div>
-        }
-      </div>
+        {/* Select the composer */}
+        <div className={classes.selectArrangement}>
+          <InputLabel style={{ padding: 5 }} htmlFor="composer"></InputLabel>
+          <Select
+            onChange={this._changeComposer}
+            autoWidth
+            value={this.state.chosenComposer}
+            renderValue={() => this.state.chosenComposer}
+            inputProps={{ id: 'composer' }}
+          >
+            {composers.map((composer, key) =>
+              <MenuItem key={key} value={composer}>{composer}</MenuItem>)
+            }
+          </Select>
+        </div>
+
+        {/* Select the instrument */}
+        <div className={classes.selectArrangement}>
+          <InputLabel style={{ padding: 5 }} htmlFor="instrument"></InputLabel>
+          <Select
+            onChange={this._changeInstrument}
+            autoWidth
+            value={this.state.chosenInstrument}
+            renderValue={() => this.state.chosenInstrument}
+            inputProps={{ id: 'instrument' }}
+            id="filterInstrument"
+          >
+            {this.state.allInstruments.map((instrument, key) =>
+              <MenuItem key={key} value={instrument}>{instrument}</MenuItem>)
+            }
+          </Select>
+        </div>
+
+      </div >
 
       <div>
         {/* the simple list view */}
         {
-          listView && hasScores &&
-          <Paper>
-            <List>
-              {
-                band.scores.map((score, index) =>
-                  <ListItem key={index} dense button
-                    onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                    <LibraryMusic color='action' />
-                    <ListItemText primary={score.title} />
-                    <ListItemSecondaryAction onClick={() => this._onMoreClick}>
-                      <IconButton style={{ right: 0 }} onClick={() => this._onMoreClick}>
-                        <MoreVertIcon onClick={() => this._onMoreClick} />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                )
-              }
-            </List>
-          </Paper>
+          listView && hasScores && bands &&
+          <div style={{ width: '65%' }}>
+            <Paper>
+              <List>
+                {
+                  scores.map((score, index) =>
+                    <ListItem key={index} dense button
+                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                      <LibraryMusic color='action' />
+                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      <ListItemSecondaryAction onClick={() => this._onMoreClick}>
+                        <CardActions disableActionSpacing >
+                          <IconButton
+                            // TODO: get same styling as member page
+                            onClick={(e) => {
+                              if (window.confirm('Are you sure you wish to delete this item?'))
+                                this._onMoreClick(score, e)
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </CardActions>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  )
+                }
+              </List>
+            </Paper>
+          </div>
         }
 
         {/* The detailed list view */}
@@ -408,9 +531,10 @@ class Scores extends React.Component {
           <div style={{
             display: 'flex', flexWrap: 'wrap'
           }}>
+
             {/* map over the scores in the band to get correct database-information */}
             {
-              band.scores.map((score, index) =>
+              scores.map((score, index) =>
                 <Card className={classes.card} key={index}
                   elevation={1}>
                   <CardHeader
@@ -420,160 +544,163 @@ class Scores extends React.Component {
                         <NoteIcon />
                       </Avatar>
                     }
-                    action={
-                      <IconButton>
-                        <MoreVertIcon />
-                      </IconButton>
-                    }
+                    action={<div className={classes.actions}>
+                      <CardActions disableActionSpacing >
+                        <IconButton
+
+                          // TODO: get same styling as member page
+                          onClick={(e) => {
+                            if (window.confirm('Are you sure you wish to delete this item?'))
+                              this._onMoreClick(score, e)
+                          }}
+
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </CardActions>
+                    </div>}
                     title={score.title}
                   />
                   <Divider />
                   <div className={classes.cardContent}>
-                    <CardMedia
-                      className={classes.media}
-                      image='http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
-                      title="default-image"
-                      onClick={() => window.location.hash = `#/score/${band.id}${score.id}`} />
-                    <CardContent className={classes.ellipsis}>
-                      <Typography variant='subheading' className={classes.metadata}
-                        onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                        Composer:  {score.composer}
-                      </Typography>
-                      <Typography variant='subheading'
-                        onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                        Parts: {score.partCount}
-                      </Typography>
-                      <div className={classes.actions}>
-                        <CardActions disableActionSpacing >
-                          <IconButton onClick={(e) => this._onMoreClick(score, e)}>
-                            <DeleteIcon />
-                          </IconButton>
-                          <IconButton aria-label="Add to favorites">
-                            <FavoriteIcon />
-                          </IconButton>
-                        </CardActions>
-                      </div>
-                    </CardContent>
+                    <div className={classes.media2}
+                    >
+                      {loaded && score.parts == undefined && !isLoaded && // display progress bar while waiting for score parts to not be undefined,
+                        // invokes an update after some second set in componentdidmount to update score.parts state
+                        <div className={classes.root}>
+                          <LinearProgress color="secondary" />
+                        </div>}
+                      {
+                        loaded ?
+                          <CardMedia
+                            className={classes.media}
+                            image={
+                              score.parts == undefined ? // if not able to get the correct score part, dispaly default image
+                                'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
+                                :
+                                score.parts[0].pages[0].originalURL
+                            }
+                            title={score.title}
+                            onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                          />
+                          :
+                          <CardMedia
+                            className={classes.media}
+                            image={
+                              'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
+                            }
+                            title={score.title}
+                            onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                          />
+                      }
+                    </div>
+                    {
+                      <CardContent className={classes.ellipsis}>
+                        <Typography variant='subheading' className={classes.metadata}>
+
+                          {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
+                          {/* Hide the composer and arranger data if these field are not defined when uploading new score */}
+                        </Typography>
+                        <Typography variant='subheading' className={classes.metadata}>
+                          {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
+                        </Typography>
+                        <Typography variant='subheading'>
+                          Parts: {score.partCount}
+                        </Typography>
+
+                      </CardContent>
+                    }
+                    {/* progress circle while waiting for the correct image to render */}
                   </div>
 
-                  {/* The toggle panel and content */}
-                  {/* Conditional rendering done by a large ternary operator, if the card-index is equal to the activeName sat in the select 
-                  method in selectArrangement, the first chosen expansion panel is rendered. Else the default expansional panel is rendered. */}
-                  {/* {"" + index == this.state.activeName ? */}
-                  <ExpansionPanel onChange={this.handleCollapse}
-
-                  >
-                    <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}
-                      id={index} >
-                      <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails className={classes.expandedPanel}>
-                      {/* {console.log('band.bandtype', band.bandtype)}
-                        <Typography> {band.bandtype ? band.bantype : console.log('null')} </Typography> */}
-
-
-
-
-                      <Typography variant='subheading'>
-                        {/* <SelectArrangement
-                          bandtype={band.bandtype}
-                          vocalValue={this.state.vocal}
-                          ensemble={this.state.ensemble}
-                          scoresID={score.id}
-                          onChange={this.handleChange}
-                          optionsdata={this.state.optionsdata}
-                          activeInstrument={this.state.activeInstrument}
-                          index={index}
-                          activeName={this.state.activeName}
-                        /> */}
-                        {/* {"" + index == this.state.activeName && */}
-                        <List>
-                          {/* map over the instruments handled by state set in the handleChange method, 
-                          to display correct instruments for the arrangement selected */}
-                          {this.state.activeInstrumentList.map((instruments, index) =>
-                            <ListItem key={index} className={classes.expandedListItems}>
-                              <LibraryMusic color='action' />
-                              <ListItemText primary={`${instruments}: `} />
-                              <List>
-                                <InstrumentScores
-                                  test={test}
-                                  testList={this.state.testList}
-                                  _onGetParts={this._onGetParts.bind(this)}
-                                  _onGetAllScores={this._onGetAllScores.bind(this)}
-                                  allscoresList={this.state.allscoresList} />
-                                {
-                                  <ListItem>
-                                  </ListItem>
-                                }
-                              </List>
-                            </ListItem>
-                          )}
-                        </List>
-
-                      </Typography>
-                    </ExpansionPanelDetails>
-                  </ExpansionPanel>
-                  {/* 
-                    
-                    // the else statement in the ternary operator
-                    : */}
-                  {/* <ExpansionPanel
-                      onChange={this.handleCollapse}
-                    //CollapseProps={{ unmountOnExit: true }}
-                    >
-                      <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon />}
-                        id={index}
-                      >
-                        <Typography variant='subheading' className={classes.heading}>Toggle instruments</Typography>
+                  <div onClick={this.onExpansionClick} id={index}>
+                    <ExpansionPanel id={index} expanded={expanded === index} onChange={this.handleChange(index)}
+                      CollapseProps={{ unmountOnExit: true, timeout: 'auto' }} >
+                      <ExpansionPanelSummary className={classes.expandButton} expandIcon={<ExpandMoreIcon id={index} />}
+                        id={index} >
+                        <Typography variant='subheading' className={classes.heading} id={index}>Toggle instruments</Typography>
                       </ExpansionPanelSummary>
                       <ExpansionPanelDetails className={classes.expandedPanel}>
                         <Typography variant='subheading'>
 
-                          <SelectArrangement
-                            vocalValue={this.state.vocal}
-                            ensemble={this.state.ensemble}
-                            scoresID={score.id}
-                            onChange={this.handleChange}
-                            optionsdata={this.state.optionsdata}
-                            activeInstrument={this.state.activeInstrument}
-                            index={index}
-                            activeName={this.state.activeName}
-                          />
-
-                          {"" + index !== this.state.activeName &&
+                          {this.state.activeScore == index ?
                             <List>
-                              {this.state.optionsdata[0].instruments.map((instruments, index) =>
-                                <ListItem key={index} className={classes.expandedListItems}>
-                                  <LibraryMusic color='action' />
-                                  <ListItemText primary={`${instruments}: `} />
-                                  <List>
-                                    <InstrumentScores
-                                      test={test}
-                                      testList={this.state.testList}
-                                      _onGetParts={this._onGetParts.bind(this)}
-                                      _onGetAllScores={this._onGetAllScores.bind(this)}
-                                      allscoresList={this.state.allscoresList} />
+                              {
+                                Object.keys(this.state.vocalInstruments).map((instr, i) =>
+                                  <ListItem key={i} className={classes.expandedListItems}>
                                     {
-                                      <ListItem>
-                                      </ListItem>
+                                      <Tooltip title=''>
+                                        <MusicNote color='action' />
+                                      </Tooltip>
                                     }
-                                  </List>
-                                </ListItem>
-                              )}
+                                    <ListItemText className={classes.instrumentName} primary={`${instr}: `} />
+                                    <List>
+
+                                      {/* {(band.scores[index].parts).map((elem, pindex) => {
+                                      partImage = band.scores[index].parts[pindex].pages[0].croppedURL
+                                      //console.log('partImage', partImage)
+                                    })} */}
+
+                                      <ListItem key={index} className={classes.partList}>
+                                        {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
+
+                                          < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
+                                            {/* <img
+                                              id={vocalIndex}
+                                              style={{ height: '50', width: '150px' }}
+                                              //hoverSrc={this.props.band.scores[index].parts[0].pages[0].croppedURL}
+                                              src={partImage}
+                                              onMouseOver={(e) => this.onHover(i, e)}
+                                              onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+
+                                            /> */}
+                                            {/* {(band.scores[index].parts).map((test, testindex) =>
+                                              (score.parts[testindex].pages || []).map((page, index) =>
+                                                <img style={{ height: '50', width: '150px' }}
+                                                  key={index}
+                                                  className={classes.sheet}
+                                                  //src={page.croppedURL}
+                                                  id={testindex}
+                                                  //onMouseOver={this.onHover}
+                                                  onMouseOver={(e) => this.onHover(testindex, e)}
+                                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                                                />
+                                              )
+                                            )} */}
+                                            {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                                              {item}</div>}
+                                          </ListItemText>
+
+                                        )
+                                        }
+
+                                      </ListItem>
+                                    </List>
+                                  </ListItem>
+                                )
+                              }
                             </List>
+                            : '' //Close the prev expansion panel when activating the next 
+
                           }
                         </Typography>
                       </ExpansionPanelDetails>
                     </ExpansionPanel>
-                  } */}
+                  </div>
 
                 </Card>
               )}
           </div>
         }
       </div>
-    </div>
+
+    </div >
   }
+
 }
+
+// LinearDeterminate.propTypes = {
+//   classes: PropTypes.object.isRequired,
+// };
 
 export default withStyles(styles)(Scores);

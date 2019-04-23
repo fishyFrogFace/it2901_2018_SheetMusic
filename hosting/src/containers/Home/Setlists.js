@@ -209,6 +209,7 @@ class Setlists extends React.Component {
             setlists = band.setlists.slice();
         }
 
+
         return <div>
             <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56 }}>
                 <div className={classes.flex} />
