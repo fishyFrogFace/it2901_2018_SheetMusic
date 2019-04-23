@@ -598,8 +598,9 @@ class Scores extends React.Component {
                     {
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}>
+                          {console.log('score', score)}
                           {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
-                          {/* Hide the composer and arranger data if these field are not set when uploading new score */}
+                          {/* Hide the composer and arranger data if these field are not defined when uploading new score */}
                         </Typography>
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}

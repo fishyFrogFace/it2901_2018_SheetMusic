@@ -25,4 +25,4 @@ yarn-error.log*
 
 hosting/build/
 package-lock.json
-
+serviceAccount.json

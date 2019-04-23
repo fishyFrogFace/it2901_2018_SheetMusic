@@ -19,66 +19,91 @@ admin.initializeApp();
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
 
 // Extracts ZIP with pdfs
-exports.extractZip = functions.storage.object().onFinalize(async (object, context) => {
-    // Full file path (<bandId>/<fileName>.pdf)
-    const filePath = object.name;
+// exports.extractZip = functions.storage.object().onFinalize(async (object, context) => {
+//     // Full file path (<bandId>/<fileName>.pdf)
+//     const filePath = object.name;
 
-    if (!filePath.endsWith('.zip')) return null;
+//     if (!filePath.endsWith('.zip')) return null;
 
-    let [bandId, fileNameExt] = filePath.split('/');
+//     let [bandId, fileNameExt] = filePath.split('/');
 
-    // File name without extension
-    const fileName = path.basename(fileNameExt, '.zip');
+//     // File name without extension
+//     const fileName = path.basename(fileNameExt, '.zip');
 
-    // Create storage bucket
-    const bucket = storage.bucket(object.bucket);
+//     // Create storage bucket
+//     const bucket = storage.bucket(object.bucket);
 
-    try {
-        // Download to local directory
-        await bucket.file(filePath).download({ destination: '/tmp/file.zip' });
+//     try {
+//         // Download to local directory
+//         await bucket.file(filePath).download({ destination: '/tmp/file.zip' });
 
-        await bucket.file(filePath).delete();
+//         await bucket.file(filePath).delete();
 
-        // Unzip
-        const dir = await unzipper.Open.file('/tmp/file.zip');
+//         // Unzip
+//         const dir = await unzipper.Open.file('/tmp/file.zip');
 
-        await Promise.all(
-            dir.files
-                .filter(file => file.path.endsWith('.pdf'))
-                .filter(file => !file.path.startsWith('__MACOSX'))
-                .map(async file => {
-                    let pdfPathParts = file.path.split('/');
-                    if (pdfPathParts[0] === fileName) {
-                        pdfPathParts = pdfPathParts.slice(1);
-                    }
+//         await Promise.all(
+//             dir.files
+//                 .filter(file => file.path.endsWith('.pdf'))
+//                 .filter(file => !file.path.startsWith('__MACOSX'))
+//                 .map(async file => {
+//                     let pdfPathParts = file.path.split('/');
+//                     if (pdfPathParts[0] === fileName) {
+//                         pdfPathParts = pdfPathParts.slice(1);
+//                     }
 
-                    const name = pdfPathParts.join(' - ');
+//                     const name = pdfPathParts.join(' - ');
 
-                    await new Promise((resolve, reject) => {
-                        file.stream()
-                            .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
-                            .on('error', reject)
-                            .on('finish', resolve)
+//                     await new Promise((resolve, reject) => {
+//                         file.stream()
+//                             .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
+//                             .on('error', reject)
+//                             .on('finish', resolve)
 
-                    });
-                })
-        );
+//                     });
+//                 })
+//         );
 
-        // Clean up
-        await fs.remove('/tmp/file.zip');
-    } catch (err) {
-        console.log(err);
+//         // Clean up
+//         await fs.remove('/tmp/file.zip');
+//     } catch (err) {
+//         console.log(err);
+//     }
+// });
+
+
+// Function made just for updating Firebase instruments collection with instruments
+exports.makeInstrumentList = functions.storage.object().onFinalize(async (object, context) => {
+
+    // This only runs when instrumentCheck is true
+    const instCheckRef = await admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
+    const checked = (await instCheckRef.get()).data().checked;
+    const instrumentList = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax',
+        'Baryton Sax', 'Piano', 'Drums', 'Guitar', 'Bass', 'Flute', 'Piccolo Flute', 'Clarinet',
+        'Walthorn', 'Cornet', 'Euphonium', 'Tuba']
+
+    if (checked) {
+        for (let inst in instrumentList) {
+            for (let i = 1; i <= 4; i++) {
+                const instList = await admin.firestore().collection(`instrumentList`).add({
+                    displayName: `${i}. ${instrumentList[inst]}`,
+                    name: `${instrumentList[inst]} ${i}`,
+                    type: instrumentList[inst],
+                    voice: i
+                });
+            }
+        }
+
+        // Secures that this function only runs once
+        const instUpdate = instCheckRef.update({
+            checked: false
+        });
     }
 });
 
 
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
 exports.convertPDF = functions.storage.object().onFinalize(async (object, context) => {
-    //const object = event.data;
-
-    //if (object.resourceState === 'not_exists') return null;
-
-    // Full file path (<bandId>/<fileName>.pdf)
     const filePath = object.name;
 
     if (!filePath.endsWith('.pdf')) return null;
@@ -119,7 +144,6 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             await promise;
         });
 
-        console.log('pfdInfo', pdfInfo)
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
 
         // Create document
@@ -144,6 +168,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
         console.log('PDF conversion complete!');
 
+        // HUSK Å KOMMENTERE HVA DENNE GJØR
         const convertProcess = await spawn('mogrify', [
             '-crop', '4000x666+0+0',
             '-resize', '40%',
@@ -209,7 +234,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         };
 
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
-        console.log('pdfText: ', pdfText)
+        console.log('pdfText', pdfText);
 
         if (true) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
@@ -249,79 +274,99 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                 expr: /(\w )?drum set/i
             }];
 
-            const _pages = pdfText.split('\f');
+            // Pattern for filtering out arranger and composer
+            const arrangerPattern = /[\\n\r]*Arranged by\s*([^\n\r]*)/g;
+            const composerPattern = /[\\n\r]*Words and Music by\s*([^\n\r]*)/g;
 
-            const snapshot = await admin.firestore().collection('instruments').get();
+            // Splits the pdf into pages with ekstra blank page
+            let _pages = pdfText.split('\f');
+            console.log('Pages:', _pages);
+            console.log('PagesLength', _pages.length);
 
-            const instruments = snapshot.docs.map(doc => ({ ...doc.data(), ref: doc.ref }));
+            const snapshot = await admin.firestore().collection('instrumentList').get();
+            const instruments = snapshot.docs.map(doc => ({ name: doc.data().name, ref: doc.ref }));
 
-            const parts = [{
-                page: 2,
-                instruments: [admin.firestore().doc('instruments/YFNsZF5GxxpkfBqtbouy')]
-            }];
+            const instrmList = []
+            for (let i in instruments) {
+                instrmList.push((instruments[i].name).toUpperCase())
+            };
 
-            const nameCount = {};
+            const parts = [];
 
-            for (let i = 3; i < _pages.length; i++) {
+            // Checks if arranger exists on the pdfs first page
+            let arrangerName = 'No arranger detected';
+            const arrangerResult = arrangerPattern.exec(_pages[0])
+
+            if (arrangerResult !== null) {
+                arrangerName = arrangerResult[1]
+                arrangerName = arrangerName.toLowerCase()
+                arrangerName = arrangerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')
+            };
+
+            // Checks if composer exists on the pdfs first page
+            let composerName = 'No composer detected';
+            const composerResult = await composerPattern.exec(_pages[0])
+
+            if (composerResult !== null) {
+                composerName = composerResult[1]
+                composerName = composerName.toLowerCase()
+                composerName = composerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')
+            };
+
+
+            // GOING THROUGH EVERY PAGE IN THE PDF
+            for (let i = 0; i < _pages.length - 1; i++) {
                 const page = _pages[i];
-
-                // const mExclude = excludePattern.test(page);
+                console.log('page', page)
 
                 const detectedInstrNames = [];
 
-                // if (!mExclude) {
-                for (let pattern of patterns) {
-                    const isMatch = pattern.expr.test(page);
 
-                    if (isMatch &&
-                        /*Simulate negative lookbehind*/
-                        !pattern.expr.exec(page)[1]) {
-                        detectedInstrNames.push(pattern.name);
-                        console.log('dedetectedInstrNamestect', detectedInstrNames)
+                for (let pattern of patterns) {
+                    const patternMatch = pattern.expr.test(page);
+
+                    // Simulate negative lookbehind
+                    if (patternMatch && !pattern.expr.exec(page)[1]) {
+                        detectedInstrNames.push(pattern.expr.exec(page)[0]);
                     }
                 }
-                // }
 
+                // IF ANY NAMES WHERE DETECTED
                 if (detectedInstrNames.length > 0) {
-                    if (detectedInstrNames.length === 1) {
-                        const [name] = detectedInstrNames;
 
-                        if (['Alto Sax', 'Tenor Sax', 'Trumpet', 'Trombone'].indexOf(name) > -1) {
-                            if (!nameCount[name]) {
-                                nameCount[name] = 0;
-                            }
+                    const [name] = detectedInstrNames;
+                    console.log('Instrument: ', name)
 
-                            const instrRef = instruments.find(instr =>
-                                instr['name'] === `${name} ${nameCount[name] + 1}`).ref;
-
-                            parts.push({
-                                page: i,
-                                instruments: [instrRef]
-                            });
-
-                            nameCount[name] += 1;
-                        } else {
-                            const instrRef = instruments.find(instr => instr['name'] === name).ref;
-
-                            parts.push({
-                                page: i,
-                                instruments: [instrRef]
-                            });
-                        }
-                    } else {
-                        const instrRefs = detectedInstrNames.map(name =>
-                            instruments.find(instr => instr['name'] === name).ref
-                        );
+                    // IF THE NAME IS IN THE INSTRUMENT LIST
+                    if (instrmList.indexOf(name) > -1) {
+                        const instrRef = instruments[instrmList.indexOf(name)].ref;
 
                         parts.push({
-                            page: i,
-                            instruments: instrRefs
+                            page: i + 1,
+                            instrument: [instrRef]
                         });
                     }
+
+                    else {
+                        parts.push({
+                            page: i + 1,
+                            instrument: 'No instruments detected'
+                        });
+                    }
+                }
+
+                else {
+                    parts.push({
+                        page: i + 1,
+                        instrument: 'No instruments detected',
+                    });
                 }
             }
 
             data['parts'] = parts;
+            data['arranger'] = arrangerName;
+            data['composer'] = composerName;
+            console.log('Data', data)
         }
 
         await pdfRef.update(data);
@@ -401,5 +446,3 @@ exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{s
         await snap.ref.update({ thumbnailURL: response.items[0].link });
     }
 });
-
-

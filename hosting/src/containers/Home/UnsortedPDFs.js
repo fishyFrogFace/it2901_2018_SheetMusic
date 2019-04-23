@@ -52,8 +52,8 @@ class UnsortedPDFs extends React.Component {
     };
 
     _onAddParts = async pdfs => {
-        const { score, parts } = await this.addPartsDialog.open(pdfs);
-        this.props.onAddParts(score, parts);
+        const { score, parts, tune } = await this.addPartsDialog.open(pdfs);
+        this.props.onAddParts(score, parts, tune);
     };
 
     _onRemoveUnsortedPdf = async pdf => {
@@ -117,8 +117,7 @@ class UnsortedPDFs extends React.Component {
                                     <List>
                                         {
                                             group.pdfs.map(pdf =>
-                                                <ListItem key={pdf.id} style={{ height: 40, padding: '10px 20px' }} button
-                                                    disableRipple>
+                                                <ListItem key={pdf.id} style={{ height: 40, padding: '10px 20px' }}>
                                                     <ListItemText primary={pdf.name} />
                                                 </ListItem>
                                             )

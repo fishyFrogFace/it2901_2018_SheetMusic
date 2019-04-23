@@ -14,6 +14,7 @@ import 'firebase/storage';
 
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 import { FileDownload, Info, InfoOutline } from "material-ui-icons";
+import jsPDF from 'jspdf';
 
 
 
@@ -81,8 +82,6 @@ class Score extends React.Component {
                     const part = score.parts[selectedPart];
 
                     const { } = await this.downloadDialog.open(part.instrument);
-
-                    const jsPDF = await import('jspdf');
 
                     const dateString = new Date().toLocaleDateString();
 
@@ -192,7 +191,7 @@ class Score extends React.Component {
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                            value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
+                                            value={index}>{part.instrument.name + ' ' + part.tune} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
 
                                         </MenuItem>
                                     )

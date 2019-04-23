@@ -1,18 +1,18 @@
 import React from 'react';
-import {withStyles} from 'material-ui/styles';
+import { withStyles } from 'material-ui/styles';
 
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {Button, CircularProgress, IconButton, Menu, MenuItem, Select, Snackbar} from "material-ui";
+import { Button, CircularProgress, IconButton, Menu, MenuItem, Select, Snackbar } from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 
 import firebase from 'firebase';
 import 'firebase/storage';
 
-import {Close, FileDownload} from "material-ui-icons";
+import { Close, FileDownload } from "material-ui-icons";
 import Selectable from "../components/Selectable";
 import AddPartDialog from "../components/dialogs/AddPartDialog";
 
@@ -87,18 +87,19 @@ class PDF extends React.Component {
         } else {
             if (selectedPages.has(index)) {
                 selectedPages.delete(index);
-                
-        console.log("Depeted");
+
+                console.log("Depeted");
             } else {
                 selectedPages.add(index);
             }
         }
 
-        this.setState({selectedPages: selectedPages, lastClicked: index});
+        this.setState({ selectedPages: selectedPages, lastClicked: index });
     };
 
     async createScoreDoc(bandId, scoreData) {
         const data = {};
+        console.log('data', data)
         data.title = scoreData.title || 'Untitled Score';
 
         if (scoreData.composer) {
@@ -129,11 +130,11 @@ class PDF extends React.Component {
 
     _onAddAsPart = async () => {
         const selectedPages = Array.from(this.state.selectedPages);
-        const {scoreData, part} = await this.addPartDialog.open();
+        const { scoreData, part } = await this.addPartDialog.open();
 
-        const {band, pdf} = this.state;
+        const { band, pdf } = this.state;
 
-        this.setState({message: 'Adding part...'});
+        this.setState({ message: 'Adding part...' });
 
         let scoreRef;
         if (scoreData.id) {
@@ -149,25 +150,26 @@ class PDF extends React.Component {
                 croppedURL: pdf.pages[page].croppedURL,
                 originalURL: pdf.pages[page].originalURL
             }))
+            // tune: 1;
         });
 
         const notSelectedPages = pdf.pages.filter((_, index) => !selectedPages.includes(index));
 
-        this.setState({selectedPages: new Set()});
+        this.setState({ selectedPages: new Set() });
 
         await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).update({
             pages: notSelectedPages
         });
 
-        this.setState({message: null});
+        this.setState({ message: null });
     };
 
     _onSelectionCloseClick = () => {
-        this.setState({selectedPages: new Set()});
+        this.setState({ selectedPages: new Set() });
     };
 
     componentDidUpdate(prevProps, prevState) {
-        const {page, detail} = this.props;
+        const { page, detail } = this.props;
 
         if (page !== prevProps.page) {
             const [bandId, pdfId] = [detail.slice(0, 20), detail.slice(20)];
@@ -180,37 +182,37 @@ class PDF extends React.Component {
 
             this.unsubs.push(
                 pdfDoc.onSnapshot(async snapshot => {
-                    this.setState({pdf: {...this.state.pdf, ...snapshot.data(), id: snapshot.id}});
+                    this.setState({ pdf: { ...this.state.pdf, ...snapshot.data(), id: snapshot.id } });
                 })
             );
 
             this.unsubs.push(
                 bandRef.onSnapshot(async snapshot => {
-                    this.setState({band: {...this.state.band, ...snapshot.data(), id: snapshot.id}});
+                    this.setState({ band: { ...this.state.band, ...snapshot.data(), id: snapshot.id } });
                 })
             );
 
             this.unsubs.push(
                 bandRef.collection('instruments').onSnapshot(async snapshot => {
                     const instruments = snapshot.docs.map(doc => doc.data());
-                    this.setState({band: {...this.state.band, instruments: instruments}});
+                    this.setState({ band: { ...this.state.band, instruments: instruments } });
                 })
             );
         }
     }
 
     render() {
-        const {classes} = this.props;
-        const {selectedPages, message, pdf, band} = this.state;
+        const { classes } = this.props;
+        const { selectedPages, message, pdf, band } = this.state;
 
         const hasPages = Boolean(pdf.pages && pdf.pages.length);
 
         return (
             <div className={classes.root}>
-                <AppBar style={{zIndex: 10}}>
+                <AppBar style={{ zIndex: 10 }}>
                     <Toolbar>
                         <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
-                            <ArrowBackIcon/>
+                            <ArrowBackIcon />
                         </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {pdf.name}
@@ -220,10 +222,10 @@ class PDF extends React.Component {
 
                 {
                     selectedPages.size > 0 &&
-                    <AppBar style={{zIndex: 100}} color='secondary' classes={{root: classes.appBar__root}}>
+                    <AppBar style={{ zIndex: 100 }} color='secondary' classes={{ root: classes.appBar__root }}>
                         <Toolbar>
                             <IconButton color="inherit" onClick={this._onSelectionCloseClick}>
-                                <Close/>
+                                <Close />
                             </IconButton>
                             <Typography variant="title" color="inherit" className={classes.flex}>
                                 {selectedPages.size} selected
@@ -238,7 +240,7 @@ class PDF extends React.Component {
                         hasPages && pdf.pages.map((page, index) =>
                             <Selectable
                                 key={index}
-                                classes={{root: classes.selectable}}
+                                classes={{ root: classes.selectable }}
                                 selected={selectedPages.has(index)}
                                 imageURL={page.originalURL}
                                 onClick={e => {
@@ -248,7 +250,7 @@ class PDF extends React.Component {
                             />
                         )}
                 </div>
-                <AddPartDialog band={band} onRef={ref => this.addPartDialog = ref}/>
+                <AddPartDialog band={band} onRef={ref => this.addPartDialog = ref} />
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
@@ -256,7 +258,7 @@ class PDF extends React.Component {
                     }}
                     open={Boolean(message)}
                     message={message}
-                    action={message && message.includes('...') ? <CircularProgress size={30} color='secondary'/> : null}
+                    action={message && message.includes('...') ? <CircularProgress size={30} color='secondary' /> : null}
                 />
             </div>
         );

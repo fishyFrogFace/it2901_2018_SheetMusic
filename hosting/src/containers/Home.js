@@ -116,6 +116,7 @@ class Home extends React.Component {
 
     async createScoreDoc(band, scoreData) {
         const data = {};
+        console.log(data);
         data.title = scoreData.title || 'Untitled Score';
 
         if (scoreData.composer) {
@@ -166,6 +167,7 @@ class Home extends React.Component {
                 pages: part.pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                tune: 1,
             })
             ));
 
@@ -175,9 +177,9 @@ class Home extends React.Component {
         this.setState({ message: null });
     };
 
-    _onAddParts = async (scoreData, parts) => {
+    _onAddParts = async (scoreData, parts, tune) => {
         const { band } = this.state;
-
+        console.log(this.state);
         this.setState({ message: 'Adding parts...' });
 
 
@@ -191,14 +193,11 @@ class Home extends React.Component {
 
         for (let part of parts) {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
-            // console.log('pdfDoc', pdfDoc)
-            // console.log('pdfDoc.data()', pdfDoc.data())
-            // this.setState({ band: { ...this.state.band, scoreInfo: part } });
-
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
+                tune: tune,
             });
 
 
@@ -351,7 +350,7 @@ class Home extends React.Component {
 
         const { band } = this.state;
 
-        const { title, date } = await this.setlistDialog.open();
+        const { title, date, time } = await this.setlistDialog.open();
 
         this.setState({ message: 'Creating setlist...' });
 
@@ -359,6 +358,7 @@ class Home extends React.Component {
             let setlistRef = await firebase.firestore().collection(`bands/${band.id}/setlists`).add({
                 title: title,
                 date: date,
+                time: time,
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`)
             });
 
@@ -379,7 +379,7 @@ class Home extends React.Component {
     };
 
 
-    // UPLOADING PDF 
+    // UPLOADING PDF
     _onUploadMenuClick = async type => {
         const { files, path, accessToken } = await this.uploadDialog.open(type);
 
@@ -782,7 +782,7 @@ class Home extends React.Component {
                                 open={Boolean(bandAnchorEl)}
                                 onClose={this._onMenuClose}
                             >
-                                <MenuItem onClick={this._onCreateBand} style={{ height: 15 }}>
+                                <MenuItem id='create-band-button' onClick={this._onCreateBand} style={{ height: 15 }}>
                                     Create band
                                 </MenuItem>
                                 <MenuItem onClick={this._onJoinBand} style={{ height: 15 }}>
@@ -818,12 +818,13 @@ class Home extends React.Component {
                             </Menu>
 
                             <IconButton onClick={this._onAccountCircleClick}>
-                                <img src={user.photoURL} style={{
-                                    width: "32px",
-                                    height: "32px",
-                                    borderRadius: '50%',
-                                }}>
-                                </img>
+                                {loaded &&
+                                    <img src={user.photoURL} style={{
+                                        width: "32px",
+                                        height: "32px",
+                                        borderRadius: '50%',
+                                    }}>
+                                    </img>}
                             </IconButton>
                             <Menu
                                 anchorEl={accountAnchorEl}
