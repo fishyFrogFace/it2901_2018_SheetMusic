@@ -13,6 +13,7 @@ import { Dropbox } from 'dropbox';
 import * as cors from 'cors';
 import * as request from 'request-promise-native';
 
+
 admin.initializeApp();
 
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
@@ -208,9 +209,9 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         };
 
         const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
-        console.log('pdfText', pdfText)
+        console.log('pdfText: ', pdfText)
 
-        if (pdfText.includes('jazzbandcharts')) {
+        if (true) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
 
             const patterns = [{
@@ -276,6 +277,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                         /*Simulate negative lookbehind*/
                         !pattern.expr.exec(page)[1]) {
                         detectedInstrNames.push(pattern.name);
+                        console.log('dedetectedInstrNamestect', detectedInstrNames)
                     }
                 }
                 // }

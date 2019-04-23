@@ -164,8 +164,8 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             pages: pages,
         };
         const pdfText = yield fs.readFile('/tmp/score.txt', 'latin1');
-        console.log('pdfText', pdfText);
-        if (pdfText.includes('jazzbandcharts')) {
+        console.log('pdfText: ', pdfText);
+        if (true) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
                     name: 'Score',
@@ -220,6 +220,7 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
                         /*Simulate negative lookbehind*/
                         !pattern.expr.exec(page)[1]) {
                         detectedInstrNames.push(pattern.name);
+                        console.log('dedetectedInstrNamestect', detectedInstrNames);
                     }
                 }
                 // }
