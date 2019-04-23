@@ -41,7 +41,8 @@ class AddPartsDialog extends React.Component {
         activeStep: 0,
         scoreCreated: false,
         open: false,
-        pdfs: []
+        pdfs: [],
+        tune: 0
     };
 
     componentDidMount() {
@@ -64,6 +65,7 @@ class AddPartsDialog extends React.Component {
             const instruments = snapshot.docs
                 .map(doc => ({...doc.data(), id: doc.id}))
                 .sort((a, b) => a.name.localeCompare(b.name));
+            console.log(instruments);
 
             this.setState({
                 instruments: instruments,
@@ -90,14 +92,15 @@ class AddPartsDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const {parts, scoreData} = this.state;
+        const {parts, scoreData, tune} = this.state;
 
         if (this.state.activeStep === 1) {
             this.setState({activeStep: 2, scoreCreated: true});
         } else {
             this.__resolve({
                 score: scoreData,
-                parts: parts
+                parts: parts,
+                tune: tune
             });
 
             this.setState({
@@ -105,7 +108,8 @@ class AddPartsDialog extends React.Component {
                 activeStep: 0,
                 scoreCreated: false,
                 parts: [],
-                scoreData: {}
+                scoreData: {},
+                tune: {}
             });
         }
     };
@@ -124,8 +128,12 @@ class AddPartsDialog extends React.Component {
         this.setState({scoreData: data})
     };
 
+    _onTuneChange = (e) => {
+        this.setState({tune: e.target.value});
+    }
+
     render() {
-        const {parts, scoreData, activeStep, scoreCreated, open, pdfs, instruments} = this.state;
+        const {parts, scoreData, activeStep, scoreCreated, open, pdfs, instruments, tune} = this.state;
 
         const {band, classes} = this.props;
 

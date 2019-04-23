@@ -78,22 +78,23 @@ class CreateScoreStep extends React.Component {
             <TextField
                 label='Title'
                 style={{marginBottom: 20}}
-                value={data.title}
+                value={pdf.name}
                 onChange={e => this._onDataChange('title', e)}
             />
             <TextField
                 label='Composer'
                 style={{marginBottom: 20}}
+                value={pdf.composer}
                 onChange={e => this._onDataChange('composer', e)}
             />
             <TextField
                 label='Arranger'
                 style={{marginBottom: 20}}
+                value={pdf.arranger}
                 onChange={e => this._onDataChange('arranger', e)}
             />
             <TextField
                 label="Tempo"
-                style={{marginBottom: 20}}
                 onChange={e => this._onDataChange('tempo', e)}
                 type="number"
                 onKeyDown={e => {
