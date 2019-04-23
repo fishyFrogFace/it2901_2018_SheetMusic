@@ -1,3 +1,7 @@
+/**
+ * This dialog is used in setlist.js
+ */
+
 import React from 'react';
 
 import {TextField, InputLabel, Input, InputAdornment, FormControl} from "material-ui";
@@ -27,11 +31,11 @@ class AddSetlistEventDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Add Event' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField required label='Name' onChange={e => this._onTextFieldChange(e, 'eventTitle')}/>
-            <TextField label='Description' onChange={e => this._onTextFieldChange(e, 'description')}/>
+            <TextField id="create-event-name" required label='Name' onChange={e => this._onTextFieldChange(e, 'eventTitle')}/>
+            <TextField id="create-event-description" label='Description' onChange={e => this._onTextFieldChange(e, 'description')}/>
             <FormControl>
                 <InputLabel> Time </InputLabel>
-                <Input type='number' label='Time' onChange={e => this._onTextFieldChange(e, 'time')} endAdornment={<InputAdornment position="end">Min</InputAdornment>}/>
+                <Input id="create-event-time" type='number' label='Time' onChange={e => this._onTextFieldChange(e, 'time')} endAdornment={<InputAdornment position="end">Min</InputAdornment>}/>
             </FormControl>            
         </AsyncDialog>
     }
