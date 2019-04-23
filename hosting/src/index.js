@@ -92,6 +92,7 @@ class App extends React.Component {
         try {
             const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
+
             this.setState({ Component: component }, () => {
                 this.setState({ page: page, detail: detail, componentLoaded: this._componentLoaded }, () => {
                     this._componentLoaded[this.page2Component[page]] = true;
@@ -102,6 +103,14 @@ class App extends React.Component {
             // Already imported or doesn't exists
         }
     }
+
+    componentDidMount() {
+        setTimeout(() => {
+
+            this._onHashChange()
+        }, 1000);
+    }
+
 
     render() {
         const { page, detail, Component, componentLoaded } = this.state;

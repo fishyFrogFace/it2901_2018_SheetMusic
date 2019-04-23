@@ -94,7 +94,6 @@ class Home extends React.Component {
         bands: null,
 
         userData: {},
-
         pdfSelected: false,
         scoreInfo: []
     };
@@ -728,6 +727,8 @@ class Home extends React.Component {
 
 
 
+
+
     _onPDFSelect = selectedPDFs => {
         this.setState({ pdfSelected: selectedPDFs.size > 0 });
     };
@@ -739,12 +740,13 @@ class Home extends React.Component {
 
         const { classes, page, loaded } = this.props;
 
+
         let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
 
         return <div className={classes.root}>
             {
                 !bands && !loaded &&
-                <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref}>
+                <div className={classes.absoluteCenter} ref={ref => this.progressEl = ref} >
                     <CircularProgress color='secondary' size={50} />
                 </div>
             }
@@ -962,6 +964,8 @@ class Home extends React.Component {
                         band={band}
                         onRemoveScore={this._onRemoveScore}
                         scoreInfo={this.state.scoreInfo}
+                        loaded={loaded}
+                        bands={bands}
                     />
                 }
                 {
