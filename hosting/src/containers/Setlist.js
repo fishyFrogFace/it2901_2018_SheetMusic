@@ -19,7 +19,6 @@ import AsyncDialog from '../components/dialogs/AsyncDialog';
 
 import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
 import {Add, ArrowBack, Edit, MusicNote} from "material-ui-icons";
-//import { isAdmin } from '@firebase/util';
 
 const styles = {
     root: {},
@@ -70,7 +69,6 @@ class Setlist extends Component {
     }
 
     _onDragEnd = async result => {
-        //console.log("Result: " + JSON.stringify(result));
         // dropped outside the list
         if (!result.destination) {
             return;
@@ -131,7 +129,6 @@ class Setlist extends Component {
                     break;
                 case 'editSetlist':
                     const {title, date, setlistTime} = await this.editSetlistDialog.open(setlist);
-                    //console.log('setlistTime: ' + setlistTime);
                     await setlistRef.update({title: title, date: date, time: setlistTime});
                     break;
             }
@@ -155,10 +152,8 @@ class Setlist extends Component {
             const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
 
             const bandRef = firebase.firestore().doc(`bands/${bandId}`);
-            //console.log("bandRef: " + bandRef);
 
             const setlistDoc = bandRef.collection('setlists').doc(setlistId);
-            //console.log("setlistDoc: " + setlistDoc);
 
             this.unsubs.forEach(unsub => unsub());
 
@@ -169,7 +164,6 @@ class Setlist extends Component {
                     if(data === undefined){
                         return;
                     }
-                    //console.log("data: " + data);
 
                     data.items = await Promise.all(
                         (data.items || []).map(async item => {
@@ -207,8 +201,6 @@ class Setlist extends Component {
                 hasRights: false,
             });
 
-            //const snapshot = await admin.firestore().collection('instruments').get();
-            //const instruments = snapshot.docs.map(doc => ({ ...doc.data(), ref: doc.ref }));
             bandRef.get().then(snapshot => {
 
                 const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
@@ -220,15 +212,11 @@ class Setlist extends Component {
                 }
 
             });
-            
-            //const members = await bandRef.collection('members').get();
-            //const members = (snapshot.data() === undefined) ? [] : snapshot.data().members;
 
             bandRef.collection('members').onSnapshot(async snapshot =>{
                 const members = await Promise.all(
                     snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
                 );
-                //console.log("setlist members: " + members);
                 for (let i in members) {
                     if (currentUser.uid === members[i].uid) {
                         if(members[i].admin || members[i].supervisor){
@@ -238,19 +226,13 @@ class Setlist extends Component {
                         }
                     }
                 }
-            });
-
-            //const snapshot = await admin.firestore().collection('members').get();
-            
-            
-            
+            });  
         }
     }
 
     //This function checks that setlistDate is a string, if so returns it and a space
     _formatedDate = (setlistDate) => {
         if(typeof setlistDate === 'string'){
-            //console.log('Setlist date: ' + setlistDate);
             return setlistDate + " ";
         }
     }
@@ -258,7 +240,6 @@ class Setlist extends Component {
     //This function checks that setlistTime is a string, if so returns it
     _formatedTime = (setlistTime) => {
         if(typeof setlistTime === 'string'){
-            //console.log("setlist time: " + setlistTime);
             return setlistTime;
         }
     }
@@ -266,11 +247,6 @@ class Setlist extends Component {
     //This function takes in an event id and it's title,
     //Warns the user about the action and deletes the event
     _onEventDeleteClick = async (eventId, eventTitle) => {
-        //console.log("Event index: " + eventIndex);
-        //console.log("Event title: " + eventTitle);
-        //console.log('this.state.isLeader is ' + this.state.isLeader);
-        //console.log(' this.state.user is ' + this.state.user);
-        
         
         this.setState({
             title: "Deleting event",
@@ -280,22 +256,14 @@ class Setlist extends Component {
         if (!await this.open()) return;
 
         const {detail, band} = this.props;
-        //console.log("detail is " + detail);
-        //console.log("Band is " + this.props.band);
         
         const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
-        //console.log("bandId: " + bandId);
-        //console.log("setlistId: " + setlistId);
 
         const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
-        //console.log("setlistRef: " + setlistRef);
 
         let itemBandRef = (await setlistRef.get()).data().items || [];
 
         const filteredItems = await itemBandRef.filter(i => i.id !== eventId);
-        //const creatorRef = setlistRef.
-        console.log('creatorRef is ' + bandId.creatorRef);
-        
         
         if (this.state.hasRights) {
             await setlistRef.update({
@@ -307,9 +275,6 @@ class Setlist extends Component {
     //This function takes in a score id and it's title,
     //Warns the user about the action and deletes the score
     _onScoreDeleteClick = async (scoreId, scoreTitle) => {
-        //console.log("Event index: " + eventIndex);
-        //console.log("Event title: " + eventTitle);
-        //console.log("Score id: " + scoreId);
         
         this.setState({
             title: "Deleting score",
@@ -321,11 +286,8 @@ class Setlist extends Component {
         const {detail} = this.props;
         
         const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
-        //console.log("score bandId: " + bandId);
-        //console.log("score setlistId: " + setlistId);
 
         const setlistRef = firebase.firestore().doc(`bands/${bandId}/setlists/${setlistId}`);
-        //console.log("score setlistRef: " + setlistRef);
 
         let itemBandRef = (await setlistRef.get()).data().items || [];
 
@@ -335,28 +297,18 @@ class Setlist extends Component {
             await setlistRef.update({
                 items: filteredItems
             });
-        }  
-        
+        }    
     }
 
-    //TODO: make it possible to edit an event
+    //This function takes in an event, changes the title, description and time of that event
+    //And then makes a new list of items with the updated event
     _onEventEditClick = async(eventId, index) => {
         
         const {band, setlist} = this.state;
-        //console.log("band: " + band);
-        //console.log("setlist: " + setlist);
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
-        //console.log("setlistRef: " + setlistRef);
         
         const event = (await setlistRef.get()).data().items[index] || [];
-        //console.log('event type: ' + event.type);
-        //console.log('event id: ' + eventId);
-        //console.log('event index: ' + index);
-        //console.log(typeof(event));
         const {title, description, time} = await this.editSetlistEventDialog.open(event);
-        //console.log('title: ' + title);
-        //console.log('description: ' + description);
-        //console.log('time: ' + time);
 
         let items = (await setlistRef.get()).data().items || [];
 
@@ -372,23 +324,14 @@ class Setlist extends Component {
 
         //Getting the item
         const item = newItems.filter(i => i.id === eventId)
-        //console.log(item);
         //Splice is inserting item into filteredlist at index
         filteredItems.splice(index, 0, item[0]);
-        //console.log(filteredItems);
         if (this.state.hasRights) {
             await setlistRef.update({
                 items: filteredItems
             });
         }
     }
-
-
-    //TODO: make it possible to edit a score?
-    _onScoreEditClick = async() => {
-        
-    }
-
 
     render() {
         const {anchorEl, updatedItems, setlist, band} = this.state;
@@ -468,9 +411,6 @@ class Setlist extends Component {
                                                                             <MusicNote style={{paddingRight:'10px'}}/>
                                                                             {item.score.title}
                                                                             
-                                                                            {/*<IconButton style={{position: 'absolute', right: '70px'}}>
-                                                                                <Edit onClick={() => this._onScoreEditClick()}/>
-                                                                            </IconButton>*/}
                                                                             {hasRights && <IconButton style={{position: 'absolute', right: '25px'}}>
                                                                                 <DeleteIcon id="score-delete-button" onClick={() => this._onScoreDeleteClick(item.id, item.score.title)}/>
                                                                             </IconButton>}

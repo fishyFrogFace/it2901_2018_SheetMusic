@@ -1,5 +1,5 @@
 /**
- * This dialog is displayed when the user clicks on add an event within a setlist
+ * This dialog is used in setlist.js
  */
 
 import React from 'react';

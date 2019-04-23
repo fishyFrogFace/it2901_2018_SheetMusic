@@ -51,9 +51,9 @@ class Setlists extends React.Component {
         }
     }
 
+    //This function updates the state of hasRights
     componentDidMount() {
         const { band } = this.props;
-        //console.log("DidMount band: " + band);
         const { currentUser } = firebase.auth();
         const bandRef = firebase.firestore().doc(`bands/${band.id}`);
         this.setState({
@@ -61,22 +61,11 @@ class Setlists extends React.Component {
             hasRights: false,
         });
 
-        /*const members = band.members;
-        console.log("DidMount members: " + members);
-        for (let i in members) {
-            if (currentUser.uid === members[i].uid) {
-                if (members[i].admin || members[i].supervisor) {
-                    this.setState({
-                        hasRights: true
-                    });
-                }
-            }
-        }*/
+        //Looping through members, if a member is an admin or supervisor, the state will be updated
         bandRef.collection('members').onSnapshot(async snapshot =>{
             const members = await Promise.all(
                 snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
             );
-            //console.log("setlist members: " + members);
             for (let i in members) {
                 if (currentUser.uid === members[i].uid) {
                     if(members[i].admin || members[i].supervisor){
@@ -88,6 +77,7 @@ class Setlists extends React.Component {
             }
         });
 
+        //If a user is the leader, the state will be updated
         bandRef.get().then(snapshot => {
             const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
@@ -100,9 +90,10 @@ class Setlists extends React.Component {
         });
     }
 
+    //This function does the same as the one above, although is called when the component updates
     componentDidUpdate(prevProp, prevState) {
         const { band } = this.props;
-        //console.log("Band DidUpdate: " + band);
+
         if (band.id !== prevProp.band.id) {
             const { currentUser } = firebase.auth();
             this.setState({
@@ -111,24 +102,11 @@ class Setlists extends React.Component {
             });
             const bandRef = firebase.firestore().doc(`bands/${band.id}`);
 
-            /*let members = band.members;
-            console.log('DidUpdate members: ' + members);
-
-            for (let i in members) {
-                if (currentUser.uid === members[i].uid) {
-                    if (members[i].admin || members[i].supervisor) {
-                        this.setState({
-                            hasRights: true
-                        });
-                    }
-                }
-            }*/
-
             bandRef.collection('members').onSnapshot(async snapshot =>{
                 const members = await Promise.all(
                     snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
                 );
-                //console.log("setlist members: " + members);
+                
                 for (let i in members) {
                     if (currentUser.uid === members[i].uid) {
                         if(members[i].admin || members[i].supervisor){
@@ -140,10 +118,8 @@ class Setlists extends React.Component {
                 }
             });
 
-
             bandRef.get().then(snapshot => {
                 const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
-                //console.log('leader', leader);
                 if (currentUser.uid === leader) {
                     this.setState({
                         hasRights: true
@@ -153,53 +129,6 @@ class Setlists extends React.Component {
             });
         }
     }
-
-    /*Used in the workaround
-    componentWillReceiveProps(props){
-        for (let i = 0; i < (props.band.setlist &&(Object.keys(props.band.setlist)).length); i++){
-            if (props.band.setlist !== undefined && Object.keys(props.band).length > 10){
-                this.setState({
-                    isLoaded: true,
-                    band: this.props.band
-                });
-            }
-            else{
-                this.setState({
-                    isLoaded: false,
-                })
-            }
-        }
-    }
-
-    //This is a workaround
-    onHandleFallback = () => {
-        if (this.state.isLoaded == false
-          //&& this.props.band.bandtype
-        ) {
-          setTimeout(function () {
-            for (let i = 0; i < (this.props.band.setlist && (Object.keys(this.props.band.setlist)).length); i++) {
-              if (this.props.band.setlist !== undefined && Object.keys(this.props.setlist).length > 10) {
-                this.setState({
-                  isLoaded: true
-                })
-              }
-              else {
-                // if not able to retrieve props, wait another 4 seconds
-                setTimeout(function () {
-                  for (let i = 0; i < (this.props.band.setlist && (Object.keys(this.props.band.setlist)).length); i++) {
-                    if (this.props.band.setlist !== undefined && Object.keys(this.props.band).length > 10) {
-                      this.setState({
-                        isLoaded: true
-                      })
-                    }
-                  }
-                }.bind(this), 4000);  // wait 4 seconds, then isLoaded: true
-              }
-            }
-          }.bind(this), 500);  // wait 0.5 seconds, then isLoaded: true
-        }
-      }*/
-
 
     //Is called by the moduleView parent tag
     _onViewModuleClick = () => {
@@ -213,7 +142,7 @@ class Setlists extends React.Component {
         this.setState({ listView: true });
     };
 
-    //This function call the function onCreateSetlist with
+    //This function call the function onCreateSetlist with props
     _onSetlistCreateClick = () => {
         this.props.onCreateSetlist();
     };
@@ -226,23 +155,18 @@ class Setlists extends React.Component {
             message: `Are you sure you want to delete ${setlistTitle}?`,
         });
 
-        //Blank return statement
         if (!await this.open()) return;
 
-        //console.log(setlistId);
         const { band } = this.props;
         //Fetching setlist reference from firestore
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
         if (this.state.hasRights) {
-
             setlistRef.delete().then(() => {
                 console.log("Document succesfully removed");
-                //location.reload();
             }).catch((err) => {
                 console.error("Error removing document", err);
             });
         }
-
     }
 
     //This function changes the boolean value of sortedAlphabetically
@@ -257,7 +181,6 @@ class Setlists extends React.Component {
     //This function checks that setlistDate is a string, if so returns it and a space
     _formatedDate = (setlistDate) => {
         if (typeof setlistDate === 'string') {
-            //console.log('Setlist date: ' + setlistDate);
             return setlistDate + " ";
         }
     }
@@ -265,7 +188,6 @@ class Setlists extends React.Component {
     //This function checks that setlistTime is a string, if so returns it
     _formatedTime = (setlistTime) => {
         if (typeof setlistTime === 'string') {
-            //console.log("setlist time: " + setlistTime);
             return setlistTime;
         }
     }
@@ -274,20 +196,17 @@ class Setlists extends React.Component {
 
         const { classes, band } = this.props;
         const { listView, isLoaded } = this.state;
-        //isLoaded should be removed when the rendering problem is solved
+        //TODO: isLoaded should be removed when the rendering problem is solved
         const hasSetlists = band.setlists && band.setlists.length > 0;
-        //this.onHandleFallback();
         let setlists = [];
 
         if (this.state.sortedAlphabetically && hasSetlists) {
             setlists = band.setlists.slice();
             //Sorting the setlists alphabetically
             setlists = setlists.sort((a, b) => a.title.localeCompare(b.title)).slice();
-            //console.log("Scores: ", setlists)
         }
         else if (hasSetlists) {
             setlists = band.setlists.slice();
-            //console.log("Scores: ", setlists)
         }
 
         return <div>

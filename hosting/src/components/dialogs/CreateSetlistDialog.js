@@ -51,9 +51,6 @@ class CreateSetlistDialog extends React.Component {
     render() {
         const {classes} = this.props;
         const {title, date,time} = this.state;
-        //console.log('CSD time:' + time)
-
-        //console.log(date);
         
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
             <TextField 
