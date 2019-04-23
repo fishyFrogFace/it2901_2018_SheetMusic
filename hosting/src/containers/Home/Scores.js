@@ -2,14 +2,13 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, CircularProgress, Tooltip, InputLabel, LinearProgress
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress
 } from "material-ui";
 import DeleteIcon from 'material-ui-icons/Delete'
-import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote, Error, ThumbsUpDown } from "material-ui-icons";
+import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import firebase from 'firebase';
-
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -598,7 +597,7 @@ class Scores extends React.Component {
                     {
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}>
-                          {console.log('score', score)}
+
                           {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
                           {/* Hide the composer and arranger data if these field are not defined when uploading new score */}
                         </Typography>

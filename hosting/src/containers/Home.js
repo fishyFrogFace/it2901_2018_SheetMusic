@@ -116,7 +116,7 @@ class Home extends React.Component {
 
     async createScoreDoc(band, scoreData) {
         const data = {};
-        console.log(data);
+
         data.title = scoreData.title || 'Untitled Score';
 
         if (scoreData.composer) {
@@ -179,7 +179,6 @@ class Home extends React.Component {
 
     _onAddParts = async (scoreData, parts, tune) => {
         const { band } = this.state;
-        console.log(this.state);
         this.setState({ message: 'Adding parts...' });
 
 
