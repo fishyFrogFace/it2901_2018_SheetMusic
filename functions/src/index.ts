@@ -142,6 +142,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
             await promise;
         });
+
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
 
         // Create document
@@ -222,8 +223,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             '-cfg', '/tmp/.xpdfrc',
             '/tmp/score.pdf',
         ]);
-
         process2.childProcess.kill();
+        console.log('process2', process2)
 
         const data = {
             processing: admin.firestore.FieldValue.delete(),
