@@ -9,9 +9,6 @@ import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote, Error, Thum
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import firebase from 'firebase';
-import HoverImage from "react-hover-image";
-import transitions from 'material-ui/styles/transitions';
-
 
 
 function InstrumentIcon(props) {
@@ -112,15 +109,10 @@ const styles = theme => ({
     transitions: '1000ms'
   },
 
-  hoverImage: {
-    width: '100px',
-    height: '100px',
-  },
 
   expandedListItems: {
     paddingBottom: '0px',
     paddingTop: '0px',
-    //marginBottom: '-30px'
   },
 
   metadata: {
@@ -133,8 +125,6 @@ const styles = theme => ({
   },
 
   media2: {
-    // height: '150px',
-    // width: '50%',
     flex: 1
   },
 
@@ -143,7 +133,6 @@ const styles = theme => ({
   },
 
   progress: {
-    // margin: theme.spacing.unit * 2,
     color: 'black',
     paddingRight: '150px',
     margin: '50px',
@@ -164,7 +153,6 @@ const styles = theme => ({
   instrumentName: {
     flex: 0,
     marginRight: '80px',
-
   },
 
   partList: {
@@ -172,12 +160,9 @@ const styles = theme => ({
     [theme.breakpoints.down('xs')]: {
       display: 'grid'
     },
-
   },
 
-
   instrumentstyle: {
-
     borderStyle: 'groove',
     borderWidth: '1px',
     padding: '8px',
@@ -194,7 +179,6 @@ const styles = theme => ({
     '&:hover': {
       background: '#e2e2e2'
     }
-
   },
 
 
@@ -229,8 +213,6 @@ class Scores extends React.Component {
     if (window.localStorage.getItem('scoresListView')) {
       this.setState({ listView: true, });
     }
-
-
   }
 
   _onViewModuleClick = () => {
@@ -248,79 +230,8 @@ class Scores extends React.Component {
     score = ''
   };
 
-  // used on onChange for the orchestra alternatives, changing the state of instruments in the 
-  // expansion panel menu, so it get the correct bandtype-list from the db. 
-  // _onSelectChange = event => {
-  //   var bandtypeInstruments = this.state.bandtypes.filter(function (item) {
-  //     return item.name == event.target.value
-  //   })
-  //   this.setState({ bandtype: event.target.value, instruments: bandtypeInstruments[0].instruments });
-  // };
 
-  // The props renders too early, therefore this function set a state for isLoaded to correctly render the 
-  // image urls for each scrore
-  // componentWillReceiveProps = (props) => {
-  //   for (let i = 0; i < (props.band.scores && (Object.keys(props.band.scores)).length); i++) {
-  //     if (props.band.scores !== undefined && Object.keys(props.band).length > 10 && props.band.scores[i].parts !== undefined) {
-  //       this.setState({
-  //         isLoaded: true,
-  //         bandtype: props.band.bandtype,
-  //         band: this.props.band,
-  //         bandtypes: this.state.bandtypes
-  //       })
-  //     }
-  //     else {
-  //       this.setState({
-  //         isLoaded: false
-  //       })
-  //     }
-  //   }
-  // }
-
-
-  // componentWillReceiveProps(nextProps) {
-  //   // You don't have to do this check first, but it can help prevent an unneeded render
-  //   if (nextProps.vocalInstruments !== this.state.vocalInstruments) {
-  //     this.setState({ vocalInstruments: nextProps.vocalInstruments });
-  //   }
-  // }
-
-  // onHandleFallback = () => {
-  //   if (this.state.isLoaded === false
-  //     //&& this.props.band.bandtype
-  //   ) {
-  //     setTimeout(function () {
-  //       for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-  //         if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-  //           this.setState({
-  //             isLoaded: true
-  //           })
-  //         }
-  //         else {
-  //           // if not able to retrieve props, wait another 4 seconds
-  //           setTimeout(function () {
-  //             for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-  //               if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-  //                 this.setState({
-  //                   isLoaded: true
-  //                 })
-  //               }
-  //             }
-  //           }.bind(this), 4000);  // wait 4 seconds, then isLoaded: true
-  //         }
-  //       }
-  //     }.bind(this), 500);  // wait 0.5 seconds, then isLoaded: true
-  //   }
-  // }
-
-  onHandleFallback = () => {
-    // const hasScores = this.props.band.scores && this.props.band.scores.length > 0 && this.props.band.scores !== undefined;
-    // hasScores &&
-    //   this.setState({
-    //     isLoaded: true
-    //   })
-  }
-
+  // closes the active expanded panel when next is activated
   handleChange = panel => (event, expanded) => {
     this.setState({
       expanded: expanded ? panel : false,
@@ -368,7 +279,6 @@ class Scores extends React.Component {
       activeScore: e.target.id,
     })
 
-
     // TODO: should use a callback on state or componentDidMount instead of setTimeout,
     // setting a timeout because we have to wait for the async calls to get instrument data
     setTimeout(() => {
@@ -378,7 +288,6 @@ class Scores extends React.Component {
       })
       this.onGetInstrumentParts()
     }, 800);
-
   }
 
   onGetInstrumentParts = () => {
@@ -454,20 +363,6 @@ class Scores extends React.Component {
     return inScore;
   }
 
-  // TODO: get associated part to link to correct score.id
-  onHover = (id, e) => {
-    console.log('e', e)
-    console.log('id', id)
-    this.setState({
-      //isLoaded: true,
-    })
-  }
-
-  onHoverLeave = (id, e) => {
-    this.setState({
-      //isLoaded: false
-    })
-  }
 
   // mounting the instrument alternatives
   componentDidMount = () => {
@@ -501,9 +396,6 @@ class Scores extends React.Component {
     const { listView, isLoaded, expanded } = this.state;
     const hasScores = band.scores && band.scores.length > 0 && this.props.band.scores !== undefined;
 
-
-
-    //console.log('sortedVocalInstruments', sortedVocalInstruments)
     let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
     let composers = []; // --||--
     let instruments = []; // --||--
@@ -547,7 +439,6 @@ class Scores extends React.Component {
 
     return <div className={this.state.hidden}>
       < div className={classes.flex} >
-
         <div
         />
         <IconButton>
@@ -617,7 +508,6 @@ class Scores extends React.Component {
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
-
                             // TODO: get same styling as member page
                             onClick={(e) => {
                               if (window.confirm('Are you sure you wish to delete this item?'))
@@ -655,8 +545,6 @@ class Scores extends React.Component {
                         <NoteIcon />
                       </Avatar>
                     }
-                    //this._onMoreClick(score, e)}
-
                     action={<div className={classes.actions}>
                       <CardActions disableActionSpacing >
                         <IconButton
@@ -677,21 +565,18 @@ class Scores extends React.Component {
                   <Divider />
                   <div className={classes.cardContent}>
                     <div className={classes.media2}
-                    //onMouseOver={(e) => this.onHover(index, e)} onMouseLeave={e => this.onHoverLeave(index, e)}
                     >
-                      {loaded || score.parts == undefined || !isLoaded && 
-
+                      {loaded && score.parts == undefined && !isLoaded && // display progress bar while waiting for score parts to not be undefined,
+                        // invokes an update after some second set in componentdidmount to update score.parts state
                         <div className={classes.root}>
                           <LinearProgress color="secondary" />
                         </div>}
-                      {console.log('score.parts', score.parts)}
-
                       {
                         loaded ?
                           <CardMedia
                             className={classes.media}
                             image={
-                              score.parts == undefined ?
+                              score.parts == undefined ? // if not able to get the correct score part, dispaly default image
                                 'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
                                 :
                                 score.parts[0].pages[0].originalURL
@@ -711,10 +596,10 @@ class Scores extends React.Component {
                       }
                     </div>
                     {
-                      //isLoaded &&
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
+                          {/* Hide the composer and arranger data if these field are not set when uploading new score */}
                         </Typography>
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
