@@ -28,7 +28,7 @@ class CreateBandDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Create Band' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField label='Name' onChange={e => this._onDataChangeName('name', e)} style={{ marginBottom: 20, width: 300 }} />
+            <TextField id='dialog-textfield' label='Name' onChange={e => this._onDataChangeName('name', e)} style={{ marginBottom: 20, width: 300 }} />
         </AsyncDialog>
     }
 }
