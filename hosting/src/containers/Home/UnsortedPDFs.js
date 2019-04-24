@@ -52,8 +52,8 @@ class UnsortedPDFs extends React.Component {
     };
 
     _onAddParts = async pdfs => {
-        const { score, parts } = await this.addPartsDialog.open(pdfs);
-        this.props.onAddParts(score, parts);
+        const { score, parts, tune } = await this.addPartsDialog.open(pdfs);
+        this.props.onAddParts(score, parts, tune);
     };
 
     _onRemoveUnsortedPdf = async pdf => {
@@ -85,7 +85,7 @@ class UnsortedPDFs extends React.Component {
                                         <div style={{ position: 'relative' }}>
                                             <Button color='secondary' onClick={() => this._onAddFullScore(group.pdf)} disabled={group.pdf.processing}>Add</Button>
                                             <Button color='secondary' onClick={() => this._onRemoveUnsortedPdf(group)} >Remove</Button>
-                                            {group.pdf.processing && <CircularProgress color='secondary' style={{ position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12 }} size={24} />}
+                                            {group.pdf.processing && <CircularProgress color='secondary' style={{ position: 'absolute', top: '50%', left: '0%', marginTop: -12, marginLeft: -12 }} size={24} />}
                                         </div>
                                     </div>
                                     <Divider />
@@ -110,15 +110,14 @@ class UnsortedPDFs extends React.Component {
                                         <div style={{ position: 'relative' }}>
                                             <Button color='secondary' disabled={group.pdfs.some(pdf => pdf.processing)} onClick={() => this._onAddParts(group.pdfs)}>Add</Button>
                                             <Button color='secondary' onClick={() => this._onRemoveUnsortedPdf(group)}>Remove</Button>
-                                            {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary' style={{ position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12 }} size={24} />}
+                                            {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary' style={{ position: 'absolute', top: '50%', left: '0%', marginTop: -12, marginLeft: -12 }} size={24} />}
                                         </div>
                                     </div>
                                     <Divider />
                                     <List>
                                         {
                                             group.pdfs.map(pdf =>
-                                                <ListItem key={pdf.id} style={{ height: 40, padding: '10px 20px' }} button
-                                                    disableRipple>
+                                                <ListItem key={pdf.id} style={{ height: 40, padding: '10px 20px' }}>
                                                     <ListItemText primary={pdf.name} />
                                                 </ListItem>
                                             )

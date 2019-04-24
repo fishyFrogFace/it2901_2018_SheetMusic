@@ -24,4 +24,6 @@ yarn-error.log*
 .idea
 .firebase
 
+hosting/build/
 package-lock.json
+serviceAccount.json

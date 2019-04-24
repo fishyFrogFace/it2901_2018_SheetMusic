@@ -1,3 +1,8 @@
+/**
+ * AsyncDialog is used in AddSetlistEventDialog, AddSetlistScoresDialog, CreateBandDialog, CreateSetlistDialog
+ * DownloadSheetsDialog, EditSetlistDialog, JoinBandDialog
+ */
+
 import React from 'react';
 
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "material-ui";

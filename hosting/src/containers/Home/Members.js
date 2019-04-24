@@ -8,7 +8,7 @@ import {
 } from "material-ui";
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
-import { Done, Clear, Star, RemoveCircle, QueueMusic, Delete } from 'material-ui-icons';
+import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
 import ChangeBandNameDialog from '../../components/dialogs/ChangeBandNameDialog';
@@ -213,12 +213,12 @@ class Members extends React.Component {
          await bandRef.update({
             description: desc
          })
-         return;
       }
    };
 
    // Changing band name
    _onChangeBandName = async () => {
+      this.setState({ anchorEl: null });
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { name } = await this.changeNameDialog.open();
       await bandRef.update({
@@ -228,8 +228,8 @@ class Members extends React.Component {
 
    // Choosing or changing band type
    _onChooseBandType = async () => {
+      this.setState({ anchorEl: null });
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-
       bandRef.update({
          bandtype: null
       })
@@ -237,9 +237,9 @@ class Members extends React.Component {
 
    // Changing band description
    _onChangeBandDesc = async () => {
+      this.setState({ anchorEl: null });
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
       const { desc } = await this.changeDescDialog.open();
-
       if (desc) {
          await bandRef.update({
             description: desc
@@ -248,15 +248,17 @@ class Members extends React.Component {
       }
 
       await bandRef.update({
-         description: null
+         description: firebase.firestore.FieldValue.delete()
       })
 
    };
 
    // Deleting a band (only possible as band leader)
    _onDeleteBand = async () => {
+      this.setState({ anchorEl: null });
+
       let band = this.props.band;
-      const bandRef = firebase.firestore().doc(`bands/${band.id}`);
+      const bandRef = firebase.firestore().collection(`bands`).doc(`${band.id}`);
       const userRef = firebase.firestore().doc(`users/${this.state.user}`);
 
       // Confirm modal about rejecting
@@ -267,15 +269,15 @@ class Members extends React.Component {
       if (!await this.open()) return;
 
       // Checking if user is band leader
-      if (this.state.isLeader && band.creatorRef.id == this.state.user) {
+      if (this.state.isLeader && band.creatorRef.id === this.state.user) {
 
          // Deleting scores from storage
-         if (await band.score.length > 0) {
+         if (await band.score && band.score.length > 0) {
             console.log('Deleting scores not yet implemented')
          }
 
          // Deleting unsorted pdfs from storage
-         if (await band.pdfs.length > 0) {
+         if (await band.pdf && band.pdfs.length > 0) {
             console.log('Deleting unsorted pdfs not yet implemented')
          }
 
@@ -285,24 +287,71 @@ class Members extends React.Component {
 
          if (filteredRefs.length > 0) {
             await userRef.update({
-               bandRefs: filteredRefs,
                defaultBandRef: filteredRefs[0],
+               bandRefs: filteredRefs,
             });
          }
-
          else {
             await userRef.update({
-               bandRefs: filteredRefs,
+               defaultBandRef: firebase.firestore.FieldValue.delete(),
+               bandRefs: firebase.firestore.FieldValue.delete(),
             });
          }
 
+         // Deleting the band and all its subcollections
+         await this._onDeleteCollection(bandRef.collection('leader'), 20);
+         await this._onDeleteCollection(bandRef.collection('members'), 50);
+         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
+         await this._onDeleteCollection(bandRef.collection('scores'), 50);
+         await this._onDeleteCollection(bandRef.collection('setlists'), 50);
+         await bandRef.delete();
 
+         //window.location.reload();
 
-         // Deleting band
-         await bandRef.delete()
-         console.log('Band deleted');
       }
    }
+
+   // Deleting collections with subcollections
+   _onDeleteCollection = async (collectionPath, batchSize) => {
+      var query = collectionPath;
+
+      return new Promise((resolve, reject) => {
+         this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+       });
+   }
+
+   // Deleting the subcollections one by one
+   _onDeleteQueryBatch(query, batchSize, resolve, reject) {
+      query.get()
+        .then((snapshot) => {
+          // When there are no documents left, we are done
+          if (snapshot.size == 0) {
+            return 0;
+          }
+    
+          // Delete documents in a batch
+          var batch = firebase.firestore().batch();
+          snapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+          });
+    
+          return batch.commit().then(() => {
+            return snapshot.size;
+          });
+        }).then((numDeleted) => {
+          if (numDeleted === 0) {
+            resolve();
+            return;
+          }
+    
+          // Recurse on the next process tick, to avoid
+          // exploding the stack.
+          process.nextTick(() => {
+            this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+          });
+        })
+        .catch(reject);
+    }
 
    // Member leaving the band
    _onLeave = async (member) => {
@@ -312,7 +361,6 @@ class Members extends React.Component {
 
       let admins = (await bandRef.get()).data().admins;
       let members = [];
-      let leaders = [];
 
       await bandRef.collection(`/members`).get().then(docs => {
          docs.forEach(doc => {
@@ -320,35 +368,12 @@ class Members extends React.Component {
          });
       });
 
-      await bandRef.collection(`/leader`).get().then(docs => {
-         docs.forEach(doc => {
-            leaders.push(doc.data());
-         });
-      });
-
       // Confirm modals about leaving
       this.setState({
          title: "Leave band",
+         message: `Are you sure you want to leave ${this.props.band.name}?`,
       });
-      if (member.admin && admins.length < 2 && members.length > 1) {
-         this.setState({
-            message: `You are the final admin of ${this.props.band.name}. To leave the band you have to promote someone else to admin first.`,
-         });
-         if (!await this.open()) return;
-         return;
-      }
-      else if (members.length < 1) {
-         this.setState({
-            message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
-         });
-         if (!await this.open()) return;
-      }
-      else {
-         this.setState({
-            message: `Are you sure you want to leave ${this.props.band.name}?`,
-         });
-         if (!await this.open()) return;
-      }
+      if (!await this.open()) return;
 
       // Remove member from admin list if member was admin
       if (member.admin) {
@@ -360,7 +385,7 @@ class Members extends React.Component {
          });
       }
 
-      // Remove member from bands member list
+      // Remove member from band
       await memberRef.delete();
 
       // Remove band from user bandRef list and update defaultBandRef to the first element in bandRef list
@@ -415,7 +440,7 @@ class Members extends React.Component {
          title: "Leave band",
       });
 
-      if (person.leader && leaders.lenght < 2 && members.lenght > 0) {
+      if (person.leader && leaders.length === 1 && members.length > 0) {
          this.setState({
             message: `You are the only bandleader of ${this.props.band.name}. To leave the band you have to promote someone else to bandleader first.`,
          });
@@ -423,9 +448,10 @@ class Members extends React.Component {
          return;
       }
 
-      else if (leaders.lenght < 2 && members.length < 1) {
+      else if (person.leader && leaders.length === 1 && members.length === 0) {
          this.setState({
-            message: `Are you sure you want to leave ${this.props.band.name}? You are the last member of the band and this action will lead to the deletion of the band.`,
+            message: `Are you sure you want to leave ${this.props.band.name}? 
+            You are the last member of the band and this action will lead to the deletion of the band.`,
          });
          if (!await this.open()) return;
          this._onDeleteBand();
@@ -580,6 +606,7 @@ class Members extends React.Component {
 
    // Demoting member from admin
    _onDemoteAdmin = async (member) => {
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
       // Confirm modal about demoting member as admin
@@ -589,9 +616,20 @@ class Members extends React.Component {
       });
       if (!await this.open()) return;
 
+      // Updating admin status for member
       await memberRef.update({
          admin: false,
       });
+
+      // Removing admin from band adminlist
+      let admins = (await bandRef.get()).data().admins || [];
+      let filteredAdmins = await admins.filter(ref => ref !== member.uid);
+
+      if (filteredAdmins.length > 0) {
+         await bandRef.update({
+            admins: filteredAdmins,
+         });
+      }
    }
 
    // Function when clicking checkbox
@@ -611,7 +649,6 @@ class Members extends React.Component {
       this.setState({ [name]: event.target.value });
 
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-
       bandRef.update({
          bandtype: event.target.value
       })
@@ -702,14 +739,16 @@ class Members extends React.Component {
       const open = Boolean(anchorEl);
       let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
 
+
       if (this.state.isLeader) {
          return <div>
             <div className={classes.divBox}>
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
 
-                     <Typography className={classes.headerPanel}> {band.name}
+                     <Typography id='band-name-title' className={classes.headerPanel}> {band.name}
                         <IconButton
+                           id='see-more-band-button'
                            className={classes.seeMoreButton}
                            aria-label="See more"
                            aria-owns={open ? 'long-menu' : undefined}
@@ -724,10 +763,10 @@ class Members extends React.Component {
                            open={Boolean(anchorEl)}
                            onClose={this.handleCloseSeeMore}
                         >
-                           <MenuItem onClick={this._onChangeBandName}>Change bandname</MenuItem>
-                           <MenuItem onClick={this._onChooseBandType}>Change bandtype</MenuItem>
-                           <MenuItem onClick={this._onChangeBandDesc}>Change description</MenuItem>
-                           <MenuItem onClick={this._onDeleteBand}>Delete band</MenuItem>
+                           <MenuItem id='change-bandName-button' onClick={this._onChangeBandName}>Change bandname</MenuItem>
+                           <MenuItem id='change-bandType-button' onClick={this._onChooseBandType}>Change bandtype</MenuItem>
+                           <MenuItem id='change-bandDesc-button' onClick={this._onChangeBandDesc}>Change description</MenuItem>
+                           <MenuItem id='delete-band-button' onClick={this._onDeleteBand}>Delete band</MenuItem>
                         </Menu>
                      </Typography>
 
@@ -765,7 +804,7 @@ class Members extends React.Component {
                      {band.description &&
                         <div>
                            <Typography className={classes.heading}> Band description </Typography>
-                           <Typography className={classes.secondaryHeading}> {band.description} </Typography>
+                           <Typography id='band-description-text' className={classes.secondaryHeading}> {band.description} </Typography>
                         </div>
                      }
 
@@ -861,6 +900,7 @@ class Members extends React.Component {
                            </FormGroup>
                         </ExpansionPanelDetails>
                      </ExpansionPanel>
+                     <Divider />
 
                      {band.members && band.members.length > 0 &&
                         <div>
@@ -975,8 +1015,9 @@ class Members extends React.Component {
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
 
-                     <Typography className={classes.headerPanel}> {band.name}
+                     <Typography id='band-name-title' className={classes.headerPanel}> {band.name}
                         <IconButton
+                           id='see-more-band-button'
                            className={classes.seeMoreButton}
                            aria-label="See more"
                            aria-owns={open ? 'long-menu' : undefined}
@@ -1244,7 +1285,7 @@ class Members extends React.Component {
                {band.leader && band.leader.length > 0 &&
                   <Paper style={{ width: 500 }}>
 
-                     <Typography className={classes.headerPanel}> {band.name} </Typography>
+                     <Typography id='band-name-title' className={classes.headerPanel}> {band.name} </Typography>
 
                      <Typography className={classes.heading} style={{ marginTop: '10px' }}> Bandcode </Typography>
                      <Typography className={classes.secondaryHeading}> {band.code} </Typography>
