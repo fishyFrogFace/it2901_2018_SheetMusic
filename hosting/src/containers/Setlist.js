@@ -92,7 +92,7 @@ class Setlist extends Component {
         const { band, setlist } = this.state;
         const setlistRef = firebase.firestore().doc(`bands/${band.id}/setlists/${setlist.id}`);
 
-        // try {
+        try {
             switch (type) {
                 case 'addScore':
                     const selectedScoreIds = await this.addScoreDialog.open();
@@ -130,6 +130,7 @@ class Setlist extends Component {
                     let selectedInstrument = null;  // Selected instrument in dialog
                     const thiss = this;             // For use in the promise
                     const items = this.state.setlist.items;                 // Get the items from the setlist
+                    const setlistTitle = this.state.setlist.title;          // Get the items from the setlist
                     const dateString = new Date().toLocaleDateString();     // Get date string
                     
                     // Get what instruments are in the setlist and open a dialog
@@ -159,18 +160,25 @@ class Setlist extends Component {
                         }
                     });
                     
-                    var array = [];
+                    var array = []; //Promise array to make sure everything is in the right order
                     var instrumentPromiseArray = [];
+                    var overview = [];  // To make the overview
+                    var overviewIndex = 0;
 
                     items.forEach((item) => {
                         switch(item.type) {
                             case('event'):
+                                overview.push({ title: item.title, page: 0, type: item.type })
                                 array.push(new Promise(resolve => {
                                     resolve([[item.title, item.description, item.time]]);
                                 }));
                                 break;
 
                             case('score'):
+                                for(let i = 0; i < item.score.partCount; i++) {
+                                    overview.push({ title: item.score.title, page: 0, type: item.type })
+                                }
+                                
                                 array.push(new Promise(resolve => {
                                     item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
                                         
@@ -213,6 +221,12 @@ class Setlist extends Component {
                     });
                     Promise.all(array).then(function(values) {
                         Promise.all(instrumentPromiseArray).then(function(instrumentArray) {
+                            let instIndex = 0;
+                            overview.forEach(item => { //Add instrument to overview
+                                if(item.type == 'score') {
+                                    item.title += " (" + instrumentArray[instIndex++] + ")";
+                                }
+                            });
 
                             const doc = new jsPDF('p', 'px', 'a4'); // Make PDF
                             const size_increase = 1.33334;   // jsPDF doesn't agree with itself on some sizes, no idea why
@@ -227,6 +241,7 @@ class Setlist extends Component {
                             let pageDict = {};
                             let totalPartIndex = 0;          // Counter for parts processed, for later indexing
                             let scoreIndex = 0;
+                            const dy = 12;                   // Line space in pixels
                             const a4_size = [595.28, 841.89];// For convenience, specific numbers was found in jsPDF source code
                             doc.setFont('Times');            // Set the fotn, for a list of fonts, do doc.getFontList()
                             doc.setFontSize(normalSize);     // Set textsize
@@ -238,6 +253,9 @@ class Setlist extends Component {
 
                                     //Item is part (is array of pages in said part)
                                     if(items[0].startsWith("data:image/png;base64,")) {
+
+                                        // Fix correct page number for the overview
+                                        overview[overviewIndex++].page = pageNumber;
                                         
                                         // Check if part is of instrument that should be included in PDF
                                         if(selectedInstrument == instrumentArray[totalPartIndex] ||
@@ -246,7 +264,7 @@ class Setlist extends Component {
                                             items.forEach(item => {
                                                 doc.addPage();
                                                 doc.addImage(item, 'PNG', 0, 0, a4_size[0]/size_increase, a4_size[1]/size_increase);
-                                                doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: ${pageNumber++}`, 20, 625);
+                                                doc.text(`${dateString}     ${setlist.title}     Downloaded by: ${band.name}     Page: ${pageNumber++}`, 20, 625);
                                             });
                                         }
                                         totalPartIndex++;
@@ -254,11 +272,13 @@ class Setlist extends Component {
 
                                     //Item is event
                                     else { 
+                                        // Fix correct page number for the overview
+                                        overview[overviewIndex++].page = pageNumber;
+
                                         doc.addPage();
                                         doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
 
                                         let y = descspace;
-                                        const dy = 12;          //Pixels
                                         
                                         var desc = items[1];
 
@@ -299,17 +319,38 @@ class Setlist extends Component {
                                 });
                             });
 
+                            //Overview creation
+                            let y = descspace
                             doc.setPage(1)
-                            doc.text('I am on page 1', 10, 10)
+                            doc.setFontSize(titleSize);
+                            doc.text(setlistTitle, leftmargin, 50); 
+                            doc.setFontSize(normalSize);
+                            overview.forEach(item => {
+                                switch(item.type) {
+                                    case('event'):
+                                        doc.text(item.title + " - " + item.page, leftmargin, y);
+                                        y += dy;
+                                        break;
+
+                                    case('score'):
+                                        let currentInstrument = item.title.split("(")[1].split(")")[0];
+                                        if(selectedInstrument == currentInstrument ||
+                                           selectedInstrument == "Everything") { 
+                                            doc.text(item.title + " - " + item.page, leftmargin, y);
+                                            y += dy;
+                                        }
+                                        break;
+                                }
+                            });
                             doc.save(`${setlist.title}.pdf`);
                         
                         });
                     });
                     break;
             }
-        // } catch (err) {
-        //     console.log(err);
-        // }
+        } catch (err) {
+            console.log(err);
+        }
 
         this.setState({ anchorEl: null });
     }

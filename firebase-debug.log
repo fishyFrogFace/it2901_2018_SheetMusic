@@ -1,0 +1,113 @@
+[debug] [2019-04-09T08:52:49.293Z] ----------------------------------------------------------------------
+[debug] [2019-04-09T08:52:49.295Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\node\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js serve
+[debug] [2019-04-09T08:52:49.295Z] CLI Version:   6.5.0
+[debug] [2019-04-09T08:52:49.295Z] Platform:      win32
+[debug] [2019-04-09T08:52:49.295Z] Node Version:  v11.12.0
+[debug] [2019-04-09T08:52:49.296Z] Time:          Tue Apr 09 2019 10:52:49 GMT+0200 (Central European Summer Time)
+[debug] [2019-04-09T08:52:49.296Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-04-09T08:52:49.308Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-04-09T08:52:49.308Z] > authorizing via signed-in user
+[debug] [2019-04-09T08:52:49.308Z] [iam] checking project scores-bc679 for permissions ["firebase.projects.get"]
+[debug] [2019-04-09T08:52:49.310Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/scores-bc679:testIamPermissions  
+
+[debug] [2019-04-09T08:52:50.274Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T08:52:50.275Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scores-bc679  
+ 
+[debug] [2019-04-09T08:52:51.209Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from 'C:\Users\Public\Documents\GitProjects\it2901_2018_SheetMusic'...
+[info] 
+[info] i  functions: Preparing to emulate functions.
+[debug] [2019-04-09T08:52:51.753Z] Fetching environment
+[debug] [2019-04-09T08:52:51.755Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/717099268802:getServerAppConfig  
+ 
+[debug] [2019-04-09T08:52:51.755Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/717099268802/clients/_:getWebAppConfig  
+ 
+[debug] [2019-04-09T08:52:52.009Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T08:52:52.010Z] Starting @google-cloud/functions-emulator
+[debug] [2019-04-09T08:52:52.073Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: hosting/build
+[info] +  hosting: Local server: http://localhost:5000
+[debug] [2019-04-09T08:52:53.555Z] Parsing function triggers
+[info] +  functions: analyzePDF: http://localhost:5001/scores-bc679/us-central1/analyzePDF
+[info] +  functions: generatePDF: http://localhost:5001/scores-bc679/us-central1/generatePDF
+[info] +  functions: uploadFromDropbox: http://localhost:5001/scores-bc679/us-central1/uploadFromDropbox
+[debug] [2019-04-10T09:50:47.603Z] ----------------------------------------------------------------------
+[debug] [2019-04-10T09:50:47.608Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\node\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js serve
+[debug] [2019-04-10T09:50:47.608Z] CLI Version:   6.5.0
+[debug] [2019-04-10T09:50:47.608Z] Platform:      win32
+[debug] [2019-04-10T09:50:47.609Z] Node Version:  v11.12.0
+[debug] [2019-04-10T09:50:47.614Z] Time:          Wed Apr 10 2019 11:50:47 GMT+0200 (Central European Summer Time)
+[debug] [2019-04-10T09:50:47.614Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-04-10T09:50:47.644Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-04-10T09:50:47.645Z] > authorizing via signed-in user
+[debug] [2019-04-10T09:50:47.645Z] [iam] checking project scores-bc679 for permissions ["firebase.projects.get"]
+[debug] [2019-04-10T09:50:47.648Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2019-04-10T09:50:47.649Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2019-04-10T09:50:47.853Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-10T09:50:47.859Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/scores-bc679:testIamPermissions  
+
+[debug] [2019-04-10T09:50:48.835Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-10T09:50:48.837Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scores-bc679  
+ 
+[debug] [2019-04-10T09:50:49.763Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from 'C:\Users\Public\Documents\GitProjects\it2901_2018_SheetMusic'...
+[info] 
+[info] i  functions: Preparing to emulate functions.
+[debug] [2019-04-10T09:50:51.348Z] Fetching environment
+[debug] [2019-04-10T09:50:51.360Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/717099268802:getServerAppConfig  
+ 
+[debug] [2019-04-10T09:50:51.363Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/717099268802/clients/_:getWebAppConfig  
+ 
+[debug] [2019-04-10T09:50:51.651Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-10T09:50:51.652Z] Starting @google-cloud/functions-emulator
+[debug] [2019-04-10T09:50:51.845Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: hosting/build
+[info] +  hosting: Local server: http://localhost:5000
+[debug] [2019-04-10T09:50:54.971Z] Parsing function triggers
+[info] +  functions: analyzePDF: http://localhost:5001/scores-bc679/us-central1/analyzePDF
+[info] +  functions: generatePDF: http://localhost:5001/scores-bc679/us-central1/generatePDF
+[info] +  functions: uploadFromDropbox: http://localhost:5001/scores-bc679/us-central1/uploadFromDropbox
+[debug] [2019-04-23T07:53:23.140Z] ----------------------------------------------------------------------
+[debug] [2019-04-23T07:53:23.143Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\node\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js serve
+[debug] [2019-04-23T07:53:23.144Z] CLI Version:   6.5.0
+[debug] [2019-04-23T07:53:23.144Z] Platform:      win32
+[debug] [2019-04-23T07:53:23.144Z] Node Version:  v11.12.0
+[debug] [2019-04-23T07:53:23.145Z] Time:          Tue Apr 23 2019 09:53:23 GMT+0200 (Central European Summer Time)
+[debug] [2019-04-23T07:53:23.145Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-04-23T07:53:23.168Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-04-23T07:53:23.171Z] > authorizing via signed-in user
+[debug] [2019-04-23T07:53:23.171Z] [iam] checking project scores-bc679 for permissions ["firebase.projects.get"]
+[debug] [2019-04-23T07:53:23.174Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2019-04-23T07:53:23.174Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2019-04-23T07:53:23.364Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-23T07:53:23.371Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/scores-bc679:testIamPermissions  
+
+[debug] [2019-04-23T07:53:23.658Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-23T07:53:23.659Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/scores-bc679  
+ 
+[debug] [2019-04-23T07:53:24.602Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from 'C:\Users\Public\Documents\GitProjects\it2901_2018_SheetMusic'...
+[info] 
+[info] i  functions: Preparing to emulate functions.
+[debug] [2019-04-23T07:53:25.610Z] Fetching environment
+[debug] [2019-04-23T07:53:25.614Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/717099268802:getServerAppConfig  
+ 
+[debug] [2019-04-23T07:53:25.614Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/717099268802/clients/_:getWebAppConfig  
+ 
+[debug] [2019-04-23T07:53:25.914Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-23T07:53:25.914Z] Starting @google-cloud/functions-emulator
+[debug] [2019-04-23T07:53:26.074Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: hosting/build
+[info] +  hosting: Local server: http://localhost:5000
+[debug] [2019-04-23T07:53:27.979Z] Parsing function triggers
+[info] +  functions: analyzePDF: http://localhost:5001/scores-bc679/us-central1/analyzePDF
+[info] +  functions: generatePDF: http://localhost:5001/scores-bc679/us-central1/generatePDF
+[info] +  functions: uploadFromDropbox: http://localhost:5001/scores-bc679/us-central1/uploadFromDropbox
