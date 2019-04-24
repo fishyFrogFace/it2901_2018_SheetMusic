@@ -190,39 +190,39 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         if (true) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
-                    name: 'Score',
-                    expr: /(: )?score/i
-                }, {
-                    name: 'Vocal',
-                    expr: /(\w )?vocal/i
-                }, {
-                    name: 'Alto Sax',
-                    expr: /(\w )?alto sax\. \d/i
-                }, {
-                    name: 'Tenor Sax',
-                    expr: /(\w )?tenor sax\. \d/i
-                }, {
-                    name: 'Baritone Sax',
-                    expr: /(\w )?baritone sax\./i
-                }, {
-                    name: 'Trumpet',
-                    expr: /(\w )?trumpet .{0,6}\d/i
-                }, {
-                    name: 'Trombone',
-                    expr: /(\w )?trombone \d/i
-                }, {
-                    name: 'Guitar',
-                    expr: /(\w )?guitar/i
-                }, {
-                    name: 'Piano',
-                    expr: /(\w )?piano/i
-                }, {
-                    name: 'Bass',
-                    expr: /(\w )?bass/i
-                }, {
-                    name: 'Drum Set',
-                    expr: /(\w )?drum set/i
-                }];
+                name: 'Score',
+                expr: /(: )?score/i
+            }, {
+                name: 'Vocal',
+                expr: /(\w )?vocal/i
+            }, {
+                name: 'Alto Sax',
+                expr: /(\w )?alto sax\. \d/i
+            }, {
+                name: 'Tenor Sax',
+                expr: /(\w )?tenor sax\. \d/i
+            }, {
+                name: 'Baritone Sax',
+                expr: /(\w )?baritone sax\./i
+            }, {
+                name: 'Trumpet',
+                expr: /(\w )?trumpet .{0,6}\d/i
+            }, {
+                name: 'Trombone',
+                expr: /(\w )?trombone \d/i
+            }, {
+                name: 'Guitar',
+                expr: /(\w )?guitar/i
+            }, {
+                name: 'Piano',
+                expr: /(\w )?piano/i
+            }, {
+                name: 'Bass',
+                expr: /(\w )?bass/i
+            }, {
+                name: 'Drum Set',
+                expr: /(\w )?drum set/i
+            }];
             // Pattern for filtering out arranger and composer
             const arrangerPattern = /[\\n\r]*Arranged by\s*([^\n\r]*)/g;
             const composerPattern = /[\\n\r]*Words and Music by\s*([^\n\r]*)/g;
