@@ -191,7 +191,7 @@ class Score extends React.Component {
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                            value={index}>{part.instrument.name + ' ' + part.tune} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
+                                            value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
 
                                         </MenuItem>
                                     )

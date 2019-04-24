@@ -67,16 +67,16 @@ exports.makeInstrumentList = functions.storage.object().onFinalize((object, cont
     // This only runs when instrumentCheck is true
     const instCheckRef = yield admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
     const checked = (yield instCheckRef.get()).data().checked;
-    const instrumentList = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax',
+    const instruments = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax',
         'Baryton Sax', 'Piano', 'Drums', 'Guitar', 'Bass', 'Flute', 'Piccolo Flute', 'Clarinet',
         'Walthorn', 'Cornet', 'Euphonium', 'Tuba'];
     if (checked) {
-        for (let inst in instrumentList) {
+        for (let inst in instruments) {
             for (let i = 1; i <= 4; i++) {
-                const instList = yield admin.firestore().collection(`instrumentList`).add({
-                    displayName: `${i}. ${instrumentList[inst]}`,
-                    name: `${instrumentList[inst]} ${i}`,
-                    type: instrumentList[inst],
+                const instList = yield admin.firestore().collection(`instruments`).add({
+                    displayName: `${i}. ${instruments[inst]}`,
+                    name: `${instruments[inst]} ${i}`,
+                    type: instruments[inst],
                     voice: i
                 });
             }
@@ -118,7 +118,6 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             });
             yield promise;
         }));
-        console.log('pfdInfo', pdfInfo);
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
         // Create document
         const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
@@ -190,39 +189,39 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         if (true) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
-                name: 'Score',
-                expr: /(: )?score/i
-            }, {
-                name: 'Vocal',
-                expr: /(\w )?vocal/i
-            }, {
-                name: 'Alto Sax',
-                expr: /(\w )?alto sax\. \d/i
-            }, {
-                name: 'Tenor Sax',
-                expr: /(\w )?tenor sax\. \d/i
-            }, {
-                name: 'Baritone Sax',
-                expr: /(\w )?baritone sax\./i
-            }, {
-                name: 'Trumpet',
-                expr: /(\w )?trumpet .{0,6}\d/i
-            }, {
-                name: 'Trombone',
-                expr: /(\w )?trombone \d/i
-            }, {
-                name: 'Guitar',
-                expr: /(\w )?guitar/i
-            }, {
-                name: 'Piano',
-                expr: /(\w )?piano/i
-            }, {
-                name: 'Bass',
-                expr: /(\w )?bass/i
-            }, {
-                name: 'Drum Set',
-                expr: /(\w )?drum set/i
-            }];
+                    name: 'Score',
+                    expr: /(: )?score/i
+                }, {
+                    name: 'Vocal',
+                    expr: /(\w )?vocal/i
+                }, {
+                    name: 'Alto Sax',
+                    expr: /(\w )?alto sax\. \d/i
+                }, {
+                    name: 'Tenor Sax',
+                    expr: /(\w )?tenor sax\. \d/i
+                }, {
+                    name: 'Baritone Sax',
+                    expr: /(\w )?baritone sax\./i
+                }, {
+                    name: 'Trumpet',
+                    expr: /(\w )?trumpet .{0,6}\d/i
+                }, {
+                    name: 'Trombone',
+                    expr: /(\w )?trombone \d/i
+                }, {
+                    name: 'Guitar',
+                    expr: /(\w )?guitar/i
+                }, {
+                    name: 'Piano',
+                    expr: /(\w )?piano/i
+                }, {
+                    name: 'Bass',
+                    expr: /(\w )?bass/i
+                }, {
+                    name: 'Drum Set',
+                    expr: /(\w )?drum set/i
+                }];
             // Pattern for filtering out arranger and composer
             const arrangerPattern = /[\\n\r]*Arranged by\s*([^\n\r]*)/g;
             const composerPattern = /[\\n\r]*Words and Music by\s*([^\n\r]*)/g;
@@ -230,7 +229,7 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             let _pages = pdfText.split('\f');
             console.log('Pages:', _pages);
             console.log('PagesLength', _pages.length);
-            const snapshot = yield admin.firestore().collection('instrumentList').get();
+            const snapshot = yield admin.firestore().collection('instruments').get();
             const instruments = snapshot.docs.map(doc => ({ name: doc.data().name, ref: doc.ref }));
             const instrmList = [];
             for (let i in instruments) {

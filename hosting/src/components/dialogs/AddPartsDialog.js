@@ -68,7 +68,7 @@ class AddPartsDialog extends React.Component {
 
             this.setState({
                 instruments: instruments,
-                parts: pdfs.map(pdf => ({ pdf: pdf, instrumentId: instruments[0].id })),
+                parts: pdfs.map(pdf => ({ pdf: pdf, instrumentId: pdf.parts[0].instrument[0].id !== undefined ? pdf.parts[0].instrument[0].id : instruments[0].id })),
             });
 
             this.__resolve = resolve;
