@@ -39,9 +39,6 @@ const styles = theme => ({
     cursor: 'pointer',
 
   },
-  media: {
-    flex: 2
-  },
 
   flex: {
     display: 'inline-flex',
@@ -78,6 +75,12 @@ const styles = theme => ({
     textAlign: 'center',
     '&:first-child': {
       paddingLeft: '8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      minWidth: '0px',
+    },
+    '&:hover': {
+      background: '#e2e2e2'
     }
   },
 
@@ -118,7 +121,7 @@ const styles = theme => ({
   },
 
   media: {
-    flex: 1,
+    flex: 2,
     backgroundPosition: 'top',
     height: '160px'
   },
@@ -160,26 +163,6 @@ const styles = theme => ({
       display: 'grid'
     },
   },
-
-  instrumentstyle: {
-    borderStyle: 'groove',
-    borderWidth: '1px',
-    padding: '8px',
-    margin: '5px',
-    cursor: 'pointer',
-    minWidth: '80px',
-    textAlign: 'center',
-    '&:first-child': {
-      paddingLeft: '8px',
-    },
-    [theme.breakpoints.down('sm')]: {
-      minWidth: '0px',
-    },
-    '&:hover': {
-      background: '#e2e2e2'
-    }
-  },
-
 
 });
 
