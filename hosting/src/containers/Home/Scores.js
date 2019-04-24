@@ -179,8 +179,6 @@ class Scores extends React.Component {
       sortedAlphabetically: false,
       defaultComposer: 'All Composers',
       chosenComposer: 'All Composers',
-      defaultInstrument: 'All Instruments',
-      chosenInstrument: 'All Instruments',
       allInstruments: [],
       allPartsInstrument: [],
       instrumentParts: [],
@@ -330,21 +328,6 @@ class Scores extends React.Component {
     this.setState({ chosenComposer: e.target.value })
   };
 
-  _changeInstrument = (e) => {
-    this.setState({ chosenInstrument: e.target.value })
-
-  };
-
-  _instrumentInScore(instrument, score) {
-    let inScore = false;
-    this.state.allInstruments.map(instrumentInScore => {
-      if (instrumentInScore === instrument) {
-        inScore = true;
-      }
-    });
-    return inScore;
-  }
-
 
   // mounting the instrument alternatives
   componentDidMount = () => {
@@ -380,47 +363,34 @@ class Scores extends React.Component {
 
     let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
     let composers = []; // --||--
-    let instruments = []; // --||--
-    if (hasScores) { // Should not fetch band.scores if empty
+    if (hasScores) { // Should not fetch band.scores if empty etc
       if (this.state.sortedAlphabetically) { // If alphabetically is chosen
         scores = band.scores.slice(); // Get default
         scores = scores.sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
-      } else {
+      }
+      else {
         scores = band.scores.slice(); // Use default
       }
+
       if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
         scores = scores.filter(score => score.composer === this.state.chosenComposer) // The scores are filtered on composer
       }
-      let chosenInstrument = this.state.chosenInstrument;
-      if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
-        scores = scores.filter(score => this._instrumentInScore(chosenInstrument, score)) // The scores are filtered on instrument
-      }
-      // Make list of all available composers
+
+      // Make list of all available composers to use in <Select> menu
       composers.push(this.state.defaultComposer); // Get default
       band.scores.map(score => {
         if (!composers.includes(score.composer)) { // And all unique composer
-          composers.push(score.composer)
+          composers.push(score.composer);
           composers = composers.filter(function (element) {
             return element !== undefined; // filter out undefined values
           });
         }
       });
-      // Make list of all available instruments
-      if (band.scores.parts) {
-        band.scores.map(score => {
-          let parts = this._onGetParts(band, score);
 
-          parts.map(instrument => {
-            if (!instruments.includes(instrument)) { // And all unique instruments
-              instruments.push(instrument)
-            }
-          })
-        })
-      }
     }
 
     return <div className={this.state.hidden}>
-      < div className={classes.flex} >
+      <div className={classes.flex} >
         <div
         />
         <IconButton>
@@ -454,25 +424,7 @@ class Scores extends React.Component {
             }
           </Select>
         </div>
-
-        {/* Select the instrument */}
-        <div className={classes.selectArrangement}>
-          <InputLabel style={{ padding: 5 }} htmlFor="instrument"></InputLabel>
-          <Select
-            onChange={this._changeInstrument}
-            autoWidth
-            value={this.state.chosenInstrument}
-            renderValue={() => this.state.chosenInstrument}
-            inputProps={{ id: 'instrument' }}
-            id="filterInstrument"
-          >
-            {this.state.allInstruments.map((instrument, key) =>
-              <MenuItem key={key} value={instrument}>{instrument}</MenuItem>)
-            }
-          </Select>
-        </div>
-
-      </div >
+      </div>
 
       <div>
         {/* the simple list view */}
