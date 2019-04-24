@@ -7,22 +7,17 @@ import createFilterOptions from 'react-select-fast-filter-options';
 import 'react-select/dist/react-select.css';
 import 'react-virtualized/styles.css'
 import 'react-virtualized-select/styles.css'
+
 import {
     Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItem, ListItemText, Step,
-    StepLabel,
-    Stepper,
-    SvgIcon, Typography,
-    withStyles, FormControl, InputLabel,
-    FormHelperText, 
-    TextField,
-    MenuItem,
-    Input,
-    Grid
+    StepLabel, Stepper, SvgIcon, Typography, withStyles, FormControl, InputLabel, FormHelperText, 
+    TextField, MenuItem, Input, Grid
 } from "material-ui";
 
 class DownloadSetlistDialog extends React.Component {
-    state = {
-    };
+    everything = { value: "Everything", label: "Everything" };
+    default = { value: "", label: "" };
+    state = { };
 
     componentDidMount() {
         this.props.onRef(this);
@@ -32,47 +27,41 @@ class DownloadSetlistDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
-    async open(instrument) {
-        this.setState({instrument: instrument});
-        await this.dialog.open();
-        return {}
+    // When the dialog is opened, this runs
+    async open(instruments) {
+        this.setState({instruments: instruments});
+        this.setState({instrument: this.default});
+        await this.dialog.open(); 
+        return this.state;
     }
 
     render() {
-        const options = [
-            { value: 'Stanford University', label: 'Stanford' },
-            { value: 'Stanford University2', label: 'Stanford2' },
-            { value: 'Stanford University3', label: 'Stanford3' },
-            { value: 'Stanford University4', label: 'Stanford4' },
-            { value: 'Stanford University', label: 'Stanford' },
-            { value: 'Stanford University2', label: 'Stanford2' },
-            { value: 'Stanford University3', label: 'Stanford3' },
-            { value: 'Stanford University4', label: 'Stanford4' },
-            { value: 'Stanford University', label: 'Stanford' },
-            { value: 'Stanford University2', label: 'Stanford2' },
-            { value: 'Stanford University3', label: 'Stanford3' },
-            { value: 'Stanford University4', label: 'Stanford4' },
-            { value: 'Stanford University', label: 'Stanford' },
-            { value: 'Stanford University2', label: 'Stanford2' },
-            { value: 'Stanford University3', label: 'Stanford3' },
-            { value: 'Stanford University4', label: 'Stanford4' },
-            { value: 'Stanford University6', label: 'Stanford5' }
-        ];
+        // If not for this, nothing will render because this.state.instruments us undefined
+        // the first time render() is called.
+        if(!this.state.instruments) {
+            return <div />
+        }
+        
+        // Some magic that makes the dropdown menu pretty
+        const options = this.state.instruments.map(item => ({ value: item, label: item }));
         const filterOptions = createFilterOptions({ options });
-        const {instrument} = this.state;
 
+        // Adds 'everything' as an option, for when you want to download all of it
+        options.splice(0, 0, this.everything)
+
+        // Returns the dialog with the dropdown and everything
         return <AsyncDialog title={`Download list?`} confirmText='Download' onRef={ref => this.dialog = ref}>
             <DialogContent style={{height: 211, width: 400}}>
                 <Select
                     name="instrument"
-                    value="any"
+                    value={this.state.instrument}
+                    displayEmpty={true}
                     options={options}
                     filterOptions={filterOptions}
-                    onChange={val => console.log(val)}
+                    onChange={instrument => { this.setState({instrument: instrument}); }}
                 />
             </DialogContent>
         </AsyncDialog>
     }
 }
-
 export default DownloadSetlistDialog;

@@ -20,6 +20,7 @@ import { Add, ArrowBack, Edit, FileDownload } from "material-ui-icons";
 
 import jsPDF from 'jspdf';
 import { async } from '@firebase/util';
+import { func } from 'prop-types';
 
 const styles = {
     root: {},
@@ -105,6 +106,7 @@ class Setlist extends Component {
                         items: [...(setlist.items || []), ...scoreItems]
                     });
                     break;
+
                 case 'addEvent':
                     const { eventTitle, description, time } = await this.addEventDialog.open();
                     await setlistRef.update({
@@ -116,39 +118,50 @@ class Setlist extends Component {
                         }]
                     });
                     break;
+
                 case 'editSetlist':
                     const { title, date } = await this.editSetlistDialog.open(setlist);
                     await setlistRef.update({ title: title, date: date });
                     break;
+
                 case 'download':
-                
-                    const con = await this.downloadDialog.open("part.instrument");
-                    console.log(con);
-                    // console.log("State");
-                    // console.log(this);
-                    // console.log(this.state);
-                    const items = this.state.setlist.items;
-                    const dateString = new Date().toLocaleDateString();
+                    let instrArr = [];              // Array of instruments in the setlist
+                    let st = null;                  // State returned from dialog
+                    let selectedInstrument = null;  // Selected instrument in dialog
+                    const thiss = this;             // For use in the promise
+                    const items = this.state.setlist.items;                 // Get the items from the setlist
+                    const dateString = new Date().toLocaleDateString();     // Get date string
+                    
+                    // Get what instruments are in the setlist and open a dialog
+                    // so that the user can choose to download only the sheets 
+                    // for one instriment, or the entire list.
+                    await new Promise(async (resolve) => {
+                        for(const item of items) {
+                            if(item.type == 'score') {
+                                await item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
+                                    for (const part of querySnapshot.docs) {
 
-                    // Get image
-                    const { width, height } = await new Promise(async resolve => {
-                        const img = new Image();
-                        let src;
-                        for(let i = 0; i < items.length; i++) {
-                            if(items[i].type == "score") {
-                                await items[i].scoreRef.collection('parts').get().then(function(querySnapshot) {
-                                    src = querySnapshot.docs[0].data().pages[0].originalURL;
+                                        //Get the name of the instrument in an array, for future filtering
+                                        await part.data().instrumentRef.get().then(function(ref) {
+                                            instrArr.push(ref.get("name"));
+                                        });
+                                    }
                                 });
-                                break;
                             }
+                        } 
+                        resolve();
+                    }).then(async function() {
+                        st = await thiss.downloadDialog.open(instrArr);    // Open the download dialog, returns the state from it
+                        if(st.instrument.value) {
+                            selectedInstrument = st.instrument.value;          // Get the instrument that was selected from the dialog
+                        } else {
+                            selectedInstrument = "Events";
                         }
-                        img.onload = () => resolve(img);
-                        img.src = src;
                     });
-
+                    
                     var array = [];
                     var instrumentPromiseArray = [];
-                    // var partArray = []; // [[Title, part1, part2...], [Title, part1, part2...]... ]
+
                     items.forEach((item) => {
                         switch(item.type) {
                             case('event'):
@@ -159,18 +172,11 @@ class Setlist extends Component {
 
                             case('score'):
                                 array.push(new Promise(resolve => {
-                                    // //To get the title, for later use
-                                    // item.scoreRef.get().then(function(documentSnapshot) {
-                                    //     scoreArray.push([documentSnapshot.data().title]);
-                                    //     console.log(documentSnapshot.data().title);
-                                        
-                                    // });
                                     item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
-                                        console.log("Snapshot");
-                                        console.log(querySnapshot);
-                                        console.log(querySnapshot.docs[0].data());
+                                        
                                         let ar = [];
                                         let arOfAr = [];
+
                                         // Iterate through parts
                                         for (const part of querySnapshot.docs) {
 
@@ -181,6 +187,7 @@ class Setlist extends Component {
                                                 });
                                             }));
 
+                                            // Get the images of pages in the part
                                             for (const page of part.data().pages) {
                                                 
                                                 const url = page.originalURL;
@@ -205,49 +212,48 @@ class Setlist extends Component {
                         }
                     });
                     Promise.all(array).then(function(values) {
-                        var instrumentArray;
-                        Promise.all(instrumentPromiseArray).then(function(array) {
-                            console.log("Arrat");
-                            instrumentArray = array;
-                            console.log(instrumentArray);
+                        Promise.all(instrumentPromiseArray).then(function(instrumentArray) {
 
-                            // Make PDF
-                            const doc = new jsPDF('p', 'px', 'a4');
-                            const size_increase = 1.33334;
-                            const titleSize = 26;
-                            const normalSize = 12;
-                            const linelen = 80;         // In characters
-                            const leftmargin = 70;      // In pixels
-                            const bottommargin = 550;   // In pixesl, from top
-                            const descspace = 80;       // How much space there is between the top of the page and the description, in pixels
-                            const pageNumberY = 612;    // How far down on the page the page numbe is placed, in pixesl
-                            let pageNumber = 1;
+                            const doc = new jsPDF('p', 'px', 'a4'); // Make PDF
+                            const size_increase = 1.33334;   // jsPDF doesn't agree with itself on some sizes, no idea why
+                            const titleSize = 26;            // Title text size
+                            const normalSize = 12;           // Normal text size
+                            const linelen = 80;              // In characters
+                            const leftmargin = 70;           // In pixels
+                            const bottommargin = 550;        // In pixesl, from top
+                            const descspace = 80;            // How much space there is between the top of the page and the description, in pixels
+                            const pageNumberY = 612;         // How far down on the page the page numbe is placed, in pixesl
+                            let pageNumber = 1;              // Page counter for correct page numbering
                             let pageDict = {};
-                            let totalPartIndex = 0;
+                            let totalPartIndex = 0;          // Counter for parts processed, for later indexing
                             let scoreIndex = 0;
-                            doc.setFont('Times');       // For a list of fonts, do doc.getFontList()
-                            doc.setFontSize(normalSize);
+                            const a4_size = [595.28, 841.89];// For convenience, specific numbers was found in jsPDF source code
+                            doc.setFont('Times');            // Set the fotn, for a list of fonts, do doc.getFontList()
+                            doc.setFontSize(normalSize);     // Set textsize
                             doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
-                            const a4_size = [595.28, 841.89];
 
 
                             values.forEach(array => {
-                                // console.log(array);
                                 array.forEach(items => {
 
-                                    //Item is part (array of pages in said part)
+                                    //Item is part (is array of pages in said part)
                                     if(items[0].startsWith("data:image/png;base64,")) {
-                                        if(instrumentArray[totalPartIndex] == "Drum") { //Instrument should be included in PDF
+                                        
+                                        // Check if part is of instrument that should be included in PDF
+                                        if(selectedInstrument == instrumentArray[totalPartIndex] ||
+                                           selectedInstrument == "Everything") { 
                                             // pageDict[pageNumber] = scoreArray[scoreIndex++];
                                             items.forEach(item => {
                                                 doc.addPage();
-
                                                 doc.addImage(item, 'PNG', 0, 0, a4_size[0]/size_increase, a4_size[1]/size_increase);
                                                 doc.text(`${dateString}     ${setlist.title}     Downloaded by: user     Page: ${pageNumber++}`, 20, 625);
                                             });
                                         }
                                         totalPartIndex++;
-                                    } else { //Item is event
+                                    } 
+
+                                    //Item is event
+                                    else { 
                                         doc.addPage();
                                         doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
 
@@ -296,8 +302,6 @@ class Setlist extends Component {
                             doc.setPage(1)
                             doc.text('I am on page 1', 10, 10)
                             doc.save(`${setlist.title}.pdf`);
-                            // console.log("Pagedict");
-                            // console.log(pageDict);
                         
                         });
                     });
