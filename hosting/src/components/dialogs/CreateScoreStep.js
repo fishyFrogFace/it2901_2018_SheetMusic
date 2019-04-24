@@ -31,38 +31,22 @@ class CreateScoreStep extends React.Component {
         this.setState({ data: newData });
     };
 
-    // _onSetData = () => {
-    //     const { pdf } = this.props;
-
-    //     console.log('pdf.composer', pdf.composer)
-    //     console.log('pdf.arranger', pdf.arranger)
-
-    //     if (pdf.composer !== 'No composer detected') {
-    //         const newData = { ...this.state.data, composer: pdf.composer };
-    //         this.props.onChange(newData);
-    //         this.setState({ data: newData });
-    //     }
-
-    //     if (pdf.arranger !== 'No arranger detected') {
-    //         const newData = { ...this.state.data, arranger: pdf.arranger };
-    //         this.props.onChange(newData);
-    //         this.setState({ data: newData });
-    //     }
-    // }
-
-    componentDidMount() {
+    componentDidMount = () => {
         const { pdf } = this.props;
 
-        console.log('pdf.composer', pdf.composer)
-        console.log('pdf.arranger', pdf.arranger)
-
-        if (pdf.composer !== 'No composer detected') {
-            const newData = { ...this.state.data, composer: pdf.composer };
+        if (pdf.composer !== 'No composer detected' && pdf.arranger !== 'No arranger detected') {
+            const newData = { ...this.state.data, composer: pdf.composer, arranger: pdf.arranger};
             this.props.onChange(newData);
             this.setState({ data: newData });
         }
 
-        if (pdf.arranger !== 'No arranger detected') {
+        else if (pdf.composer !== 'No composer detected' && pdf.arranger === 'No arranger detected') {
+            const newData = { ...this.state.data, composer: pdf.composer };
+            this.props.onChange(newData);
+            this.setState({ data: newData });
+        }
+        
+        else if (pdf.composer === 'No composer detected' && pdf.arranger !== 'No arranger detected') {
             const newData = { ...this.state.data, arranger: pdf.arranger };
             this.props.onChange(newData);
             this.setState({ data: newData });
@@ -120,14 +104,12 @@ class CreateScoreStep extends React.Component {
                 style={{ marginBottom: 20 }}
                 defaultValue={pdf.name}
                 onChange={e => this._onDataChange('title', e)}
-                required='true'
             />
             {pdf.composer === 'No composer detected' &&
                 <TextField
                     label='Composer'
                     style={{ marginBottom: 20 }}
                     onChange={e => this._onDataChange('composer', e)}
-                    required='true'
                 />}
             {pdf.composer !== 'No composer detected' &&
                 <TextField
@@ -142,7 +124,6 @@ class CreateScoreStep extends React.Component {
                     label='Arranger'
                     style={{ marginBottom: 20 }}
                     onChange={e => this._onDataChange('arranger', e)}
-                    required='true'
                 />}
             {pdf.arranger !== "No arranger detecter" &&
                 <TextField
