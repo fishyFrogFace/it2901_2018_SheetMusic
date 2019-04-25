@@ -208,7 +208,6 @@ class Score extends React.Component {
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
-
                     {
                         hasParts &&
                         (score.parts[selectedPart].pages || []).map((page, index) =>

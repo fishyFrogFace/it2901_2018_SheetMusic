@@ -2,13 +2,14 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress, Link
 } from "material-ui";
 import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import firebase from 'firebase';
+import AsyncDialog from '../../components/dialogs/AsyncDialog';
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -89,6 +90,7 @@ const styles = theme => ({
   actions: {
     marginTop: '8px',
     marginLeft: '-30px',
+    flex: 2
   },
 
   expandedPanel: {
@@ -106,6 +108,11 @@ const styles = theme => ({
       background: '#e2e2e2'
     },
     transitions: '1000ms'
+  },
+
+  title: {
+    width: 'fit-content',
+    cursor: 'pointer'
   },
 
 
@@ -224,10 +231,37 @@ class Scores extends React.Component {
     this.setState({ listView: true });
   };
 
+  //  not in use atm
   _onMoreClick = (score) => {
     this.props.onRemoveScore(score);
     score = ''
   };
+
+  // opens delete modal dialog
+  open = async () => {
+    try {
+      await this.dialog.open();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  _onDeleteScore = async (score, scoreTitle) => {
+    // Confirm modal for deleting
+    const { band } = this.props;
+    this.setState({
+      title: "Delete this score",
+      message: `Are you sure you want to delete ${scoreTitle}?`,
+    });
+
+    if (!await this.open()) return;
+
+    //Fetching setlist reference from firestore
+    const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+    await fireScore.ref.delete();
+    this.setState({ message: null });
+  }
 
 
   // closes the active expanded panel when next is activated
@@ -438,8 +472,10 @@ class Scores extends React.Component {
 
     return <div className={this.state.hidden}>
       < div className={classes.flex} >
-        <div
-        />
+        {/* Display delete modal dialog */}
+        <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+          <Typography variant="body1" >{this.state.message}</Typography>
+        </AsyncDialog>
         <IconButton>
           <SortByAlpha onClick={this._onSortByAlphaClick} />
         </IconButton>
@@ -507,10 +543,8 @@ class Scores extends React.Component {
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
-                            // TODO: get same styling as member page
-                            onClick={(e) => {
-                              if (window.confirm('Are you sure you wish to delete this item?'))
-                                this._onMoreClick(score, e)
+                            onClick={() => {
+                              this._onDeleteScore(score, score.title)
                             }}
                           >
                             <DeleteIcon />
@@ -538,6 +572,9 @@ class Scores extends React.Component {
                 <Card className={classes.card} key={index}
                   elevation={1}>
                   <CardHeader
+                    classes={{
+                      title: classes.title,
+                    }}
                     className={classes.cardHeader}
                     avatar={
                       <Avatar aria-label="Note" className={classes.avatar}>
@@ -546,21 +583,19 @@ class Scores extends React.Component {
                     }
                     action={<div className={classes.actions}>
                       <CardActions disableActionSpacing >
-                        <IconButton
-
-                          // TODO: get same styling as member page
-                          onClick={(e) => {
-                            if (window.confirm('Are you sure you wish to delete this item?'))
-                              this._onMoreClick(score, e)
+                        <IconButton style={{ flex: 1, float: 'right' }}
+                          onClick={() => {
+                            this._onDeleteScore(score, score.title)
                           }}
-
                         >
                           <DeleteIcon />
                         </IconButton>
                       </CardActions>
                     </div>}
-                    title={score.title}
+                    title={<a onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>{score.title}</a>
+                    }
                   />
+
                   <Divider />
                   <div className={classes.cardContent}>
                     <div className={classes.media2}
@@ -583,7 +618,7 @@ class Scores extends React.Component {
                             title={score.title}
                             onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                           />
-                          :
+                          : // ternary
                           <CardMedia
                             className={classes.media}
                             image={
@@ -622,7 +657,6 @@ class Scores extends React.Component {
                       </ExpansionPanelSummary>
                       <ExpansionPanelDetails className={classes.expandedPanel}>
                         <Typography variant='subheading'>
-
                           {this.state.activeScore == index ?
                             <List>
                               {
@@ -635,72 +669,43 @@ class Scores extends React.Component {
                                     }
                                     <ListItemText className={classes.instrumentName} primary={`${instr}: `} />
                                     <List>
-
-                                      {/* {(band.scores[index].parts).map((elem, pindex) => {
-                                      partImage = band.scores[index].parts[pindex].pages[0].croppedURL
-                                      //console.log('partImage', partImage)
-                                    })} */}
-
                                       <ListItem key={index} className={classes.partList}>
                                         {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
-
                                           < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
-                                            {/* <img
-                                              id={vocalIndex}
-                                              style={{ height: '50', width: '150px' }}
-                                              //hoverSrc={this.props.band.scores[index].parts[0].pages[0].croppedURL}
-                                              src={partImage}
-                                              onMouseOver={(e) => this.onHover(i, e)}
-                                              onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
+                                            {/* Original */}
+                                            {
+                                              <div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                                                {item}</div>
+                                            }
 
-                                            /> */}
-                                            {/* {(band.scores[index].parts).map((test, testindex) =>
-                                              (score.parts[testindex].pages || []).map((page, index) =>
-                                                <img style={{ height: '50', width: '150px' }}
-                                                  key={index}
-                                                  className={classes.sheet}
-                                                  //src={page.croppedURL}
-                                                  id={testindex}
-                                                  //onMouseOver={this.onHover}
-                                                  onMouseOver={(e) => this.onHover(testindex, e)}
-                                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-                                                />
+                                            {/* TESTING */}
+                                            {/* {
+                                              (score.parts[1].pages || []).map((page, index) =>
+                                                <img key={index} className={classes.sheet} src={page.originalURL} />
+                                                <div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                                                  {item}</div>
                                               )
-                                            )} */}
-                                            {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                                              {item}</div>}
+                                            } */}
                                           </ListItemText>
-
-                                        )
-                                        }
-
+                                        )}
                                       </ListItem>
                                     </List>
                                   </ListItem>
-                                )
-                              }
+                                )}
                             </List>
                             : '' //Close the prev expansion panel when activating the next 
-
                           }
                         </Typography>
                       </ExpansionPanelDetails>
                     </ExpansionPanel>
                   </div>
-
                 </Card>
               )}
           </div>
         }
       </div>
-
     </div >
   }
-
 }
-
-// LinearDeterminate.propTypes = {
-//   classes: PropTypes.object.isRequired,
-// };
 
 export default withStyles(styles)(Scores);

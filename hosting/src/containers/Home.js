@@ -236,6 +236,7 @@ class Home extends React.Component {
         const { band } = this.state;
         this.setState({ message: 'Removing Score...' });
 
+
         const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
         await fireScore.ref.delete();
 
