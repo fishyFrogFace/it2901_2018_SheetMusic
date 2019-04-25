@@ -9,6 +9,11 @@ import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
 import 'firebase/firestore';
 import 'firebase/auth';
 
+
+/**
+ * The root component of the React app.
+ */
+
 class App extends React.Component {
     state = {
         user: {},
@@ -36,7 +41,7 @@ class App extends React.Component {
         super(props);
 
         // Initialize Firebase
-        var config = {
+        const config = {
             apiKey: "AIzaSyCBHe8CK4uabfrJeS-GwyQ3phiQQ2Q73cE",
             authDomain: "scores-bc679.firebaseapp.com",
             databaseURL: "https://scores-bc679.firebaseio.com",
@@ -44,26 +49,12 @@ class App extends React.Component {
             storageBucket: "scores-bc679.appspot.com",
             messagingSenderId: "717099268802"
         };
-        firebase.initializeApp(config);
 
+        firebase.initializeApp(config);
 
         firebase.auth().onAuthStateChanged(user => this._onUserStateChanged(user));
         window.addEventListener('hashchange', () => this._onHashChange());
-
-        //     let ref = firebase.ref('instruments');
-        //     ref.on('value', gotData, errdata);
-        // }
-
-        // gotData = (data) => {
-        //     console.log(data)
     }
-
-    readUserData() {
-        firebase.database().ref('instruments/').once('value', function (snapshot) {
-            console.log(snapshot.val())
-        });
-    }
-
 
 
     async _onUserStateChanged(user) {
@@ -92,7 +83,6 @@ class App extends React.Component {
         try {
             const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
-
             this.setState({ Component: component }, () => {
                 this.setState({ page: page, detail: detail, componentLoaded: this._componentLoaded }, () => {
                     this._componentLoaded[this.page2Component[page]] = true;
@@ -100,7 +90,7 @@ class App extends React.Component {
             });
         } catch (err) {
             console.log(err);
-            // Already imported or doesn't exists
+            {/* Already imported or doesn't exists */}
         }
     }
 
@@ -117,6 +107,7 @@ class App extends React.Component {
 
         if (!Component) return null;
 
+        {/* Renders component based on state, changes in state is triggered by _onHashChange() which is triggered by changes to window.location.hash*/}
         return <Component {...this.props} page={page} detail={detail} loaded={componentLoaded[this.page2Component[page]]} />
     }
 }
