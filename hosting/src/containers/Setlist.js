@@ -317,7 +317,7 @@ class Setlist extends Component {
                                             desc = desc.substring(linelen, desc.length);
 
                                             //Test if line-break is in the middle of a word
-                                            if(lineToBeAdded[lineToBeAdded.length-1] != " " && desc[0] != " ") {
+                                            if(lineToBeAdded[lineToBeAdded.length-1] != " " && desc[0] != " " && desc.length > 0) {
                                                 lineToBeAdded += "-";
                                             }
 
