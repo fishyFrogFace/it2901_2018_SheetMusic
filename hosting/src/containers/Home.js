@@ -192,13 +192,6 @@ class Home extends React.Component {
 
         for (let part of parts) {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.pdf.id}`).get();
-<<<<<<< HEAD
-            console.log('pdfDoc', pdfDoc)
-            console.log('pdfDoc.data()', pdfDoc.data())
-            this.setState({ band: { ...this.state.band, scoreInfo: part } });
-
-=======
->>>>>>> 5ed12bab236c4e7469592e87beea87e46677444b
             await scoreRef.collection('parts').add({
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -604,13 +597,7 @@ class Home extends React.Component {
                                         snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                                     );
                                     item.parts = parts;
-<<<<<<< HEAD
-                                    let instr = 
-                                    item.instruments 
-=======
-                                    let instr =
-                                        item.instruments
->>>>>>> 5ed12bab236c4e7469592e87beea87e46677444b
+                                    let instr = item.instruments;
                                 });
                             }
                             this.setState({ band: { ...this.state.band, scores: items } });
@@ -971,22 +958,14 @@ class Home extends React.Component {
             >
 
                 {
-<<<<<<< HEAD
-                    
-                    page === 'scores' && 
-=======
 
                     page === 'scores' &&
->>>>>>> 5ed12bab236c4e7469592e87beea87e46677444b
                     <Scores
                         band={band}
                         onRemoveScore={this._onRemoveScore}
                         scoreInfo={this.state.scoreInfo}
-<<<<<<< HEAD
-=======
                         loaded={loaded}
                         bands={bands}
->>>>>>> 5ed12bab236c4e7469592e87beea87e46677444b
                     />
                 }
                 {

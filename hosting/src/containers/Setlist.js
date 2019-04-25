@@ -171,7 +171,7 @@ class Setlist extends Component {
                         resolve();
                     }).then(async function() {
                         st = await thiss.downloadDialog.open(instrArr);    // Open the download dialog, returns the state from it
-                        if(st.instrument.value) {
+                        if(st.instrument && st.instrument.value) {
                             selectedInstrument = st.instrument.value;          // Get the instrument that was selected from the dialog
                         } else {
                             selectedInstrument = "Events";
@@ -603,6 +603,9 @@ class Setlist extends Component {
                                 </Typography>
                             </div>
                             <div className={classes.flex} />
+                            {<IconButton color="inherit" onClick={() => this._onMenuClick('download')}>
+                                <FileDownload id="menu-download-button"/>
+                            </IconButton>}
                             {hasRights && <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
                                 <Edit id="menu-edit-button"/>
                             </IconButton>}

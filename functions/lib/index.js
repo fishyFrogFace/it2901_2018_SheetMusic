@@ -14,11 +14,8 @@ const Storage = require("@google-cloud/storage");
 const child_process_promise_1 = require("child-process-promise");
 const fs = require("fs-extra");
 const admin = require("firebase-admin");
-<<<<<<< HEAD
 const unzipper = require("unzipper");
-=======
 const PDFDocument = require("pdfkit");
->>>>>>> 5ed12bab236c4e7469592e87beea87e46677444b
 const vision = require("@google-cloud/vision");
 require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
@@ -143,11 +140,8 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         ]);
         gsProcess.childProcess.kill();
         console.log('PDF conversion complete!');
-<<<<<<< HEAD
         // '-crop', '4000x666+0+0',
-=======
         // HUSK Å KOMMENTERE HVA DENNE GJØR
->>>>>>> 5ed12bab236c4e7469592e87beea87e46677444b
         const convertProcess = yield child_process_promise_1.spawn('mogrify', [
             '-crop', '4000x666',
             '-resize', '40%',

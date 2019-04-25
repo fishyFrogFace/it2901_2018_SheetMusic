@@ -16,9 +16,6 @@ import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 import { FileDownload, Info, InfoOutline } from "material-ui-icons";
 import jsPDF from 'jspdf';
 
-
-import jsPDF from 'jspdf';
-
 import * as cors from 'cors';
 const corsHandler = cors({ origin: true });
 
