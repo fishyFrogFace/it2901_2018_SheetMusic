@@ -106,7 +106,10 @@ const styles = {
     }
 };
 
-
+/**
+ * Landing page for users that are not logged in. Contains link to Google login and descriptions of the services
+ * provided.
+ */
 
 class SignIn extends Component {
     _onSignIn = async () => {
@@ -119,27 +122,21 @@ class SignIn extends Component {
         }
     };
 
-    _onTestUserSignin = async id => {
-        await firebase.auth().signInWithEmailAndPassword(`test_user_${id}@gmail.com`, 'password');
-    };
-
     render() {
         const {classes} = this.props;
-
 
         return (
             <div className={classes.root}>
                 <div className={classes.videoContainer}>
                     <iframe
                         className={classes.iframe}
-                        src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8"
-                        frameborder="0" allowfullscreen/>
+                        src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8"/>
                     <div className={classes.overlay}>
                         <div className={classes.overlayContainer}>
                             <Typography variant='display4' className={classes.title}>ScoresButler</Typography>
                             <Paper elevation={1}>
                                 <div className={classes.button} onClick={() => this._onSignIn()}>
-                                    <img className={classes.buttonIcon}
+                                    <img className={classes.buttonIcon} alt={"Google"}
                                          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
                                     <Typography variant='body2' className={classes.buttonText}>Sign in with
                                         Google</Typography>
@@ -154,7 +151,7 @@ class SignIn extends Component {
                     </Typography>
                     <div className={classes.infoContainer}>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={sheet}/>
+                            <img className={classes.infoImage} src={sheet} alt={"sheet"}/>
                             <Typography variant='subheading' className={classes.infoHeader}>Upload</Typography>
                             <Typography variant='body1' className={classes.infoText}>
                                 Upload your scores, arrange and sort them into instrument
@@ -162,14 +159,14 @@ class SignIn extends Component {
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage}  src={arrangement}/>
+                            <img className={classes.infoImage}  src={arrangement} alt={"setlist"}/>
                             <Typography variant='subheading' className={classes.infoHeader}>Archive</Typography>
                             <Typography variant='body1' className={classes.infoText}>
                                 Archive all your bands scores, and access them everywhere.
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={setlist}/>
+                            <img className={classes.infoImage} src={setlist} alt={"setlist"}/>
                             <Typography variant='subheading' className={classes.infoHeader}>Create</Typography>
                             <Typography variant='body1' className={classes.infoText}>
                                 Create setlists for your band which contain arrangements
@@ -177,7 +174,7 @@ class SignIn extends Component {
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={download}/>
+                            <img className={classes.infoImage} src={download} alt={"download"}/>
                             <Typography variant='subheading' className={classes.infoHeader}>Download</Typography>
                             <Typography className={classes.infoText} variant='body1'>
                                 Download your part of the set.
@@ -185,12 +182,9 @@ class SignIn extends Component {
                         </div>
                     </div>
                 </div>
-                <button id='test_user_1_signin' style={{display: 'none'}} onClick={() => this._onTestUserSignin(1)}/>
-                <button id='test_user_2_signin' style={{display: 'none'}} onClick={() => this._onTestUserSignin(2)}/>
             </div>
         );
     }
 }
-
 
 export default withStyles(styles)(SignIn);
