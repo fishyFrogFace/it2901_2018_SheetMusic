@@ -31,7 +31,6 @@ class App extends React.Component {
         scores: 'Home',
         setlists: 'Home',
         pdfs: 'Home',
-        pdf: 'PDF',
         score: 'Score',
         setlist: 'Setlist',
         signin: 'SignIn'
