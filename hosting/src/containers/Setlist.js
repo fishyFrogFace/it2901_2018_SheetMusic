@@ -193,6 +193,7 @@ class Setlist extends Component {
                                 break;
 
                             case('score'):
+                                console.log('item', item)
                                 for(let i = 0; i < item.score.partCount; i++) {
                                     overview.push({ title: item.score.title, page: 0, type: item.type })
                                 }
@@ -402,7 +403,10 @@ class Setlist extends Component {
                     data.items = await Promise.all(
                         (data.items || []).map(async item => {
                             if (item.type === 'score') {
-                                return { ...item, score: (await item.scoreRef.get()).data() };
+                                return { 
+                                    ...item, 
+                                    score: (await item.scoreRef.get()).data() 
+                                };
                             }
 
                             return { ...item };
@@ -422,10 +426,17 @@ class Setlist extends Component {
             this.unsubs.push(
                 bandRef.collection('scores').onSnapshot(async snapshot => {
                     let scores = await Promise.all(
-                        snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
+                        snapshot.docs.map(async (doc, index) => ({ 
+                            ...doc.data(), 
+                            id: doc.id, 
+                            partCount: bandRef.collection(`scores/${doc.id}/parts`).get().then(snap => {
+                                bandRef.collection('scores').doc(doc.id).update({partCount: snap.size})
+                                scores[index].partCount = snap.size
+                            })
+                        }))
                     );
-
-                    this.setState({ band: { ...this.state.band, scores: scores } });
+ 
+                    this.setState({ band: { ...this.state.band, scores: scores, } });
                 })
             );
 
@@ -582,7 +593,7 @@ class Setlist extends Component {
         }
 
         console.log('this.state.band', this.state.band)
-        console.log('this.props', this.props)
+        console.log('this.state.setlist', this.state.setlist)
 
         return (
             <div className={classes.root}>

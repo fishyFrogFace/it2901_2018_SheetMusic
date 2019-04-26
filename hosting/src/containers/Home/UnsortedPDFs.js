@@ -78,12 +78,6 @@ class UnsortedPDFs extends React.Component {
         this.props.onRemoveUnsortedPdf(pdf);
     };
 
-    componentDidUpdate() {
-        const { band } = this.state;
-
-
-
-    }
 
     render() {
         const { band } = this.props;

@@ -92,7 +92,7 @@ class AddPartsDialog extends React.Component {
     };
 
     _onNextClick = () => {
-        const { parts, scoreData, tune } = this.state;
+        const { parts, scoreData } = this.state;
 
         if (this.state.activeStep === 1) {
             this.setState({ activeStep: 2, scoreCreated: true });
@@ -100,7 +100,6 @@ class AddPartsDialog extends React.Component {
             this.__resolve({
                 score: scoreData,
                 parts: parts,
-                tune: tune
             });
 
             this.setState({
@@ -109,7 +108,6 @@ class AddPartsDialog extends React.Component {
                 scoreCreated: false,
                 parts: [],
                 scoreData: {},
-                tune: {}
             });
         }
     };
