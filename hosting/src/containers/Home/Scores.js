@@ -277,6 +277,7 @@ class Scores extends React.Component {
   onExpansionClick = (e) => {
     const parts = [];
     const instrumentType = [];
+    console.log('223:', this.props.band.scores, 'e.target:', e.target)
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
       if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
         for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
