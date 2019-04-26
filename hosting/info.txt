@@ -1,6 +1,0 @@
-
-apiKey: "AIzaSyB5ofZU4-5tj0vT-KPShQ6QhZCP6TeAQvQ",
-authDomain: "scoresbutler-9ff30.firebaseapp.com",
-databaseURL: "https://scoresbutler-9ff30.firebaseio.com",
-projectId: "scoresbutler-9ff30",
-storageBucket: "scoresbutler-9ff30.appspot.com",
