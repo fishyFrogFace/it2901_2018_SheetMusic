@@ -35,7 +35,6 @@
     "typeface-roboto": "^0.0.54",
     "typescript": "^3.4.4",
     "react-scroll-up-button": "^1.6.4",
-    "typeface-roboto": "^0.0.54",
     "v-scroll-to-top": "^1.0.2"
   },
   "scripts": {

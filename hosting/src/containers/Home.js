@@ -449,6 +449,12 @@ class Home extends React.Component {
 
 
     async componentDidUpdate(prevProps, prevState) {
+        setTimeout(() => {
+            if (user === null) {
+                window.location.reload();
+            }
+        }, 2000);
+
         const user = firebase.auth().currentUser;
 
         const { page, loaded } = this.props;
@@ -699,16 +705,16 @@ class Home extends React.Component {
             easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
         };
 
-        if (!prevState.band.pdfs && band.pdfs ||
-            !prevState.band.scores && band.scores ||
-            !prevState.band.members && band.members ||
-            !prevState.band.setlists && band.setlists) {
+        // if (!prevState.band.pdfs && band.pdfs ||
+        //     !prevState.band.scores && band.scores ||
+        //     !prevState.band.members && band.members ||
+        //     !prevState.band.setlists && band.setlists) {
 
-            await this.contentEl.animate([
-                { transform: 'translateY(70px)', opacity: 0 },
-                { transform: 'none', opacity: 1 }
-            ], options).finished;
-        }
+        //     await this.contentEl.animate([
+        //         { transform: 'translateY(70px)', opacity: 0 },
+        //         { transform: 'none', opacity: 1 }
+        //     ], options).finished;
+        // }
 
         if (!loaded) {
             if ((prevState.bands || []).length === 0 && (bands && bands.length > 0)) {
@@ -802,20 +808,23 @@ class Home extends React.Component {
                             <div style={{ flex: 1 }} />
 
                             <IconButton id='upload-button' style={{ marginLeft: 10 }} color="inherit"
-                                onClick={this._onFileUploadButtonClick}>
+                                //onClick={this._onFileUploadButtonClick}
+                                onClick={() => this._onUploadMenuClick('computer')}
+                            >
                                 <FileUpload />
                             </IconButton>
-                            <Menu
+                            {/* <Menu
                                 anchorEl={uploadAnchorEl}
                                 open={Boolean(uploadAnchorEl)}
                                 onClose={this._onMenuClose}
                                 style={{ marginTop: 0 }}
-                            >
-                                <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
-                                    computer</MenuItem>
-                                <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
-                                    Dropbox</MenuItem>
-                            </Menu>
+
+                            > */}
+                            {/* <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
+                                    computer</MenuItem> */}
+                            {/* <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
+                                    Dropbox</MenuItem> */}
+                            {/* </Menu> */}
 
                             <IconButton onClick={this._onAccountCircleClick}>
                                 {loaded &&
@@ -841,13 +850,22 @@ class Home extends React.Component {
                                     paddingRight: 50,
                                     paddingLeft: 10,
                                 }}>
-                                    <img src={user.photoURL} style={{
-                                        width: "46px",
-                                        height: "46px",
-                                        margin: "10px",
-                                        borderRadius: '50%',
-                                    }}>
-                                    </img>
+                                    {user !== null ?
+                                        <img src={user.photoURL} style={{
+                                            width: "46px",
+                                            height: "46px",
+                                            margin: "10px",
+                                            borderRadius: '50%',
+                                        }}>
+                                        </img> :
+                                        <img src={"https://img.icons8.com/color/100/000000/google-logo.png"} style={{
+                                            width: "46px",
+                                            height: "46px",
+                                            margin: "10px",
+                                            borderRadius: '50%',
+                                        }}>
+                                        </img>
+                                    }
                                     <div style={{
                                         display: "flex",
                                         flexDirection: 'column',
@@ -855,10 +873,10 @@ class Home extends React.Component {
                                         marginRight: '30px',
                                     }}>
                                         <Typography variant="body2" style={{ fontSize: "16px", fontWeight: "500" }}>
-                                            {user.displayName}
+                                            {user !== null ? user.displayName : ''}
                                         </Typography>
                                         <Typography variant="body1">
-                                            {user.email}
+                                            {user !== null ? user.email : ''}
                                         </Typography>
                                     </div>
                                 </div>

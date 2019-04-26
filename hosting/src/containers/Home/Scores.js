@@ -474,7 +474,7 @@ class Scores extends React.Component {
                     <ListItem key={index} dense button
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
-                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      <ListItemText primary={score.title} />
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
@@ -567,15 +567,11 @@ class Scores extends React.Component {
                     {
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}>
-
                           {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
                           {/* Hide the composer and arranger data if these field are not defined when uploading new score */}
                         </Typography>
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
-                        </Typography>
-                        <Typography variant='subheading'>
-                          Parts: {score.partCount}
                         </Typography>
 
                       </CardContent>

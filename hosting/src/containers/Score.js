@@ -95,12 +95,12 @@ class Score extends React.Component {
                         img.onload = () => resolve(img);
                         img.src = part.pages[0].originalURL;
                     });
-                    
+
                     // Make PDF
                     const size_increase = 1.33334;
                     // const doc = new jsPDF('p', 'px', 'a4'); //[width*size_increase, height*size_increase]);
-                    const doc = new jsPDF('p', 'px', [width*size_increase, height*size_increase]);
-                    
+                    const doc = new jsPDF('p', 'px', [width * size_increase, height * size_increase]);
+
                     // Go through the images in the score and add them and a watermark to the PDF
                     for (let i = 0; i < part.pages.length; i++) {
                         if (i > 0) {
@@ -210,9 +210,6 @@ class Score extends React.Component {
                         <div className={classes.flex} />
                         <IconButton color='inherit' onClick={e => this._onMenuClick('download')}>
                             <FileDownload />
-                        </IconButton>
-                        <IconButton color='inherit' onClick={e => this._onMenuClick('info')}>
-                            <InfoOutline />
                         </IconButton>
                     </Toolbar>
                 </AppBar>

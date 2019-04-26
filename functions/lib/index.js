@@ -14,8 +14,6 @@ const Storage = require("@google-cloud/storage");
 const child_process_promise_1 = require("child-process-promise");
 const fs = require("fs-extra");
 const admin = require("firebase-admin");
-const unzipper = require("unzipper");
-const PDFDocument = require("pdfkit");
 const vision = require("@google-cloud/vision");
 require("isomorphic-fetch");
 const dropbox_1 = require("dropbox");
@@ -120,7 +118,6 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
             });
             yield promise;
         }));
-        console.log('pfdInfo', pdfInfo);
         const match = /Pages:[ ]+(\d+)/.exec(pdfInfo);
         // Create document
         const pdfRef = yield admin.firestore().collection(`bands/${bandId}/pdfs`).add({
@@ -140,10 +137,9 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         ]);
         gsProcess.childProcess.kill();
         console.log('PDF conversion complete!');
-        // '-crop', '4000x666+0+0',
         // HUSK Å KOMMENTERE HVA DENNE GJØR
         const convertProcess = yield child_process_promise_1.spawn('mogrify', [
-            '-crop', '4000x666',
+            '-crop', '4000x666+0+0',
             '-resize', '40%',
             '-path', '../output-cropped',
             '*.png'
@@ -193,39 +189,39 @@ exports.convertPDF = functions.storage.object().onFinalize((object, context) => 
         if (true) {
             // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
             const patterns = [{
-                name: 'Score',
-                expr: /(: )?score/i
-            }, {
-                name: 'Vocal',
-                expr: /(\w )?vocal/i
-            }, {
-                name: 'Alto Sax',
-                expr: /(\w )?alto sax\. \d/i
-            }, {
-                name: 'Tenor Sax',
-                expr: /(\w )?tenor sax\. \d/i
-            }, {
-                name: 'Baritone Sax',
-                expr: /(\w )?baritone sax\./i
-            }, {
-                name: 'Trumpet',
-                expr: /(\w )?trumpet .{0,6}\d/i
-            }, {
-                name: 'Trombone',
-                expr: /(\w )?trombone \d/i
-            }, {
-                name: 'Guitar',
-                expr: /(\w )?guitar/i
-            }, {
-                name: 'Piano',
-                expr: /(\w )?piano/i
-            }, {
-                name: 'Bass',
-                expr: /(\w )?bass/i
-            }, {
-                name: 'Drum Set',
-                expr: /(\w )?drum set/i
-            }];
+                    name: 'Score',
+                    expr: /(: )?score/i
+                }, {
+                    name: 'Vocal',
+                    expr: /(\w )?vocal/i
+                }, {
+                    name: 'Alto Sax',
+                    expr: /(\w )?alto sax\. \d/i
+                }, {
+                    name: 'Tenor Sax',
+                    expr: /(\w )?tenor sax\. \d/i
+                }, {
+                    name: 'Baritone Sax',
+                    expr: /(\w )?baritone sax\./i
+                }, {
+                    name: 'Trumpet',
+                    expr: /(\w )?trumpet .{0,6}\d/i
+                }, {
+                    name: 'Trombone',
+                    expr: /(\w )?trombone \d/i
+                }, {
+                    name: 'Guitar',
+                    expr: /(\w )?guitar/i
+                }, {
+                    name: 'Piano',
+                    expr: /(\w )?piano/i
+                }, {
+                    name: 'Bass',
+                    expr: /(\w )?bass/i
+                }, {
+                    name: 'Drum Set',
+                    expr: /(\w )?drum set/i
+                }];
             // Pattern for filtering out arranger and composer
             const arrangerPattern = /[\\n\r]*Arranged by\s*([^\n\r]*)/g;
             const composerPattern = /[\\n\r]*Words and Music by\s*([^\n\r]*)/g;
