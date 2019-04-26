@@ -550,8 +550,13 @@ class Home extends React.Component {
                                     id: doc.id,
                                 }))
                             );
-                            // getting information for each part for each score
+                            // Getting information for each part for each score
                             for (let item of items) {
+                                // Adding partCount to each score
+                                data.defaultBandRef.collection(`scores/${item.id}/parts`).get().then(snap => {
+                                    data.defaultBandRef.collection('scores').doc(item.id).update({ partCount: snap.size })
+                                })
+                                // Adding information to state
                                 data.defaultBandRef.collection(`scores/${item.id}/parts`).onSnapshot(async snapshot => {
                                     let parts = await Promise.all(
                                         snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
@@ -562,7 +567,6 @@ class Home extends React.Component {
                             }
                             this.setState({ band: { ...this.state.band, scores: items } });
                         })
-
                     );
 
                     this.unsubs.push(

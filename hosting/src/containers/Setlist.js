@@ -429,10 +429,6 @@ class Setlist extends Component {
                         snapshot.docs.map(async (doc, index) => ({ 
                             ...doc.data(), 
                             id: doc.id, 
-                            partCount: bandRef.collection(`scores/${doc.id}/parts`).get().then(snap => {
-                                bandRef.collection('scores').doc(doc.id).update({partCount: snap.size})
-                                scores[index].partCount = snap.size
-                            })
                         }))
                     );
  
