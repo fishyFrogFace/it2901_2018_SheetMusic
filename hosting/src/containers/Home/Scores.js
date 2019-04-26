@@ -210,39 +210,17 @@ class Scores extends React.Component {
     score = ''
   };
 
-
-  // closes the active expanded panel when next is activated
+  // Closes the active expanded panel when next is activated
   handleChange = panel => (event, expanded) => {
     this.setState({
       expanded: expanded ? panel : false,
     });
   };
 
-  // get all instruments from db for seleting and filter on instrument
-  onGetAllInstruments = () => {
-    let allPartsInstruments = []
-    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
-          let data = this.props.band.scores[i].parts[k].instrumentRef
-          data.get().then(function (documentSnapshot) {
-            const partsInstruments = documentSnapshot.data()
-            allPartsInstruments.push(partsInstruments.name)
-
-          });
-        }
-      }
-    }
-    setTimeout(() => {
-      this.setState({
-        allPartsInstruments: allPartsInstruments
-      })
-    }, 500);
-  }
-
   onExpansionClick = (e) => {
     const parts = [];
     const instrumentType = [];
+
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
       if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
         for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
@@ -438,7 +416,7 @@ class Scores extends React.Component {
                     <ListItem key={index} dense button
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
-                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      <ListItemText primary={score.title} secondary={`Parts: ${1}`} />
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
@@ -570,38 +548,10 @@ class Scores extends React.Component {
                                     }
                                     <ListItemText className={classes.instrumentName} primary={`${instr}: `} />
                                     <List>
-
-                                      {/* {(band.scores[index].parts).map((elem, pindex) => {
-                                      partImage = band.scores[index].parts[pindex].pages[0].croppedURL
-                                      //console.log('partImage', partImage)
-                                    })} */}
-
                                       <ListItem key={index} className={classes.partList}>
                                         {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
 
                                           < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
-                                            {/* <img
-                                              id={vocalIndex}
-                                              style={{ height: '50', width: '150px' }}
-                                              //hoverSrc={this.props.band.scores[index].parts[0].pages[0].croppedURL}
-                                              src={partImage}
-                                              onMouseOver={(e) => this.onHover(i, e)}
-                                              onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-
-                                            /> */}
-                                            {/* {(band.scores[index].parts).map((test, testindex) =>
-                                              (score.parts[testindex].pages || []).map((page, index) =>
-                                                <img style={{ height: '50', width: '150px' }}
-                                                  key={index}
-                                                  className={classes.sheet}
-                                                  //src={page.croppedURL}
-                                                  id={testindex}
-                                                  //onMouseOver={this.onHover}
-                                                  onMouseOver={(e) => this.onHover(testindex, e)}
-                                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-                                                />
-                                              )
-                                            )} */}
                                             {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                               {item}</div>}
                                           </ListItemText>
@@ -633,9 +583,5 @@ class Scores extends React.Component {
   }
 
 }
-
-// LinearDeterminate.propTypes = {
-//   classes: PropTypes.object.isRequired,
-// };
 
 export default withStyles(styles)(Scores);
