@@ -16,6 +16,7 @@ const fs = require("fs-extra");
 const admin = require("firebase-admin");
 const unzipper = require("unzipper");
 const request = require("request-promise-native");
+// import * as firebase from 'firebase';
 admin.initializeApp();
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
 // Function made just for updating Firebase instruments collection with instruments.

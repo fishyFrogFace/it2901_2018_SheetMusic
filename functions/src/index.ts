@@ -7,6 +7,8 @@ import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
 import * as request from 'request-promise-native';
+import * as XMLHttpRequest from 'xmlhttprequest';
+// import * as firebase from 'firebase';
 
 admin.initializeApp();
 

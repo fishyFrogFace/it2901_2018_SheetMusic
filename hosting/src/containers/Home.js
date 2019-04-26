@@ -557,8 +557,7 @@ class Home extends React.Component {
                                         snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                                     );
                                     item.parts = parts;
-                                    let instr =
-                                        item.instruments
+                                    let instr = item.instruments;
                                 });
                             }
                             this.setState({ band: { ...this.state.band, scores: items } });
@@ -696,6 +695,7 @@ class Home extends React.Component {
 
 
         let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
+
 
         return <div className={classes.root}>
             {
