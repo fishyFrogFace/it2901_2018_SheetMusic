@@ -3,6 +3,8 @@ import React from 'react';
 import { TextField, withStyles } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
+const styles = {};
+
 /**
  * Component used by Home.js (as part of the top bar) to display a dialog for creating a new band.
  */
