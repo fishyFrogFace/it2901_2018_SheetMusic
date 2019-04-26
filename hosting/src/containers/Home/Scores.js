@@ -252,32 +252,9 @@ class Scores extends React.Component {
     });
   };
 
-  // get all instruments from db for seleting and filter on instrument
-  onGetAllInstruments = () => {
-    let allPartsInstruments = []
-    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
-          let data = this.props.band.scores[i].parts[k].instrumentRef
-          data.get().then(function (documentSnapshot) {
-            const partsInstruments = documentSnapshot.data()
-            allPartsInstruments.push(partsInstruments.name)
-
-          });
-        }
-      }
-    }
-    setTimeout(() => {
-      this.setState({
-        allPartsInstruments: allPartsInstruments
-      })
-    }, 500);
-  }
-
   onExpansionClick = (e) => {
     const parts = [];
     const instrumentType = [];
-    console.log('223:', this.props.band.scores, 'e.target:', e.target)
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
       if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
         for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
@@ -475,7 +452,7 @@ class Scores extends React.Component {
                     <ListItem key={index} dense button
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
-                      <ListItemText primary={score.title} />
+                      <ListItemText primary={score.title} secondary={`Parts: ${1}`} />
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
@@ -604,20 +581,8 @@ class Scores extends React.Component {
                                       <ListItem key={index} className={classes.partList}>
                                         {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
                                           < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
-                                            {/* Original */}
-                                            {
-                                              <div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                                                {item}</div>
-                                            }
-
-                                            {/* TESTING */}
-                                            {/* {
-                                              (score.parts[1].pages || []).map((page, index) =>
-                                                <img key={index} className={classes.sheet} src={page.originalURL} />
-                                                <div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
-                                                  {item}</div>
-                                              )
-                                            } */}
+                                            {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
+                                              {item}</div>}
                                           </ListItemText>
                                         )}
                                       </ListItem>

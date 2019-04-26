@@ -25,8 +25,6 @@ import Setlists from "./Home/Setlists";
 import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
 
-
-
 const styles = {
     root: {
         height: '100%',
@@ -122,19 +120,15 @@ class Home extends React.Component {
         if (scoreData.composer) {
             data.composer = scoreData.composer;
         }
-
         if (scoreData.arranger) {
             data.arranger = scoreData.arranger;
         }
-
         if (scoreData.tempo) {
             data.tempo = scoreData.tempo;
         }
-
         if (scoreData.genres && scoreData.genres.length > 0) {
             data.genres = scoreData.genres;
         }
-
         if (scoreData.tags && scoreData.tags.length > 0) {
             data.tags = scoreData.tags;
         }
@@ -145,6 +139,7 @@ class Home extends React.Component {
         })
     }
 
+    // This function runs after AddFullScoreDialog is done
     _onAddFullScore = async (scoreData, parts, pdf) => {
         const { band } = this.state;
 
@@ -162,26 +157,25 @@ class Home extends React.Component {
 
         console.log("Depeted");
 
-        await Promise.all(
-            parts.map(part => scoreRef.collection('parts').add({
-                pages: part.pages,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                tune: 1,
-            })
-            ));
+        const pdfRef = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`)
 
-        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
+        for (let part of parts) {
+            await scoreRef.collection('parts').add({
+                pages: [pdf.pages[part.page - 1]],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                instrumentRef: part.instrumentId ? (firebase.firestore().doc(`instruments/${part.instrumentId}`)) : (firebase.firestore().doc(`instruments/${part.instrument[0].id}`)),
+            });
+        }
 
         console.log("Depeted");
+        await pdfRef.delete();
+
         this.setState({ message: null });
     };
 
-    _onAddParts = async (scoreData, parts, tune) => {
+    _onAddParts = async (scoreData, parts) => {
         const { band } = this.state;
         this.setState({ message: 'Adding parts...' });
-
-
 
         let scoreRef;
         if (scoreData.id) {
@@ -196,7 +190,6 @@ class Home extends React.Component {
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                tune: tune,
             });
 
 
@@ -387,50 +380,17 @@ class Home extends React.Component {
 
         this.setState({ uploadAnchorEl: null });
 
-        switch (type) {
-            case 'computer':
+        let fileNames = [];
 
-                let fileNames = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            this.setState({ message: `Uploading file ${i + 1}/${files.length}...` });
+            fileNames.push(file.name.replace(/\.[^/.]+$/, ""));
+            await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
+            console.log(`File ${file.name} uploaded`);
+        };
 
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    this.setState({ message: `Uploading file ${i + 1}/${files.length}...` });
-                    fileNames.push(file.name.replace(/\.[^/.]+$/, ""));
-                    await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
-                    console.log(`File ${file.name} uploaded`);
-                };
-
-                // firebase.firestore().collection(`bands/${band.id}/pdfs/`).onSnapshot(async snap => {
-                //     let items = await Promise.all(
-                //         snap.docs.map(async doc => ({...doc.data(), id: doc.id}))
-                //     );
-
-                //     this.setState({message: `Preparing files...`});
-                //     // setTimeout(this.setState({ message: `Preparing files...` }), 30000)
-                //     setTimeout(this.setState({ message: `Uploading files failed...` }), 30000)
-                //     // this.setState({message: `Uploading files failed...`});
-
-
-                //     for (let item of items) {
-                //         console.log(fileNames.includes(item.name));
-                //         if (fileNames.includes(item.name)) {
-                //             setTimeout(this.setState({ message: `Files successfully uploaded` }), 2000)
-                //             this.setState({ message: null });
-                //         };
-                //     };
-                // });
-
-                this.setState({ message: null });
-                break;
-
-            // case 'dropbox':
-            //     const response = await fetch(`https://us-central1-scores-butler.cloudfunctions.net/uploadFromDropbox?bandId=${band.id}&folderPath=${path}&accessToken=${accessToken}`);
-            //     console.log(response.status);
-            //     break;
-
-            case 'drive':
-                break;
-        }
+        this.setState({ message: null });
     };
 
 
@@ -597,8 +557,13 @@ class Home extends React.Component {
                                     id: doc.id,
                                 }))
                             );
-                            // getting information for each part for each score
+                            // Getting information for each part for each score
                             for (let item of items) {
+                                // Adding partCount to each score
+                                data.defaultBandRef.collection(`scores/${item.id}/parts`).get().then(snap => {
+                                    data.defaultBandRef.collection('scores').doc(item.id).update({ partCount: snap.size })
+                                })
+                                // Adding information to state
                                 data.defaultBandRef.collection(`scores/${item.id}/parts`).onSnapshot(async snapshot => {
                                     let parts = await Promise.all(
                                         snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
@@ -609,7 +574,6 @@ class Home extends React.Component {
                             }
                             this.setState({ band: { ...this.state.band, scores: items } });
                         })
-
                     );
 
                     this.unsubs.push(
@@ -631,27 +595,22 @@ class Home extends React.Component {
                             const visited = [];
 
                             for (let item of items) {
-                                if (item.pageCount > 10) {
-                                    if (item.parts) {
-                                        item.parts = await Promise.all(
-                                            item.parts.map(async part => ({
-                                                ...part,
-                                                instruments: await Promise.all(
-                                                    part.instruments.map(async instr => {
-                                                        const doc = await instr.get();
-                                                        return { ...doc.data(), id: doc.id };
-                                                    })
-                                                )
-                                            }))
-                                        );
-                                    }
+                                if ((item.pageCount > 10) && (item.parts !== undefined)) {
+                                    item.parts = await Promise.all(
+                                        item.parts.map(async part => ({
+                                            ...part,
+                                            instrument: part.instrument,
+                                            instrumentId: part.instrument[0].id
+                                        }))
+                                    );
 
                                     groups.push({
                                         name: item.name.split('-')[0].trimRight(),
                                         pdf: item,
                                         type: 'full'
                                     });
-                                } else {
+                                }
+                                else {
                                     const similarPdfs = [];
 
                                     if (visited.includes(item.id)) continue;
@@ -808,23 +767,9 @@ class Home extends React.Component {
                             <div style={{ flex: 1 }} />
 
                             <IconButton id='upload-button' style={{ marginLeft: 10 }} color="inherit"
-                                //onClick={this._onFileUploadButtonClick}
-                                onClick={() => this._onUploadMenuClick('computer')}
-                            >
+                                onClick={() => this._onUploadMenuClick('computer')}>
                                 <FileUpload />
                             </IconButton>
-                            {/* <Menu
-                                anchorEl={uploadAnchorEl}
-                                open={Boolean(uploadAnchorEl)}
-                                onClose={this._onMenuClose}
-                                style={{ marginTop: 0 }}
-
-                            > */}
-                            {/* <MenuItem onClick={() => this._onUploadMenuClick('computer')}>Choose from
-                                    computer</MenuItem> */}
-                            {/* <MenuItem onClick={() => this._onUploadMenuClick('dropbox')}>Choose from
-                                    Dropbox</MenuItem> */}
-                            {/* </Menu> */}
 
                             <IconButton onClick={this._onAccountCircleClick}>
                                 {loaded &&
