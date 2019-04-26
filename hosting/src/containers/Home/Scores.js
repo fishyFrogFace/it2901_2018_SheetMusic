@@ -236,28 +236,6 @@ class Scores extends React.Component {
     });
   };
 
-  // get all instruments from db for seleting and filter on instrument
-  // onGetAllInstruments = () => {
-  //   let allPartsInstruments = []
-  //   for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-  //     if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-  //       for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
-  //         let data = this.props.band.scores[i].parts[k].instrumentRef
-  //         data.get().then(function (documentSnapshot) {
-  //           const partsInstruments = documentSnapshot.data()
-  //           allPartsInstruments.push(partsInstruments.name)
-
-  //         });
-  //       }
-  //     }
-  //   }
-  //   setTimeout(() => {
-  //     this.setState({
-  //       allPartsInstruments: allPartsInstruments
-  //     })
-  //   }, 500);
-  // }
-
   onExpansionClick = (e) => {
     const parts = [];
     const instrumentType = [];
