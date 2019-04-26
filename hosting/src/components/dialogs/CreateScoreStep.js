@@ -2,7 +2,7 @@ import React from 'react';
 
 import { IconButton, TextField, withStyles } from "material-ui";
 import ChipInput from 'material-ui-chip-input'
-import { ArrowBack, ArrowForward } from "material-ui-icons";
+import { ArrowBack, ArrowForward, Done } from "material-ui-icons";
 
 const styles = {
     chipInput__chipContainer: {
@@ -31,6 +31,28 @@ class CreateScoreStep extends React.Component {
         this.setState({ data: newData });
     };
 
+    componentDidMount = () => {
+        const { pdf } = this.props;
+
+        if (pdf.composer !== 'No composer detected' && pdf.arranger !== 'No arranger detected') {
+            const newData = { ...this.state.data, composer: pdf.composer, arranger: pdf.arranger};
+            this.props.onChange(newData);
+            this.setState({ data: newData });
+        }
+
+        else if (pdf.composer !== 'No composer detected' && pdf.arranger === 'No arranger detected') {
+            const newData = { ...this.state.data, composer: pdf.composer };
+            this.props.onChange(newData);
+            this.setState({ data: newData });
+        }
+        
+        else if (pdf.composer === 'No composer detected' && pdf.arranger !== 'No arranger detected') {
+            const newData = { ...this.state.data, arranger: pdf.arranger };
+            this.props.onChange(newData);
+            this.setState({ data: newData });
+        }
+    }
+
     _onPrevImageClick = e => {
         const { selectedPage } = this.state;
         this.setState({ selectedPage: selectedPage > 0 ? selectedPage - 1 : 0 })
@@ -46,6 +68,8 @@ class CreateScoreStep extends React.Component {
         const { pdf } = this.props;
         const { classes } = this.props;
         const { selectedPage, data } = this.state;
+
+        console.log('render', this.state.data)
 
         return <div style={{ display: 'flex', flexDirection: 'column' }}>
             {pdf &&
@@ -78,21 +102,36 @@ class CreateScoreStep extends React.Component {
             <TextField
                 label='Title'
                 style={{ marginBottom: 20 }}
-                value={pdf.name}
+                defaultValue={pdf.name}
                 onChange={e => this._onDataChange('title', e)}
             />
-            <TextField
-                label='Composer'
-                style={{ marginBottom: 20 }}
-                value={pdf.composer}
-                onChange={e => this._onDataChange('composer', e)}
-            />
-            <TextField
-                label='Arranger'
-                style={{ marginBottom: 20 }}
-                value={pdf.arranger}
-                onChange={e => this._onDataChange('arranger', e)}
-            />
+            {pdf.composer === 'No composer detected' &&
+                <TextField
+                    label='Composer'
+                    style={{ marginBottom: 20 }}
+                    onChange={e => this._onDataChange('composer', e)}
+                />}
+            {pdf.composer !== 'No composer detected' &&
+                <TextField
+                    label='Composer'
+                    style={{ marginBottom: 20 }}
+                    defaultValue={pdf.composer}
+                    onChange={e => this._onDataChange('composer', e)}
+                    />
+            }
+            {pdf.arranger === "No arranger detected" &&
+                <TextField
+                    label='Arranger'
+                    style={{ marginBottom: 20 }}
+                    onChange={e => this._onDataChange('arranger', e)}
+                />}
+            {pdf.arranger !== "No arranger detecter" &&
+                <TextField
+                    label='Arranger'
+                    style={{ marginBottom: 20 }}
+                    defaultValue={pdf.arranger}
+                    onChange={e => this._onDataChange('arranger', e)}
+                />}
             <TextField
                 label="Tempo"
                 onChange={e => this._onDataChange('tempo', e)}

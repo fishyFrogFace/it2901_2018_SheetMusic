@@ -11,14 +11,19 @@ import DeleteIcon from 'material-ui-icons/Delete';
 import firebase from 'firebase';
 import 'firebase/storage';
 
+import DownloadSetlistDialog from "../components/dialogs/DownloadSetlistDialog";
 import AddSetlistScoresDialog from "../components/dialogs/AddSetlistScoresDialog";
 import AddSetlistEventDialog from "../components/dialogs/AddSetlistEventDialog";
 import EditSetlistDialog from "../components/dialogs/EditSetlistDialog";
 import EditSetlistEventDialog from "../components/dialogs/EditSetlistEventDialog";
 import AsyncDialog from '../components/dialogs/AsyncDialog';
 
-import {DragDropContext, Droppable, Draggable} from "react-beautiful-dnd";
-import {Add, ArrowBack, Edit, MusicNote} from "material-ui-icons";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Add, ArrowBack, Edit, FileDownload, MusicNote } from "material-ui-icons";
+
+import jsPDF from 'jspdf';
+import { async } from '@firebase/util';
+import { func } from 'prop-types';
 
 const styles = {
     root: {},
@@ -50,6 +55,7 @@ class Setlist extends Component {
     addScoreDialog;
     addEventDialog;
     editSetlistDialog;
+    downloadSetlistDialog;
 
     unsubs = [];
 
@@ -117,6 +123,7 @@ class Setlist extends Component {
                         items: [...(setlist.items || []), ...scoreItems]
                     });
                     break;
+
                 case 'addEvent':
                     const { eventTitle, description, time } = await this.addEventDialog.open();
                     await setlistRef.update({
@@ -129,9 +136,234 @@ class Setlist extends Component {
                         }]
                     });
                     break;
+
                 case 'editSetlist':
                     const {title, date, setlistTime} = await this.editSetlistDialog.open(setlist);
                     await setlistRef.update({title: title, date: date, time: setlistTime});
+                    break;
+
+                case 'download':
+                    let instrArr = [];              // Array of instruments in the setlist
+                    let st = null;                  // State returned from dialog
+                    let selectedInstrument = null;  // Selected instrument in dialog
+                    const thiss = this;             // For use in the promise
+                    const items = this.state.setlist.items;                 // Get the items from the setlist
+                    const setlistTitle = this.state.setlist.title;          // Get the items from the setlist
+                    const dateString = new Date().toLocaleDateString();     // Get date string
+                    
+                    // Get what instruments are in the setlist and open a dialog
+                    // so that the user can choose to download only the sheets 
+                    // for one instriment, or the entire list.
+                    await new Promise(async (resolve) => {
+                        for(const item of items) {
+                            if(item.type == 'score') {
+                                await item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
+                                    for (const part of querySnapshot.docs) {
+
+                                        //Get the name of the instrument in an array, for future filtering
+                                        await part.data().instrumentRef.get().then(function(ref) {
+                                            instrArr.push(ref.get("name"));
+                                        });
+                                    }
+                                });
+                            }
+                        } 
+                        resolve();
+                    }).then(async function() {
+                        st = await thiss.downloadDialog.open(instrArr);    // Open the download dialog, returns the state from it
+                        if(st.instrument && st.instrument.value) {
+                            selectedInstrument = st.instrument.value;          // Get the instrument that was selected from the dialog
+                        } else {
+                            selectedInstrument = "Events";
+                        }
+                    });
+                    
+                    var array = []; //Promise array to make sure everything is in the right order
+                    var instrumentPromiseArray = [];
+                    var overview = [];  // To make the overview
+                    var overviewIndex = 0;
+
+                    items.forEach((item) => {
+                        switch(item.type) {
+                            case('event'):
+                                overview.push({ title: item.title, page: 0, type: item.type })
+                                array.push(new Promise(resolve => {
+                                    resolve([[item.title, item.description, item.time]]);
+                                }));
+                                break;
+
+                            case('score'):
+                                for(let i = 0; i < item.score.partCount; i++) {
+                                    overview.push({ title: item.score.title, page: 0, type: item.type })
+                                }
+                                
+                                array.push(new Promise(resolve => {
+                                    item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
+                                        
+                                        let ar = [];
+                                        let arOfAr = [];
+
+                                        // Iterate through parts
+                                        for (const part of querySnapshot.docs) {
+
+                                            //Get the name of the instrument in an array, for future filtering
+                                            instrumentPromiseArray.push(new Promise(resolve => {
+                                                part.data().instrumentRef.get().then(function(ref) {
+                                                    resolve(ref.get("name"));
+                                                });
+                                            }));
+
+                                            // Get the images of pages in the part
+                                            for (const page of part.data().pages) {
+                                                
+                                                const url = page.originalURL;
+                                                const response = await fetch(url);
+                                                const blob = await response.blob();
+
+                                                const imageData = await new Promise((resolve, reject) => {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => resolve(reader.result);
+                                                    reader.onerror = reject;
+                                                    reader.readAsDataURL(blob);
+                                                });
+                                                ar.push(imageData);
+                                            };
+                                            arOfAr.push(ar);
+                                            ar = [];
+                                        };
+                                        resolve(arOfAr);
+                                    })
+                                }));
+                                break;
+                        }
+                    });
+                    Promise.all(array).then(function(values) {
+                        Promise.all(instrumentPromiseArray).then(function(instrumentArray) {
+                            let instIndex = 0;
+                            overview.forEach(item => { //Add instrument to overview
+                                if(item.type == 'score') {
+                                    item.title += " (" + instrumentArray[instIndex++] + ")";
+                                }
+                            });
+
+                            const doc = new jsPDF('p', 'px', 'a4'); // Make PDF
+                            const size_increase = 1.33334;   // jsPDF doesn't agree with itself on some sizes, no idea why
+                            const titleSize = 26;            // Title text size
+                            const normalSize = 12;           // Normal text size
+                            const linelen = 80;              // In characters
+                            const leftmargin = 70;           // In pixels
+                            const bottommargin = 550;        // In pixesl, from top
+                            const descspace = 80;            // How much space there is between the top of the page and the description, in pixels
+                            const pageNumberY = 612;         // How far down on the page the page numbe is placed, in pixesl
+                            let pageNumber = 1;              // Page counter for correct page numbering
+                            let pageDict = {};
+                            let totalPartIndex = 0;          // Counter for parts processed, for later indexing
+                            let scoreIndex = 0;
+                            const dy = 12;                   // Line space in pixels
+                            const a4_size = [595.28, 841.89];// For convenience, specific numbers was found in jsPDF source code
+                            doc.setFont('Times');            // Set the fotn, for a list of fonts, do doc.getFontList()
+                            doc.setFontSize(normalSize);     // Set textsize
+                            doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
+
+
+                            values.forEach(array => {
+                                array.forEach(items => {
+
+                                    //Item is part (is array of pages in said part)
+                                    if(items[0].startsWith("data:image/png;base64,")) {
+
+                                        // Fix correct page number for the overview
+                                        overview[overviewIndex++].page = pageNumber;
+                                        
+                                        // Check if part is of instrument that should be included in PDF
+                                        if(selectedInstrument == instrumentArray[totalPartIndex] ||
+                                           selectedInstrument == "Everything") { 
+                                            // pageDict[pageNumber] = scoreArray[scoreIndex++];
+                                            items.forEach(item => {
+                                                doc.addPage();
+                                                doc.addImage(item, 'PNG', 0, 0, a4_size[0]/size_increase, a4_size[1]/size_increase);
+                                                doc.text(`${dateString}     ${setlist.title}     Downloaded by: ${band.name}     Page: ${pageNumber++}`, 20, 625);
+                                            });
+                                        }
+                                        totalPartIndex++;
+                                    } 
+
+                                    //Item is event
+                                    else { 
+                                        // Fix correct page number for the overview
+                                        overview[overviewIndex++].page = pageNumber;
+
+                                        doc.addPage();
+                                        doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
+
+                                        let y = descspace;
+                                        
+                                        var desc = items[1];
+
+                                        //Title
+                                        doc.setFontSize(titleSize);
+                                        doc.text(items[0], leftmargin, 50); 
+
+                                        doc.setFontSize(normalSize);
+
+                                        //Description
+                                        while (desc.length > 0) {
+                                            //Remove start of line space
+                                            if(desc[0] == " ") {
+                                                desc = desc.substring(1, desc.length);
+                                            }
+
+                                            let lineToBeAdded = desc.substring(0, linelen);
+                                            desc = desc.substring(linelen, desc.length);
+
+                                            //Test if line-break is in the middle of a word
+                                            if(lineToBeAdded[lineToBeAdded.length-1] != " " && desc[0] != " " && desc.length > 0) {
+                                                lineToBeAdded += "-";
+                                            }
+
+                                            doc.text(lineToBeAdded, leftmargin, y); 
+                                            y += dy;
+
+                                            if(y > bottommargin) {
+                                                y = descspace;
+                                                doc.addPage();
+                                                doc.text(`Page: ${pageNumber++}`, leftmargin, pageNumberY);
+                                            }
+                                        }
+
+                                        //Time
+                                        doc.text(items[2] + " minutes", leftmargin, 600);
+                                    }       
+                                });
+                            });
+
+                            //Overview creation
+                            let y = descspace
+                            doc.setPage(1)
+                            doc.setFontSize(titleSize);
+                            doc.text(setlistTitle, leftmargin, 50); 
+                            doc.setFontSize(normalSize);
+                            overview.forEach(item => {
+                                switch(item.type) {
+                                    case('event'):
+                                        doc.text(item.title + " - " + item.page, leftmargin, y);
+                                        y += dy;
+                                        break;
+
+                                    case('score'):
+                                        let currentInstrument = item.title.split("(")[1].split(")")[0];
+                                        if(selectedInstrument == currentInstrument ||
+                                           selectedInstrument == "Everything") { 
+                                            doc.text(item.title + " - " + item.page, leftmargin, y);
+                                            y += dy;
+                                        }
+                                        break;
+                                }
+                            });
+                            doc.save(`${setlist.title}.pdf`);
+                        
+                        });
+                    });
                     break;
             }
         } catch (err) {
@@ -371,6 +603,9 @@ class Setlist extends Component {
                                 </Typography>
                             </div>
                             <div className={classes.flex} />
+                            {<IconButton color="inherit" onClick={() => this._onMenuClick('download')}>
+                                <FileDownload id="menu-download-button"/>
+                            </IconButton>}
                             {hasRights && <IconButton color="inherit" onClick={() => this._onMenuClick('editSetlist')}>
                                 <Edit id="menu-edit-button"/>
                             </IconButton>}
@@ -460,9 +695,10 @@ class Setlist extends Component {
                         
                     </div>
                 </DragDropContext>
-                <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref}/>
-                <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref}/>
-                <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref}/>
+                <DownloadSetlistDialog onRef={ref => this.downloadDialog = ref} />
+                <AddSetlistScoresDialog band={band} onRef={ref => this.addScoreDialog = ref} />
+                <AddSetlistEventDialog onRef={ref => this.addEventDialog = ref} />
+                <EditSetlistDialog onRef={ref => this.editSetlistDialog = ref} />
                 <EditSetlistEventDialog onRef={ref => this.editSetlistEventDialog = ref}/>
                 
                 <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
