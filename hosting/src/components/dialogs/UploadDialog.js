@@ -56,7 +56,6 @@ class UploadDialog extends React.Component {
             switch (provider) {
                 case 'computer':
                     this.inputRef.click();
-                    console.log("Vi er her");
                     break;
                 case 'dropbox':
                     const authUrl = new Dropbox.Dropbox({ clientId: 'tbg7d2wqxr0ngke' }).getAuthenticationUrl('https://scores-bc679.firebaseapp.com/auth');

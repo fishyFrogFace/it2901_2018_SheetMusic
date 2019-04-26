@@ -25,8 +25,6 @@ import Setlists from "./Home/Setlists";
 import UploadDialog from "../components/dialogs/UploadDialog";
 import levenshtein from 'fast-levenshtein';
 
-
-
 const styles = {
     root: {
         height: '100%',
@@ -122,19 +120,15 @@ class Home extends React.Component {
         if (scoreData.composer) {
             data.composer = scoreData.composer;
         }
-
         if (scoreData.arranger) {
             data.arranger = scoreData.arranger;
         }
-
         if (scoreData.tempo) {
             data.tempo = scoreData.tempo;
         }
-
         if (scoreData.genres && scoreData.genres.length > 0) {
             data.genres = scoreData.genres;
         }
-
         if (scoreData.tags && scoreData.tags.length > 0) {
             data.tags = scoreData.tags;
         }
@@ -145,10 +139,14 @@ class Home extends React.Component {
         })
     }
 
+    // This function runs after AddFullScoreDialog is done
     _onAddFullScore = async (scoreData, parts, pdf) => {
         const { band } = this.state;
 
         this.setState({ message: 'Adding score...' });
+
+        console.log('onAddFullScore_Parts', parts)
+        console.log('pdf', pdf)
 
         let scoreRef;
         if (scoreData.id) {
@@ -159,29 +157,30 @@ class Home extends React.Component {
 
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
-
+        
         console.log("Depeted");
-
-        await Promise.all(
-            parts.map(part => scoreRef.collection('parts').add({
-                pages: part.pages,
+        
+        const pdfRef = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`)
+        
+        for (let part of parts) {
+            await scoreRef.collection('parts').add({
+                pages: [pdf.pages[part.page - 1]],
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                tune: 1,
-            })
-            ));
-
-        await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`).delete();
+                instrumentRef: part.instrumentId ? (firebase.firestore().doc(`instruments/${part.instrumentId}`)) : (firebase.firestore().doc(`instruments/${part.instrument[0].id}`)),
+            });
+        }
 
         console.log("Depeted");
+        await pdfRef.delete();
+
         this.setState({ message: null });
     };
 
-    _onAddParts = async (scoreData, parts, tune) => {
+    _onAddParts = async (scoreData, parts) => {
         const { band } = this.state;
         this.setState({ message: 'Adding parts...' });
 
-
+        console.log('onAddParts')
 
         let scoreRef;
         if (scoreData.id) {
@@ -196,7 +195,6 @@ class Home extends React.Component {
                 pages: pdfDoc.data().pages,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
-                tune: tune,
             });
 
 
@@ -625,27 +623,21 @@ class Home extends React.Component {
                             const visited = [];
 
                             for (let item of items) {
-                                if (item.pageCount > 10) {
-                                    if (item.parts) {
-                                        item.parts = await Promise.all(
-                                            item.parts.map(async part => ({
-                                                ...part,
-                                                instruments: await Promise.all(
-                                                    part.instruments.map(async instr => {
-                                                        const doc = await instr.get();
-                                                        return { ...doc.data(), id: doc.id };
-                                                    })
-                                                )
-                                            }))
-                                        );
-                                    }
+                                if ((item.pageCount > 10) && (item.parts !== undefined)) {
+                                    item.parts = await Promise.all(
+                                        item.parts.map(async part => ({
+                                            ...part,
+                                            instrument: part.instrument
+                                        }))
+                                    );
 
                                     groups.push({
                                         name: item.name.split('-')[0].trimRight(),
                                         pdf: item,
                                         type: 'full'
                                     });
-                                } else {
+                                }
+                                else {
                                     const similarPdfs = [];
 
                                     if (visited.includes(item.id)) continue;

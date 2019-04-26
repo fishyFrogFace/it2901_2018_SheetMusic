@@ -66,6 +66,7 @@ class AddPartsDialog extends React.Component {
                 .map(doc => ({ ...doc.data(), id: doc.id }))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
+            console.log('pdfs', pdfs)
             this.setState({
                 instruments: instruments,
                 parts: pdfs.map(pdf => ({ pdf: pdf, instrumentId: pdf.parts[0].instrument[0].id !== undefined ? pdf.parts[0].instrument[0].id : instruments[0].id })),
@@ -137,6 +138,8 @@ class AddPartsDialog extends React.Component {
         const { band, classes } = this.props;
 
         if (!open) return null;
+
+        console.log('AddPartsParts', parts)
 
         return <Dialog open={open} classes={{ paper: classes.dialog__paper }} fullScreen>
             <DialogTitle>Add parts</DialogTitle>

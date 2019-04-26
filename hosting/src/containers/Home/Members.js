@@ -281,6 +281,23 @@ class Members extends React.Component {
             console.log('Deleting unsorted pdfs not yet implemented')
          }
 
+         let members = []
+         for (let member in band.members) {
+            members.push(member)
+         }
+
+         // Deleting the band and all its subcollections
+         await this._onDeleteCollection(bandRef.collection('leader'), 20);
+         await this._onDeleteCollection(bandRef.collection('members'), 50);
+         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
+         await this._onDeleteCollection(bandRef.collection('scores'), 50);
+         await this._onDeleteCollection(bandRef.collection('setlists'), 50);
+         await bandRef.delete();
+
+         // CREATE FUNCTION FOR DELETING BANDREFS OF ALL MEMBERS
+         // const membersRef = firebase.firestore().doc(`users/${this.state.user}`);
+
+
          // Removing bandRef 
          let userBandRefs = (await userRef.get()).data().bandRefs || [];
          let filteredRefs = await userBandRefs.filter(ref => ref.id !== bandRef.id);
@@ -297,14 +314,6 @@ class Members extends React.Component {
                bandRefs: firebase.firestore.FieldValue.delete(),
             });
          }
-
-         // Deleting the band and all its subcollections
-         await this._onDeleteCollection(bandRef.collection('leader'), 20);
-         await this._onDeleteCollection(bandRef.collection('members'), 50);
-         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
-         await this._onDeleteCollection(bandRef.collection('scores'), 50);
-         await this._onDeleteCollection(bandRef.collection('setlists'), 50);
-         await bandRef.delete();
 
          //window.location.reload();
 

@@ -125,7 +125,7 @@ class CreateScoreStep extends React.Component {
                     style={{ marginBottom: 20 }}
                     onChange={e => this._onDataChange('arranger', e)}
                 />}
-            {pdf.arranger !== "No arranger detecter" &&
+            {pdf.arranger !== "No arranger detected" &&
                 <TextField
                     label='Arranger'
                     style={{ marginBottom: 20 }}

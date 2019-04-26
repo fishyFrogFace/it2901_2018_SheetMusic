@@ -6,11 +6,6 @@ import { spawn } from 'child-process-promise';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
-import * as PDFDocument from 'pdfkit';
-import * as vision from '@google-cloud/vision';
-import 'isomorphic-fetch';
-import { Dropbox } from 'dropbox';
-import * as cors from 'cors';
 import * as request from 'request-promise-native';
 
 
@@ -18,88 +13,35 @@ admin.initializeApp();
 
 const storage = new Storage({ keyFilename: 'service-account-key.json' });
 
-// Extracts ZIP with pdfs
-// exports.extractZip = functions.storage.object().onFinalize(async (object, context) => {
-//     // Full file path (<bandId>/<fileName>.pdf)
-//     const filePath = object.name;
+// Function made just for updating Firebase instruments collection with instruments.
+// TO USE IT: Uncomment the code and change instrumentCheck in firebase to true.
+// exports.makeInstrumentList = functions.storage.object().onFinalize(async (object, context) => {
 
-//     if (!filePath.endsWith('.zip')) return null;
+//     // This only runs when instrumentCheck is true
+//     const instCheckRef = await admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
+//     const checked = (await instCheckRef.get()).data().checked;
+//     const instruments = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax',
+//         'Baryton Sax', 'Piano', 'Drums', 'Guitar', 'Bass', 'Flute', 'Piccolo Flute', 'Clarinet',
+//         'Walthorn', 'Cornet', 'Euphonium', 'Tuba']
 
-//     let [bandId, fileNameExt] = filePath.split('/');
+//     if (checked) {
+//         for (let inst in instruments) {
+//             for (let i = 1; i <= 4; i++) {
+//                 const instList = await admin.firestore().collection(`instruments`).add({
+//                     displayName: `${i}. ${instruments[inst]}`,
+//                     name: `${instruments[inst]} ${i}`,
+//                     type: instruments[inst],
+//                     voice: i
+//                 });
+//             }
+//         }
 
-//     // File name without extension
-//     const fileName = path.basename(fileNameExt, '.zip');
-
-//     // Create storage bucket
-//     const bucket = storage.bucket(object.bucket);
-
-//     try {
-//         // Download to local directory
-//         await bucket.file(filePath).download({ destination: '/tmp/file.zip' });
-
-//         await bucket.file(filePath).delete();
-
-//         // Unzip
-//         const dir = await unzipper.Open.file('/tmp/file.zip');
-
-//         await Promise.all(
-//             dir.files
-//                 .filter(file => file.path.endsWith('.pdf'))
-//                 .filter(file => !file.path.startsWith('__MACOSX'))
-//                 .map(async file => {
-//                     let pdfPathParts = file.path.split('/');
-//                     if (pdfPathParts[0] === fileName) {
-//                         pdfPathParts = pdfPathParts.slice(1);
-//                     }
-
-//                     const name = pdfPathParts.join(' - ');
-
-//                     await new Promise((resolve, reject) => {
-//                         file.stream()
-//                             .pipe(bucket.file(`${bandId}/${name}`).createWriteStream())
-//                             .on('error', reject)
-//                             .on('finish', resolve)
-
-//                     });
-//                 })
-//         );
-
-//         // Clean up
-//         await fs.remove('/tmp/file.zip');
-//     } catch (err) {
-//         console.log(err);
+//         // Secures that this function only runs once
+//         const instUpdate = instCheckRef.update({
+//             checked: false
+//         });
 //     }
 // });
-
-
-// Function made just for updating Firebase instruments collection with instruments
-exports.makeInstrumentList = functions.storage.object().onFinalize(async (object, context) => {
-
-    // This only runs when instrumentCheck is true
-    const instCheckRef = await admin.firestore().collection(`instrumentcheck`).doc('instrumentCheck');
-    const checked = (await instCheckRef.get()).data().checked;
-    const instruments = ['Trombone', 'Trumpet', 'Bass Trombone', 'Alt Sax', 'Tenor Sax',
-        'Baryton Sax', 'Piano', 'Drums', 'Guitar', 'Bass', 'Flute', 'Piccolo Flute', 'Clarinet',
-        'Walthorn', 'Cornet', 'Euphonium', 'Tuba']
-
-    if (checked) {
-        for (let inst in instruments) {
-            for (let i = 1; i <= 4; i++) {
-                const instList = await admin.firestore().collection(`instruments`).add({
-                    displayName: `${i}. ${instruments[inst]}`,
-                    name: `${instruments[inst]} ${i}`,
-                    type: instruments[inst],
-                    voice: i
-                });
-            }
-        }
-
-        // Secures that this function only runs once
-        const instUpdate = instCheckRef.update({
-            checked: false
-        });
-    }
-});
 
 
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
@@ -398,7 +340,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                         else {
                             parts.push({
                                 page: i + 1,
-                                instrument: 'No instruments detected'
+                                instrument: [instruments[instrmList.indexOf("NO INSTRUMENTS DETECTED")].ref]
                             });
                         }
                     }
@@ -406,7 +348,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                     else {
                         parts.push({
                             page: i + 1,
-                            instrument: 'No instruments detected',
+                            instrument: [instruments[instrmList.indexOf("NO INSTRUMENTS DETECTED")].ref]
                         });
                     }
                 }
@@ -430,59 +372,6 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             console.log(err);
         }
     }
-});
-
-exports.analyzePDF = functions.https.onRequest(async (req, res) => {
-    const { bandId, pdfId } = req.query;
-
-    const bucket = storage.bucket('gs://scores-bc679.appspot.com');
-
-    await bucket.file(`bands/${bandId}/pdfs/${pdfId}/combinedImage.png`).download({ destination: '/tmp/image.png' });
-
-    const client = new vision.ImageAnnotatorClient();
-
-    const response = await client.textDetection('/tmp/image.png');
-    const detections = response[0];
-
-    await res.json(detections);
-});
-
-exports.generatePDF = functions.https.onRequest(async (req, res) => {
-    const bucket = storage.bucket('gs://scores-bc679.appspot.com');
-
-    const doc = new PDFDocument();
-
-    const image = '';
-
-    const file = bucket.file('test/test.pdf');
-    await file.setMetadata({ contentType: 'application/pdf' });
-
-    const writeStream = file.createWriteStream();
-
-    doc.pipe(writeStream);
-    doc.image(image, 0, 0);
-    doc.end();
-
-    writeStream.on('finish', async () => {
-        res.status(200).send();
-    });
-});
-
-exports.uploadFromDropbox = functions.https.onRequest((req, res) => {
-    return cors({ origin: true })(req, res, async () => {
-        const { bandId, folderPath, accessToken } = req.query;
-        const dropbox = new Dropbox({ accessToken: accessToken });
-        const response = await dropbox.filesDownloadZip({ path: folderPath }) as any;
-        const bucket = storage.bucket('scores-bc679.appspot.com');
-        await bucket.file(`${bandId}/${Math.random().toString().slice(2)}.zip`).save(response.fileBinary);
-        res.status(200).send();
-    });
-});
-
-exports.updatePartCount = functions.firestore.document('bands/{bandId}/scores/{scoreId}/parts/{partId}').onWrite(async (change, context) => {
-    const partRef = change.after.ref.parent.parent;
-    const partCount = (await partRef.collection('parts').get()).size;
-    await partRef.update({ partCount: partCount });
 });
 
 exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{scoreId}').onCreate(async (snap, context) => {

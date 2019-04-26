@@ -229,8 +229,7 @@ class Scores extends React.Component {
     score = ''
   };
 
-
-  // closes the active expanded panel when next is activated
+  // Closes the active expanded panel when next is activated
   handleChange = panel => (event, expanded) => {
     this.setState({
       expanded: expanded ? panel : false,
@@ -238,33 +237,34 @@ class Scores extends React.Component {
   };
 
   // get all instruments from db for seleting and filter on instrument
-  onGetAllInstruments = () => {
-    let allPartsInstruments = []
-    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
-          let data = this.props.band.scores[i].parts[k].instrumentRef
-          data.get().then(function (documentSnapshot) {
-            const partsInstruments = documentSnapshot.data()
-            allPartsInstruments.push(partsInstruments.name)
+  // onGetAllInstruments = () => {
+  //   let allPartsInstruments = []
+  //   for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
+  //     if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
+  //       for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
+  //         let data = this.props.band.scores[i].parts[k].instrumentRef
+  //         data.get().then(function (documentSnapshot) {
+  //           const partsInstruments = documentSnapshot.data()
+  //           allPartsInstruments.push(partsInstruments.name)
 
-          });
-        }
-      }
-    }
-    setTimeout(() => {
-      this.setState({
-        allPartsInstruments: allPartsInstruments
-      })
-    }, 500);
-  }
+  //         });
+  //       }
+  //     }
+  //   }
+  //   setTimeout(() => {
+  //     this.setState({
+  //       allPartsInstruments: allPartsInstruments
+  //     })
+  //   }, 500);
+  // }
 
   onExpansionClick = (e) => {
     const parts = [];
     const instrumentType = [];
+
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
       if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
-        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
+        for (let k = 0; k < (this.props.band.scores[e.target.id].parts.length); k++) {
           let data = this.props.band.scores[i].parts[k].instrumentRef
           data.get().then(function (documentSnapshot) {
             const partsInstruments = documentSnapshot.data()
@@ -503,7 +503,7 @@ class Scores extends React.Component {
                     <ListItem key={index} dense button
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
-                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      <ListItemText primary={score.title} secondary={`Parts: ${1}`} />
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
@@ -605,7 +605,7 @@ class Scores extends React.Component {
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
                         </Typography>
                         <Typography variant='subheading'>
-                          Parts: {score.partCount}
+                          {/* Parts: {score.partCount} */}
                         </Typography>
 
                       </CardContent>

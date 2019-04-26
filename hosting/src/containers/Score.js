@@ -170,6 +170,8 @@ class Score extends React.Component {
 
         const hasParts = Boolean(score.parts && score.parts.length);
 
+        console.log(score.parts)
+        
         return (
             <div className={classes.root}>
                 <AppBar>
