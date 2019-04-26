@@ -624,7 +624,7 @@ class Scores extends React.Component {
                           <LinearProgress color="secondary" />
                         </div>}
                       {
-                        !loaded ?
+                        loaded ?
                           <CardMedia
                             className={classes.media}
                             image={
