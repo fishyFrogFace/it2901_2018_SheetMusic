@@ -1,0 +1,56 @@
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@babel/runtime": "^7.0.0-beta.55",
+    "@material-ui/icons": "^3.0.2",
+    "date-fns": "2.0.0-alpha.7",
+    "dropbox": "^4.0.1",
+    "fast-crc32c": "^1.0.4",
+    "fast-levenshtein": "^2.0.6",
+    "firebase": "^5.0.2",
+    "fuse.js": "^3.2.0",
+    "hammerjs": "^2.0.8",
+    "jspdf": "^1.5.3",
+    "material-ui": "^1.0.0-beta.32",
+    "material-ui-chip-input": "1.0.0-beta.3",
+    "material-ui-icons": "^1.0.0-beta.17",
+    "material-ui-pickers": "1.0.0-rc.7",
+    "panzoom": "^4.3.1",
+    "puppeteer-core": "^1.12.2",
+    "react": "^16.2.0",
+    "react-beautiful-dnd": "^7.1.3",
+    "react-dom": "^16.2.0",
+    "react-event-listener": "^0.6.6",
+    "react-hover-image": "^1.0.0",
+    "react-modal-image": "^2.3.2",
+    "react-pdf-preview": "^1.0.0",
+    "react-scripts": "^2.1.5",
+    "react-scroll-up-button": "^1.6.4",
+    "typeface-roboto": "^0.0.54",
+    "v-scroll-to-top": "^1.0.2"
+  },
+  "scripts": {
+    "start": "node_modules/.bin/react-scripts start",
+    "build": "node_modules/.bin/react-scripts build",
+    "eject": "node_modules/.bin/react-scripts eject",
+    "build:testConfig": "cypress-firebase createTestEnvFile",
+    "test": "npm run build:testConfig && cypress run",
+    "test:open": "npm run build:testConfig && cypress open",
+    "test:stage": "npm run test -- --env envName=stage",
+    "test:open:stage": "npm run test:open -- --env envName=stage"
+  },
+  "devDependencies": {
+    "cypress": "^3.2.0",
+    "cypress-firebase": "^0.1.5",
+    "firebase-admin": "^5.12.1",
+    "gulp": "^4.0.0"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
