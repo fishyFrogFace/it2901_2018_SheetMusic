@@ -3,8 +3,9 @@ import React from 'react';
 import { TextField, withStyles } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
-const styles = {
-};
+/**
+ * Component used by Home.js (as part of the top bar) to display a dialog for creating a new band.
+ */
 
 class CreateBandDialog extends React.Component {
     data = {};
@@ -28,7 +29,16 @@ class CreateBandDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Create Band' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField id='dialog-textfield' label='Name' onChange={e => this._onDataChangeName('name', e)} style={{ marginBottom: 20, width: 300 }} />
+            <TextField
+                id='dialog-textfield'
+                label='Name'
+                onChange={e =>
+                    this._onDataChangeName('name', e)}
+                style={{
+                    marginBottom: 20,
+                    width: 300
+                }}
+            />
         </AsyncDialog>
     }
 }
