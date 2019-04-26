@@ -8,7 +8,6 @@ import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
 import * as request from 'request-promise-native';
 
-
 admin.initializeApp();
 
 const storage = new Storage({ keyFilename: 'service-account-key.json' });

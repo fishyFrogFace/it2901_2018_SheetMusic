@@ -161,16 +161,12 @@ class Score extends React.Component {
         }
     }
 
-
-
     render() {
 
         const { classes } = this.props;
         const { anchorEl, message, selectedPart, score } = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
-
-        console.log(score.parts)
         
         return (
             <div className={classes.root}>
@@ -193,7 +189,7 @@ class Score extends React.Component {
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                            value={index}>{part.instrument.name} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
+                                            value={index}>{part.instrument.displayName} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
 
                                         </MenuItem>
                                     )

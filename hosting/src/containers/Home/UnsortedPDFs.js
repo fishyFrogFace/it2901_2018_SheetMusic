@@ -47,6 +47,22 @@ const styles = theme => ({
 });
 
 class UnsortedPDFs extends React.Component {
+    state = {
+        bandAnchorEl: null,
+        uploadAnchorEl: null,
+        accountAnchorEl: null,
+        uploadSheetsDialogOpen: false,
+        message: null,
+        windowSize: null,
+        bandtypes: [],
+        band: {},
+        bands: null,
+
+        userData: {},
+        pdfSelected: false,
+        scoreInfo: []
+    };
+
     _onAddParts = async pdfs => {
         const { score, parts, tune } = await this.addPartsDialog.open(pdfs);
         this.props.onAddParts(score, parts, tune);
@@ -61,6 +77,13 @@ class UnsortedPDFs extends React.Component {
     _onRemoveUnsortedPdf = async pdf => {
         this.props.onRemoveUnsortedPdf(pdf);
     };
+
+    componentDidUpdate() {
+        const { band } = this.state;
+
+
+
+    }
 
     render() {
         const { band } = this.props;
@@ -79,15 +102,6 @@ class UnsortedPDFs extends React.Component {
             })
         }
 
-        console.log('band', band)
-
-        // if (band && band.pdfs && band.pdfs[2].pdf && band.pdfs[2].pdf.parts) {
-        //     const instRef = band.pdfs[2].pdf.parts[0].instrument[0]
-        //     console.log(instRef)
-
-        //     let instName = instRef.get().data().name || [];
-        //     console.log(instName);
-        // }
 
         return <div>
             <div style={{ paddingTop: 20, paddingLeft: 20 }}>

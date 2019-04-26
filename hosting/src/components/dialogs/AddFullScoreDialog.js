@@ -72,18 +72,18 @@ class AddFullScoreDialog extends React.Component {
                 scoreData: { title: pdf.name.split('-')[0].trim() }
             });
 
-            // const partsRef = firebase.firestore().doc(`users/${this.state.user}`);
-            // let userBandRefs = (await userRef.get()).data().bandRefs || [];
-
             const snapshot = await firebase.firestore().collection('instruments').get();
             const instruments = snapshot.docs
                 .map(doc => ({ ...doc.data(), id: doc.id }))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
-            console.log('pdf', pdf)
+            const parts = pdf.parts.map(part => {
+                const instr = instruments.find(instrument => instrument.id === part.instrumentId);
+                part.instrument = instr.name;
+            })
+
             this.setState({
                 instruments: instruments,
-                // parts: { pdf: pdf, instrumentId: pdf.parts[0].instrument[0].id !== undefined ? pdf.parts[0].instrument[0].id : instruments[0].id },
                 parts: pdf.parts || []
             });
 
@@ -112,9 +112,6 @@ class AddFullScoreDialog extends React.Component {
         }
 
         if (activeStep === 2) {
-            console.log('parts', parts)
-            console.log('partslength', parts.length)
-
             this.__resolve({
                 score: scoreData,
                 pdf: pdf,
@@ -166,10 +163,6 @@ class AddFullScoreDialog extends React.Component {
         const { classes, band } = this.props;
 
         if (!open) return null;
-
-        console.log(instruments);
-        console.log('parts', parts)
-        
 
         return <Dialog open={open} classes={{ paper: classes.dialog__paper }} fullScreen>
             <DialogTitle>Add full score</DialogTitle>
@@ -233,26 +226,26 @@ class AddFullScoreDialog extends React.Component {
                                 </div>
 
                                 <div style={{ display: 'flex', flex: 1, height: '100%', overflowY: 'auto', padding: '12px 16px' }}>
-                                        {parts.map((part, index) =>
-                                            <div key={index} style={{ display: 'flex', marginBottom: 30 }}>
-                                                {pageIndex + 1 === part.page &&
-                                                    <FormControl style={{ marginRight: 20, width: 200 }}>
-                                                        <InputLabel htmlFor="instrument"> Instrument </InputLabel>
-                                                        <Select
-                                                            value={part.instrumentId ? part.instrumentId : part.instrument[0].id}
-                                                            onChange={e => this._onSelectChange(index, e)}
-                                                            renderValue={() => part.instrument[0].id ? 'Select instrument' : part.instrument }
-                                                        >
-                                                            {
-                                                                instruments.map(instrument =>
-                                                                    <MenuItem key={instrument.id} value={instrument}>{instrument.name}</MenuItem>
-                                                                )
-                                                            }
-                                                        </Select>
-                                                    </FormControl>
-                                                }
-                                            </div>
-                                        )}
+                                    {parts.map((part, index) =>
+                                        <div key={index} style={{ display: 'flex', marginBottom: 30 }}>
+                                            {pageIndex + 1 === part.page &&
+                                                <FormControl style={{ marginRight: 20, width: 200 }}>
+                                                    <InputLabel htmlFor="instrument"> Instrument </InputLabel>
+                                                    <Select
+                                                        value={part.instrumentId ? part.instrumentId : part.instrument[0].id}
+                                                        onChange={e => this._onSelectChange(index, e)}
+                                                        renderValue={() => part.instrument === 'No instruments detected' ? 'Select instrument' : part.instrument}
+                                                    >
+                                                        {
+                                                            instruments.map(instrument =>
+                                                                <MenuItem key={instrument.id} value={instrument}>{instrument.name}</MenuItem>
+                                                            )
+                                                        }
+                                                    </Select>
+                                                </FormControl>
+                                            }
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
