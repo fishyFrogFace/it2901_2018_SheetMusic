@@ -326,41 +326,41 @@ class Members extends React.Component {
 
       return new Promise((resolve, reject) => {
          this._onDeleteQueryBatch(query, batchSize, resolve, reject);
-       });
+      });
    }
 
    // Deleting the subcollections one by one
    _onDeleteQueryBatch(query, batchSize, resolve, reject) {
       query.get()
-        .then((snapshot) => {
-          // When there are no documents left, we are done
-          if (snapshot.size == 0) {
-            return 0;
-          }
-    
-          // Delete documents in a batch
-          var batch = firebase.firestore().batch();
-          snapshot.docs.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-    
-          return batch.commit().then(() => {
-            return snapshot.size;
-          });
-        }).then((numDeleted) => {
-          if (numDeleted === 0) {
-            resolve();
-            return;
-          }
-    
-          // Recurse on the next process tick, to avoid
-          // exploding the stack.
-          process.nextTick(() => {
-            this._onDeleteQueryBatch(query, batchSize, resolve, reject);
-          });
-        })
-        .catch(reject);
-    }
+         .then((snapshot) => {
+            // When there are no documents left, we are done
+            if (snapshot.size == 0) {
+               return 0;
+            }
+
+            // Delete documents in a batch
+            var batch = firebase.firestore().batch();
+            snapshot.docs.forEach((doc) => {
+               batch.delete(doc.ref);
+            });
+
+            return batch.commit().then(() => {
+               return snapshot.size;
+            });
+         }).then((numDeleted) => {
+            if (numDeleted === 0) {
+               resolve();
+               return;
+            }
+
+            // Recurse on the next process tick, to avoid
+            // exploding the stack.
+            process.nextTick(() => {
+               this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+            });
+         })
+         .catch(reject);
+   }
 
    // Member leaving the band
    _onLeave = async (member) => {
@@ -572,8 +572,10 @@ class Members extends React.Component {
       });
 
       // Add member to the admin list
-      let admins = (await bandRef.get()).data().admins || [];
-      admins.push(member.uid);
+      let admins = (await bandRef.get()).data().admins || {};
+      if (!admins.includes(member.uid)) {
+         admins.push(member.uid)
+      }
       await bandRef.update({
          admins: admins,
       });
@@ -951,11 +953,11 @@ class Members extends React.Component {
                                        }
                                     </List>
                                  }
-
                                  {this.state.checkedAdmin && !this.state.checkedSupervisor &&
                                     <List>
                                        {band.admins.map((member, index) =>
                                           <ListItem key={index} dense >
+
                                              <Avatar src={member.user.photoURL} />
                                              <ListItemText primary={member.user.displayName} />
                                              {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}

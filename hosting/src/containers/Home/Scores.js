@@ -312,19 +312,17 @@ class Scores extends React.Component {
     let uniqeInstr = [...new Set(instr)]; // exclude duplicates
     let uniqueVocal = [...new Set(instrTypes)] // exlude duplicates
     let sortedUniqeVocal = uniqueVocal.sort((a, b) => a.localeCompare(b)) // sort the instruments parts on name
-
     for (let h = 0; h < uniqeInstr.length; h++) {
       for (let g = 0; g < sortedUniqeVocal.length; g++) {
-        if (sortedUniqeVocal[g].includes(uniqeInstr[h])) {
+        if (sortedUniqeVocal[g].slice(0, -2) === (uniqeInstr[h])) {
           dict[uniqeInstr[h]] = [...sortedUniqeVocal] // create dictionary with each instrument with all instrument parts
         }
       }
     }
     Object.keys(dict).forEach(function (key) {
-      const matches = dict[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
+      const matches = dict[key].filter(s => s.slice(0, -2) === key); // filter out the instrument parts not match the instrument
       finalDictionary[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
     });
-
     this.setState({
       vocalInstruments: finalDictionary
     })
@@ -452,7 +450,9 @@ class Scores extends React.Component {
                     <ListItem key={index} dense button
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
-                      <ListItemText primary={score.title} secondary={`Parts: ${1}`} />
+                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      {console.log('score:', score)}
+
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
@@ -551,10 +551,11 @@ class Scores extends React.Component {
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
                         </Typography>
-
+                        <Typography variant='subheading' className={classes.metadata}>
+                          {`Parts: ${score.partCount}`}
+                        </Typography>
                       </CardContent>
                     }
-                    {/* progress circle while waiting for the correct image to render */}
                   </div>
 
                   <div onClick={this.onExpansionClick} id={index}>
@@ -583,6 +584,7 @@ class Scores extends React.Component {
                                           < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
                                             {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                               {item}</div>}
+                                            {/* TODO: open correct score part in expansion panel */}
                                           </ListItemText>
                                         )}
                                       </ListItem>

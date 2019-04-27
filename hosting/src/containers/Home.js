@@ -409,6 +409,7 @@ class Home extends React.Component {
 
 
     async componentDidUpdate(prevProps, prevState) {
+        // Sometimes the user is not fetched in time, therefore we check for user is null and refresh the page if it is
         setTimeout(() => {
             if (user === null) {
                 window.location.reload();
@@ -418,7 +419,7 @@ class Home extends React.Component {
         const user = firebase.auth().currentUser;
 
         const { page, loaded } = this.props;
-        const { bands, band, windowSize } = this.state;
+        const { bands } = this.state;
 
 
         if (page !== prevProps.page) {
@@ -772,8 +773,14 @@ class Home extends React.Component {
                             </IconButton>
 
                             <IconButton onClick={this._onAccountCircleClick}>
-                                {loaded &&
+                                {loaded && user !== null ?
                                     <img src={user.photoURL} style={{
+                                        width: "32px",
+                                        height: "32px",
+                                        borderRadius: '50%',
+                                    }}>
+                                    </img> :
+                                    <img src={"https://img.icons8.com/color/100/000000/google-logo.png"} style={{
                                         width: "32px",
                                         height: "32px",
                                         borderRadius: '50%',
