@@ -238,11 +238,53 @@ class Scores extends React.Component {
 
     if (!await this.open()) return;
 
-    //Fetching setlist reference from firestore
+    //Fetching score and score parts reference from firestore
+    await this._onDeleteCollection(firebase.firestore().collection(`bands/${band.id}/scores/${score.id}/parts`), 20);
     const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
     await fireScore.ref.delete();
     this.setState({ message: null });
   }
+
+  // Deleting collections with subcollections
+  _onDeleteCollection = async (collectionPath, batchSize) => {
+    var query = collectionPath;
+    return new Promise((resolve, reject) => {
+      this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+    });
+  }
+
+  // Deleting the subcollections one by one
+  _onDeleteQueryBatch(query, batchSize, resolve, reject) {
+    query.get()
+      .then((snapshot) => {
+        // When there are no documents left, we are done
+        if (snapshot.size == 0) {
+          return 0;
+        }
+
+        // Delete documents in a batch
+        var batch = firebase.firestore().batch();
+        snapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        return batch.commit().then(() => {
+          return snapshot.size;
+        });
+      }).then((numDeleted) => {
+        if (numDeleted === 0) {
+          resolve();
+          return;
+        }
+        // Recurse on the next process tick, to avoid
+        // exploding the stack.
+        process.nextTick(() => {
+          this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+        });
+      })
+      .catch(reject);
+  }
+
 
 
   // closes the active expanded panel when next is activated
