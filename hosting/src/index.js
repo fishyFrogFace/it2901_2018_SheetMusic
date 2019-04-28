@@ -9,6 +9,10 @@ import DateFnsUtils from 'material-ui-pickers/utils/date-fns-utils';
 import 'firebase/firestore';
 import 'firebase/auth';
 
+import * as cors from 'cors';
+const corsHandler = cors({ origin: true });
+
+
 
 /**
  * The root component of the React app.
@@ -80,6 +84,12 @@ class App extends React.Component {
         let [page, detail] = hash.split('/').slice(1);
 
         try {
+            // let pg = this.page2Component[page];
+            // if(pg == undefined) {
+            //     pg = 'Score';
+            // }
+            
+            // const component = (await import(`./containers/${pg}.js`)).default;
             const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
 
             this.setState({ Component: component }, () => {

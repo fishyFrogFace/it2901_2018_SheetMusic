@@ -16,7 +16,8 @@ import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
 import { FileDownload, Info, InfoOutline } from "material-ui-icons";
 import jsPDF from 'jspdf';
 
-
+import * as cors from 'cors';
+const corsHandler = cors({ origin: true });
 
 const styles = {
     root: {},
@@ -71,34 +72,42 @@ class Score extends React.Component {
 
     async _onMenuClick(type) {
         this.setState({ anchorEl: null });
-
+        console.log("Type: " + type);
         const user = firebase.auth().currentUser;
 
+        // Switch-case here to ensure that the downloat button
+        // was pressed. Not if-sentence to make it easier to add
+        // something later.
+        // Types: download, info
         switch (type) {
             case 'download':
                 try {
                     const { selectedPart, score } = this.state;
 
                     const part = score.parts[selectedPart];
-
                     const { } = await this.downloadDialog.open(part.instrument);
 
                     const dateString = new Date().toLocaleDateString();
 
+                    // Get image
                     const { width, height } = await new Promise(resolve => {
                         const img = new Image();
                         img.onload = () => resolve(img);
                         img.src = part.pages[0].originalURL;
                     });
 
-                    const doc = new jsPDF('p', 'px', [width, height]);
+                    // Make PDF
+                    const size_increase = 1.33334;
+                    // const doc = new jsPDF('p', 'px', 'a4'); //[width*size_increase, height*size_increase]);
+                    const doc = new jsPDF('p', 'px', [width * size_increase, height * size_increase]);
 
+                    // Go through the images in the score and add them and a watermark to the PDF
                     for (let i = 0; i < part.pages.length; i++) {
                         if (i > 0) {
                             doc.addPage();
                         }
 
-                        const url = part.pages[0].originalURL;
+                        const url = part.pages[i].originalURL;
                         const response = await fetch(url);
                         const blob = await response.blob();
 
@@ -113,12 +122,12 @@ class Score extends React.Component {
                         doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
                     }
 
+                    // Download the PDF
                     doc.save(`${score.title}.pdf`);
                 } catch (err) {
                     console.log(err);
                     // Cancelled
                 }
-
                 break;
         }
     }
@@ -161,15 +170,13 @@ class Score extends React.Component {
         }
     }
 
-
-
     render() {
 
         const { classes } = this.props;
         const { anchorEl, message, selectedPart, score } = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
-
+        
         return (
             <div className={classes.root}>
                 <AppBar>
@@ -191,7 +198,7 @@ class Score extends React.Component {
                                 {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
-                                            value={index}>{part.instrument.name + ' ' + part.tune} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
+                                            value={index}>{part.instrument.displayName} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
 
                                         </MenuItem>
                                     )
@@ -202,13 +209,9 @@ class Score extends React.Component {
                         <IconButton color='inherit' onClick={e => this._onMenuClick('download')}>
                             <FileDownload />
                         </IconButton>
-                        <IconButton color='inherit' onClick={e => this._onMenuClick('info')}>
-                            <InfoOutline />
-                        </IconButton>
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
-
                     {
                         hasParts &&
                         (score.parts[selectedPart].pages || []).map((page, index) =>

@@ -2,13 +2,14 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress, Link
 } from "material-ui";
 import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import firebase from 'firebase';
+import AsyncDialog from '../../components/dialogs/AsyncDialog';
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -38,9 +39,6 @@ const styles = theme => ({
     marginBottom: 20,
     cursor: 'pointer',
 
-  },
-  media: {
-    flex: 2
   },
 
   flex: {
@@ -78,6 +76,12 @@ const styles = theme => ({
     textAlign: 'center',
     '&:first-child': {
       paddingLeft: '8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      minWidth: '0px',
+    },
+    '&:hover': {
+      background: '#e2e2e2'
     }
   },
 
@@ -89,6 +93,7 @@ const styles = theme => ({
   actions: {
     marginTop: '8px',
     marginLeft: '-30px',
+    flex: 2
   },
 
   expandedPanel: {
@@ -108,6 +113,11 @@ const styles = theme => ({
     transitions: '1000ms'
   },
 
+  title: {
+    width: 'fit-content',
+    cursor: 'pointer'
+  },
+
 
   expandedListItems: {
     paddingBottom: '0px',
@@ -118,7 +128,7 @@ const styles = theme => ({
   },
 
   media: {
-    flex: 1,
+    flex: 2,
     backgroundPosition: 'top',
     height: '160px'
   },
@@ -161,26 +171,6 @@ const styles = theme => ({
     },
   },
 
-  instrumentstyle: {
-    borderStyle: 'groove',
-    borderWidth: '1px',
-    padding: '8px',
-    margin: '5px',
-    cursor: 'pointer',
-    minWidth: '80px',
-    textAlign: 'center',
-    '&:first-child': {
-      paddingLeft: '8px',
-    },
-    [theme.breakpoints.down('sm')]: {
-      minWidth: '0px',
-    },
-    '&:hover': {
-      background: '#e2e2e2'
-    }
-  },
-
-
 });
 
 class Scores extends React.Component {
@@ -196,8 +186,6 @@ class Scores extends React.Component {
       sortedAlphabetically: false,
       defaultComposer: 'All Composers',
       chosenComposer: 'All Composers',
-      defaultInstrument: 'All Instruments',
-      chosenInstrument: 'All Instruments',
       allInstruments: [],
       allPartsInstrument: [],
       instrumentParts: [],
@@ -224,10 +212,79 @@ class Scores extends React.Component {
     this.setState({ listView: true });
   };
 
+  //  not in use atm
   _onMoreClick = (score) => {
     this.props.onRemoveScore(score);
     score = ''
   };
+
+  // opens delete modal dialog
+  open = async () => {
+    try {
+      await this.dialog.open();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  _onDeleteScore = async (score, scoreTitle) => {
+    // Confirm modal for deleting
+    const { band } = this.props;
+    this.setState({
+      title: "Delete this score",
+      message: `Are you sure you want to delete ${scoreTitle}?`,
+    });
+
+    if (!await this.open()) return;
+
+    //Fetching score and score parts reference from firestore
+    await this._onDeleteCollection(firebase.firestore().collection(`bands/${band.id}/scores/${score.id}/parts`), 20);
+    const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+    await fireScore.ref.delete();
+    this.setState({ message: null });
+  }
+
+  // Deleting collections with subcollections
+  _onDeleteCollection = async (collectionPath, batchSize) => {
+    var query = collectionPath;
+    return new Promise((resolve, reject) => {
+      this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+    });
+  }
+
+  // Deleting the subcollections one by one
+  _onDeleteQueryBatch(query, batchSize, resolve, reject) {
+    query.get()
+      .then((snapshot) => {
+        // When there are no documents left, we are done
+        if (snapshot.size == 0) {
+          return 0;
+        }
+
+        // Delete documents in a batch
+        var batch = firebase.firestore().batch();
+        snapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        return batch.commit().then(() => {
+          return snapshot.size;
+        });
+      }).then((numDeleted) => {
+        if (numDeleted === 0) {
+          resolve();
+          return;
+        }
+        // Recurse on the next process tick, to avoid
+        // exploding the stack.
+        process.nextTick(() => {
+          this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+        });
+      })
+      .catch(reject);
+  }
+
 
 
   // closes the active expanded panel when next is activated
@@ -236,28 +293,6 @@ class Scores extends React.Component {
       expanded: expanded ? panel : false,
     });
   };
-
-  // get all instruments from db for seleting and filter on instrument
-  onGetAllInstruments = () => {
-    let allPartsInstruments = []
-    for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
-      if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined) {
-        for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
-          let data = this.props.band.scores[i].parts[k].instrumentRef
-          data.get().then(function (documentSnapshot) {
-            const partsInstruments = documentSnapshot.data()
-            allPartsInstruments.push(partsInstruments.name)
-
-          });
-        }
-      }
-    }
-    setTimeout(() => {
-      this.setState({
-        allPartsInstruments: allPartsInstruments
-      })
-    }, 500);
-  }
 
   onExpansionClick = (e) => {
     const parts = [];
@@ -319,19 +354,17 @@ class Scores extends React.Component {
     let uniqeInstr = [...new Set(instr)]; // exclude duplicates
     let uniqueVocal = [...new Set(instrTypes)] // exlude duplicates
     let sortedUniqeVocal = uniqueVocal.sort((a, b) => a.localeCompare(b)) // sort the instruments parts on name
-
     for (let h = 0; h < uniqeInstr.length; h++) {
       for (let g = 0; g < sortedUniqeVocal.length; g++) {
-        if (sortedUniqeVocal[g].includes(uniqeInstr[h])) {
+        if (sortedUniqeVocal[g].slice(0, -2) === (uniqeInstr[h])) {
           dict[uniqeInstr[h]] = [...sortedUniqeVocal] // create dictionary with each instrument with all instrument parts
         }
       }
     }
     Object.keys(dict).forEach(function (key) {
-      const matches = dict[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
+      const matches = dict[key].filter(s => s.slice(0, -2) === key); // filter out the instrument parts not match the instrument
       finalDictionary[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
     });
-
     this.setState({
       vocalInstruments: finalDictionary
     })
@@ -346,21 +379,6 @@ class Scores extends React.Component {
   _changeComposer = (e) => {
     this.setState({ chosenComposer: e.target.value })
   };
-
-  _changeInstrument = (e) => {
-    this.setState({ chosenInstrument: e.target.value })
-
-  };
-
-  _instrumentInScore(instrument, score) {
-    let inScore = false;
-    this.state.allInstruments.map(instrumentInScore => {
-      if (instrumentInScore === instrument) {
-        inScore = true;
-      }
-    });
-    return inScore;
-  }
 
 
   // mounting the instrument alternatives
@@ -397,49 +415,38 @@ class Scores extends React.Component {
 
     let scores = []; // Local variable to be able to switch back and forth between alphabetically and not, and filter on composer and instrument without influencing the original
     let composers = []; // --||--
-    let instruments = []; // --||--
-    if (hasScores) { // Should not fetch band.scores if empty
+    if (hasScores) { // Should not fetch band.scores if empty etc
       if (this.state.sortedAlphabetically) { // If alphabetically is chosen
         scores = band.scores.slice(); // Get default
         scores = scores.sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
-      } else {
+      }
+      else {
         scores = band.scores.slice(); // Use default
       }
+
       if (this.state.chosenComposer !== this.state.defaultComposer) { // If not all composers (default) is chosen
         scores = scores.filter(score => score.composer === this.state.chosenComposer) // The scores are filtered on composer
       }
-      let chosenInstrument = this.state.chosenInstrument;
-      if (chosenInstrument !== this.state.defaultInstrument) { // If not all instruments (default) is chosen
-        scores = scores.filter(score => this._instrumentInScore(chosenInstrument, score)) // The scores are filtered on instrument
-      }
-      // Make list of all available composers
+
+      // Make list of all available composers to use in <Select> menu
       composers.push(this.state.defaultComposer); // Get default
       band.scores.map(score => {
         if (!composers.includes(score.composer)) { // And all unique composer
-          composers.push(score.composer)
+          composers.push(score.composer);
           composers = composers.filter(function (element) {
             return element !== undefined; // filter out undefined values
           });
         }
       });
-      // Make list of all available instruments
-      if (band.scores.parts) {
-        band.scores.map(score => {
-          let parts = this._onGetParts(band, score);
 
-          parts.map(instrument => {
-            if (!instruments.includes(instrument)) { // And all unique instruments
-              instruments.push(instrument)
-            }
-          })
-        })
-      }
     }
 
     return <div className={this.state.hidden}>
       < div className={classes.flex} >
-        <div
-        />
+        {/* Display delete modal dialog */}
+        <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+          <Typography variant="body1" >{this.state.message}</Typography>
+        </AsyncDialog>
         <IconButton>
           <SortByAlpha onClick={this._onSortByAlphaClick} />
         </IconButton>
@@ -471,25 +478,7 @@ class Scores extends React.Component {
             }
           </Select>
         </div>
-
-        {/* Select the instrument */}
-        <div className={classes.selectArrangement}>
-          <InputLabel style={{ padding: 5 }} htmlFor="instrument"></InputLabel>
-          <Select
-            onChange={this._changeInstrument}
-            autoWidth
-            value={this.state.chosenInstrument}
-            renderValue={() => this.state.chosenInstrument}
-            inputProps={{ id: 'instrument' }}
-            id="filterInstrument"
-          >
-            {this.state.allInstruments.map((instrument, key) =>
-              <MenuItem key={key} value={instrument}>{instrument}</MenuItem>)
-            }
-          </Select>
-        </div>
-
-      </div >
+      </div>
 
       <div>
         {/* the simple list view */}
@@ -504,13 +493,13 @@ class Scores extends React.Component {
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
                       <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      {console.log('score:', score)}
+
                       <ListItemSecondaryAction onClick={() => this._onMoreClick}>
                         <CardActions disableActionSpacing >
                           <IconButton
-                            // TODO: get same styling as member page
-                            onClick={(e) => {
-                              if (window.confirm('Are you sure you wish to delete this item?'))
-                                this._onMoreClick(score, e)
+                            onClick={() => {
+                              this._onDeleteScore(score, score.title)
                             }}
                           >
                             <DeleteIcon />
@@ -538,6 +527,9 @@ class Scores extends React.Component {
                 <Card className={classes.card} key={index}
                   elevation={1}>
                   <CardHeader
+                    classes={{
+                      title: classes.title,
+                    }}
                     className={classes.cardHeader}
                     avatar={
                       <Avatar aria-label="Note" className={classes.avatar}>
@@ -546,21 +538,19 @@ class Scores extends React.Component {
                     }
                     action={<div className={classes.actions}>
                       <CardActions disableActionSpacing >
-                        <IconButton
-
-                          // TODO: get same styling as member page
-                          onClick={(e) => {
-                            if (window.confirm('Are you sure you wish to delete this item?'))
-                              this._onMoreClick(score, e)
+                        <IconButton style={{ flex: 1, float: 'right' }}
+                          onClick={() => {
+                            this._onDeleteScore(score, score.title)
                           }}
-
                         >
                           <DeleteIcon />
                         </IconButton>
                       </CardActions>
                     </div>}
-                    title={score.title}
+                    title={<a onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>{score.title}</a>
+                    }
                   />
+
                   <Divider />
                   <div className={classes.cardContent}>
                     <div className={classes.media2}
@@ -583,7 +573,7 @@ class Scores extends React.Component {
                             title={score.title}
                             onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                           />
-                          :
+                          : // ternary
                           <CardMedia
                             className={classes.media}
                             image={
@@ -597,20 +587,17 @@ class Scores extends React.Component {
                     {
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}>
-
                           {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
                           {/* Hide the composer and arranger data if these field are not defined when uploading new score */}
                         </Typography>
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
                         </Typography>
-                        <Typography variant='subheading'>
-                          Parts: {score.partCount}
+                        <Typography variant='subheading' className={classes.metadata}>
+                          {`Parts: ${score.partCount}`}
                         </Typography>
-
                       </CardContent>
                     }
-                    {/* progress circle while waiting for the correct image to render */}
                   </div>
 
                   <div onClick={this.onExpansionClick} id={index}>
@@ -622,7 +609,6 @@ class Scores extends React.Component {
                       </ExpansionPanelSummary>
                       <ExpansionPanelDetails className={classes.expandedPanel}>
                         <Typography variant='subheading'>
-
                           {this.state.activeScore == index ?
                             <List>
                               {
@@ -635,72 +621,32 @@ class Scores extends React.Component {
                                     }
                                     <ListItemText className={classes.instrumentName} primary={`${instr}: `} />
                                     <List>
-
-                                      {/* {(band.scores[index].parts).map((elem, pindex) => {
-                                      partImage = band.scores[index].parts[pindex].pages[0].croppedURL
-                                      //console.log('partImage', partImage)
-                                    })} */}
-
                                       <ListItem key={index} className={classes.partList}>
                                         {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
-
                                           < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
-                                            {/* <img
-                                              id={vocalIndex}
-                                              style={{ height: '50', width: '150px' }}
-                                              //hoverSrc={this.props.band.scores[index].parts[0].pages[0].croppedURL}
-                                              src={partImage}
-                                              onMouseOver={(e) => this.onHover(i, e)}
-                                              onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-
-                                            /> */}
-                                            {/* {(band.scores[index].parts).map((test, testindex) =>
-                                              (score.parts[testindex].pages || []).map((page, index) =>
-                                                <img style={{ height: '50', width: '150px' }}
-                                                  key={index}
-                                                  className={classes.sheet}
-                                                  //src={page.croppedURL}
-                                                  id={testindex}
-                                                  //onMouseOver={this.onHover}
-                                                  onMouseOver={(e) => this.onHover(testindex, e)}
-                                                  onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
-                                                />
-                                              )
-                                            )} */}
                                             {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                               {item}</div>}
+                                            {/* TODO: open correct score part in expansion panel */}
                                           </ListItemText>
-
-                                        )
-                                        }
-
+                                        )}
                                       </ListItem>
                                     </List>
                                   </ListItem>
-                                )
-                              }
+                                )}
                             </List>
                             : '' //Close the prev expansion panel when activating the next 
-
                           }
                         </Typography>
                       </ExpansionPanelDetails>
                     </ExpansionPanel>
                   </div>
-
                 </Card>
               )}
           </div>
         }
       </div>
-
     </div >
   }
-
 }
-
-// LinearDeterminate.propTypes = {
-//   classes: PropTypes.object.isRequired,
-// };
 
 export default withStyles(styles)(Scores);
