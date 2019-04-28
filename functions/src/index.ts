@@ -1,14 +1,16 @@
 import * as functions from 'firebase-functions';
 import * as path from 'path';
 import * as Storage from '@google-cloud/storage';
-
 import { spawn } from 'child-process-promise';
 import * as fs from 'fs-extra';
 import * as admin from 'firebase-admin';
 import * as unzipper from 'unzipper';
 import * as request from 'request-promise-native';
 import * as XMLHttpRequest from 'xmlhttprequest';
-// import * as firebase from 'firebase';
+import * as firebase from 'firebase';
+
+/* Index.ts is the collection of codes for all the functions ran by firebase in the project
+It consists of functions for setting thumbnail, uploading and converting a pdf */
 
 admin.initializeApp();
 
@@ -49,6 +51,9 @@ const storage = new Storage({ keyFilename: 'service-account-key.json' });
 exports.convertPDF = functions.storage.object().onFinalize(async (object, context) => {
     const filePath = object.name;
 
+    /* Creates a check for if the file is a zip file. If it is a zip it unsips the file. This is put in this
+    function as it is a onFinalize function. With two onFinalize functions we created a higher amount of
+    function calls */
     if (filePath.endsWith('.zip')) {
 
         let [bandId, fileNameExt] = filePath.split('/');
@@ -97,6 +102,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         }
     }
 
+    /* The main convertion function for the pdfs. Here we create images from the pdfs and
+    perform an analyzis on the pdf looking for instruments, composers and arrangers */
     else if (filePath.endsWith('.pdf')) {
 
         let [bandId, fileNameExt] = filePath.split('/');
@@ -121,6 +128,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             await fs.ensureDir('/tmp/output-cropped');
             await fs.ensureDir('/tmp/output-cropped-compressed');
 
+            // We spawn xpdf which is used for the analysis
             const pdfInfo = await new Promise<string>(async resolve => {
                 const promise = spawn('xpdf/pdfinfo', [
                     '-cfg', '/tmp/.xpdfrc',
@@ -159,7 +167,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
 
             console.log('PDF conversion complete!');
 
-            // HUSK Å KOMMENTERE HVA DENNE GJØR
+            // lager et cropped image
             const convertProcess = await spawn('mogrify', [
                 '-crop', '4000x666+0+0',
                 '-resize', '40%',
@@ -216,7 +224,6 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                 '/tmp/score.pdf',
             ]);
             process2.childProcess.kill();
-            console.log('process2', process2)
 
             const data = {
                 processing: admin.firestore.FieldValue.delete(),
@@ -225,8 +232,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
             };
 
             const pdfText = await fs.readFile('/tmp/score.txt', 'latin1');
-            console.log('pdfText', pdfText);
 
+            // Here we start the analysis with creating patterns for the different instruments
             if (true) {
                 // const excludePattern = /(vox\.|[bat]\. sx|tpt|tbn|pno|d\.s\.)/ig;
 
@@ -265,14 +272,13 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                     expr: /(\w )?drum set/i
                 }];
 
-                // Pattern for filtering out arranger and composer
+                // Pattern for filtering out arranger and composer.
+                //Here we look for the text following the pattern.
                 const arrangerPattern = /[\\n\r]*Arranged by\s*([^\n\r]*)/g;
                 const composerPattern = /[\\n\r]*Words and Music by\s*([^\n\r]*)/g;
 
-                // Splits the pdf into pages with ekstra blank page
+                // Splits the pdf into pages with extra blank page
                 let _pages = pdfText.split('\f');
-                console.log('Pages:', _pages);
-                console.log('PagesLength', _pages.length);
 
                 const snapshot = await admin.firestore().collection('instruments').get();
                 const instruments = snapshot.docs.map(doc => ({ name: doc.data().name, ref: doc.ref }));
@@ -308,7 +314,6 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                 // GOING THROUGH EVERY PAGE IN THE PDF
                 for (let i = 0; i < _pages.length - 1; i++) {
                     const page = _pages[i];
-                    console.log('page', page)
 
                     const detectedInstrNames = [];
 
@@ -322,11 +327,10 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                         }
                     }
 
-                    // IF ANY NAMES WHERE DETECTED
+                    // IF ANY NAMES WERE DETECTED
                     if (detectedInstrNames.length > 0) {
 
                         const [name] = detectedInstrNames;
-                        console.log('Instrument: ', name)
 
                         // IF THE NAME IS IN THE INSTRUMENT LIST
                         if (instrmList.indexOf(name) > -1) {
@@ -354,12 +358,13 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
                     }
                 }
 
+                //Adds the parts, arranger and composer to the finished dataset
                 data['parts'] = parts;
                 data['arranger'] = arrangerName;
                 data['composer'] = composerName;
-                console.log('Data', data)
             }
 
+            //Updates firebase with the data
             await pdfRef.update(data);
 
             // Clean up
@@ -375,6 +380,8 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
     }
 });
 
+
+// Creates a thumbnail
 exports.createThumbnail = functions.firestore.document('bands/{bandId}/scores/{scoreId}').onCreate(async (snap, context) => {
     const data = snap.data();
     if (data.composer) {

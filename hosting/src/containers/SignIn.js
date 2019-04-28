@@ -129,6 +129,7 @@ class SignIn extends Component {
             <div className={classes.root}>
                 <div className={classes.videoContainer}>
                     <iframe
+                        title="Frame"
                         className={classes.iframe}
                         src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8"/>
                     <div className={classes.overlay}>
