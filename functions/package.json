@@ -19,7 +19,6 @@
     "firebase-admin": "~5.12.0",
     "firebase-functions": "^1.0.2",
     "fs-extra": "^6.0.1",
-    "gaxios": "^1.8.5",
     "gs": "git+https://github.com/sina-masnadi/node-gs.git",
     "gtoken": "^2.3.3",
     "install": "^0.11.0",
