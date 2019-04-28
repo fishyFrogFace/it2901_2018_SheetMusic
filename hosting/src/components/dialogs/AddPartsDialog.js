@@ -9,12 +9,16 @@ import { Add } from "material-ui-icons";
 import CreateScoreStep from "./CreateScoreStep";
 import firebase from "firebase";
 
+/* Dialog for when adding an unproccessed part to a score. Inherited from UnsortedPDFs */
+
+
 const styles = {
     dialog__paper: {
         maxWidth: 800
     }
 };
 
+// Creates the design for the next button
 function StepIcon(props) {
     const extraProps = {};
 
@@ -41,8 +45,7 @@ class AddPartsDialog extends React.Component {
         activeStep: 0,
         scoreCreated: false,
         open: false,
-        pdfs: [],
-        tune: 0
+        pdfs: []
     };
 
     componentDidMount() {
@@ -53,6 +56,7 @@ class AddPartsDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
+    // Sets states when opening the dialog
     async open(pdfs) {
         return new Promise(async (resolve, reject) => {
             this.setState({
@@ -61,12 +65,12 @@ class AddPartsDialog extends React.Component {
                 scoreData: { title: pdfs[0].name }
             });
 
+            // creates a list of instruments from the database
             const snapshot = await firebase.firestore().collection('instruments').get();
             const instruments = snapshot.docs
                 .map(doc => ({ ...doc.data(), id: doc.id }))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
-            console.log('pdfs', pdfs)
             this.setState({
                 instruments: instruments,
                 parts: pdfs.map(pdf => ({ pdf: pdf, instrumentId: pdf.parts[0].instrument[0].id !== undefined ? pdf.parts[0].instrument[0].id : instruments[0].id })),
@@ -77,20 +81,24 @@ class AddPartsDialog extends React.Component {
         });
     }
 
+    // Updates the change of instruments
     _onSelectChange(index, e) {
         const parts = [...this.state.parts];
         parts[index].instrumentId = e.target.value;
         this.setState({ parts })
     }
 
+    // Adds the part to an existing score
     _onScoreClick(scoreId) {
         this.setState({ scoreData: { id: scoreId }, activeStep: 2 });
     }
 
+    // Adds the part to a new score
     _onNewScoreClick = () => {
         this.setState({ activeStep: 1 });
     };
 
+    // Function to keep track of states for the different steps
     _onNextClick = () => {
         const { parts, scoreData } = this.state;
 
@@ -112,32 +120,31 @@ class AddPartsDialog extends React.Component {
         }
     };
 
+    // Resets state when cancelling the process of processing a score
     _onCancelClick = () => {
         this.__reject("Dialog canceled");
         this.setState({ open: false, parts: [], scoreData: {}, activeStep: 0, scoreCreated: false });
     };
 
+    // Sets correct state when going back to the previous step
     _onBackClick = () => {
         const { activeStep, scoreCreated } = this.state;
         this.setState({ activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1, scoreCreated: false });
     };
 
+    //Updates state when changing the data in step 1
     _onScoreDataChange = data => {
         this.setState({ scoreData: data })
     };
 
-    _onTuneChange = (e) => {
-        this.setState({ tune: e.target.value });
-    }
-
+    // renders the page
     render() {
-        const { parts, scoreData, activeStep, scoreCreated, open, pdfs, instruments, tune } = this.state;
+        const { parts, scoreData, activeStep, scoreCreated, open, pdfs, instruments } = this.state;
 
         const { band, classes } = this.props;
 
+        // If not opened it returns null as state is not set
         if (!open) return null;
-
-        console.log('AddPartsParts', parts)
 
         return <Dialog open={open} classes={{ paper: classes.dialog__paper }} fullScreen>
             <DialogTitle>Add parts</DialogTitle>
@@ -192,6 +199,7 @@ class AddPartsDialog extends React.Component {
                                                 inputProps={{ id: 'instrument' }}
                                             >
                                                 {
+                                                    // creates a list of instruments to choose from
                                                     instruments.map(instrument =>
                                                         <MenuItem key={instrument.id} value={instrument.id}>{instrument.name}</MenuItem>
                                                     )

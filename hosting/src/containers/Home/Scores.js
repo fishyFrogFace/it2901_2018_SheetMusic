@@ -2,13 +2,14 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress,
 } from "material-ui";
 import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import firebase from 'firebase';
+import AsyncDialog from '../../components/dialogs/AsyncDialog';
 
 function InstrumentIcon(props) {
   const extraProps = {
@@ -37,7 +38,6 @@ const styles = theme => ({
     width: '65%',
     marginBottom: 20,
     cursor: 'pointer',
-
   },
 
   flex: {
@@ -61,7 +61,6 @@ const styles = theme => ({
     flex: 0.8,
     '&:last-child': {
       paddingBottom: '0px',
-
     }
   },
 
@@ -92,6 +91,7 @@ const styles = theme => ({
   actions: {
     marginTop: '8px',
     marginLeft: '-30px',
+    flex: 2
   },
 
   expandedPanel: {
@@ -111,13 +111,14 @@ const styles = theme => ({
     transitions: '1000ms'
   },
 
+  title: {
+    width: 'fit-content',
+    cursor: 'pointer'
+  },
 
   expandedListItems: {
     paddingBottom: '0px',
     paddingTop: '0px',
-  },
-
-  metadata: {
   },
 
   media: {
@@ -132,17 +133,6 @@ const styles = theme => ({
 
   selectArrangement: {
     padding: '8px'
-  },
-
-  progress: {
-    color: 'black',
-    paddingRight: '150px',
-    margin: '50px',
-    height: '50px',
-  },
-
-  checked: {
-    color: 'green',
   },
 
   cardHeader: {
@@ -163,7 +153,6 @@ const styles = theme => ({
       display: 'grid'
     },
   },
-
 });
 
 class Scores extends React.Component {
@@ -205,12 +194,74 @@ class Scores extends React.Component {
     this.setState({ listView: true });
   };
 
-  _onMoreClick = (score) => {
-    this.props.onRemoveScore(score);
-    score = ''
-  };
+  // opens delete modal dialog
+  open = async () => {
+    try {
+      await this.dialog.open();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
-  // Closes the active expanded panel when next is activated
+  _onDeleteScore = async (score, scoreTitle) => {
+    // Confirm modal for deleting
+    const { band } = this.props;
+    this.setState({
+      title: "Delete this score",
+      message: `Are you sure you want to delete ${scoreTitle}?`,
+    });
+
+    if (!await this.open()) return;
+
+    //Fetching score and score parts reference from firestore
+    await this._onDeleteCollection(firebase.firestore().collection(`bands/${band.id}/scores/${score.id}/parts`), 20);
+    const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
+    await fireScore.ref.delete();
+    this.setState({ message: null });
+  }
+
+  // Deleting collections with subcollections
+  _onDeleteCollection = async (collectionPath, batchSize) => {
+    var query = collectionPath;
+    return new Promise((resolve, reject) => {
+      this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+    });
+  }
+
+  // Deleting the subcollections one by one
+  _onDeleteQueryBatch(query, batchSize, resolve, reject) {
+    query.get()
+      .then((snapshot) => {
+        // When there are no documents left, we are done
+        if (snapshot.size == 0) {
+          return 0;
+        }
+
+        // Delete documents in a batch
+        var batch = firebase.firestore().batch();
+        snapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        return batch.commit().then(() => {
+          return snapshot.size;
+        });
+      }).then((numDeleted) => {
+        if (numDeleted === 0) {
+          resolve();
+          return;
+        }
+        // Recurse on the next process tick, to avoid
+        // exploding the stack.
+        process.nextTick(() => {
+          this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+        });
+      })
+      .catch(reject);
+  }
+
+  // closes the active expanded panel when next is activated
   handleChange = panel => (event, expanded) => {
     this.setState({
       expanded: expanded ? panel : false,
@@ -220,7 +271,6 @@ class Scores extends React.Component {
   onExpansionClick = (e) => {
     const parts = [];
     const instrumentType = [];
-
     for (let i = 0; i < (this.props.band.scores && (Object.keys(this.props.band.scores)).length); i++) {
       if (this.props.band.scores !== undefined && Object.keys(this.props.band).length > 10 && this.props.band.scores[i].parts !== undefined && e.target.id == i) {
         for (let k = 0; k < (this.props.band.scores[i].partCount); k++) {
@@ -278,19 +328,17 @@ class Scores extends React.Component {
     let uniqeInstr = [...new Set(instr)]; // exclude duplicates
     let uniqueVocal = [...new Set(instrTypes)] // exlude duplicates
     let sortedUniqeVocal = uniqueVocal.sort((a, b) => a.localeCompare(b)) // sort the instruments parts on name
-
     for (let h = 0; h < uniqeInstr.length; h++) {
       for (let g = 0; g < sortedUniqeVocal.length; g++) {
-        if (sortedUniqeVocal[g].includes(uniqeInstr[h])) {
+        if (sortedUniqeVocal[g].slice(0, -2) === (uniqeInstr[h])) {
           dict[uniqeInstr[h]] = [...sortedUniqeVocal] // create dictionary with each instrument with all instrument parts
         }
       }
     }
     Object.keys(dict).forEach(function (key) {
-      const matches = dict[key].filter(s => s.includes(key)); // filter out the instrument parts not match the instrument
+      const matches = dict[key].filter(s => s.slice(0, -2) === key); // filter out the instrument parts not match the instrument
       finalDictionary[key] = [matches] // create the final dictionary with all instrument and associated instrument part/vocal
     });
-
     this.setState({
       vocalInstruments: finalDictionary
     })
@@ -306,7 +354,6 @@ class Scores extends React.Component {
     this.setState({ chosenComposer: e.target.value })
   };
 
-
   // mounting the instrument alternatives
   componentDidMount = () => {
     const instr = [];
@@ -319,7 +366,6 @@ class Scores extends React.Component {
         })
         for (let elem of instr) {
           allInstruments.push(elem.name)
-
         }
       })
     this.setState({
@@ -364,13 +410,14 @@ class Scores extends React.Component {
           });
         }
       });
-
     }
 
     return <div className={this.state.hidden}>
-      <div className={classes.flex} >
-        <div
-        />
+      < div className={classes.flex} >
+        {/* Display delete modal dialog */}
+        <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
+          <Typography variant="body1" >{this.state.message}</Typography>
+        </AsyncDialog>
         <IconButton>
           <SortByAlpha onClick={this._onSortByAlphaClick} />
         </IconButton>
@@ -416,16 +463,13 @@ class Scores extends React.Component {
                     <ListItem key={index} dense button
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
-                      <ListItemText primary={score.title} secondary={`Parts: ${1}`} />
-                      <ListItemSecondaryAction onClick={() => this._onMoreClick}>
+                      <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
+                      <ListItemSecondaryAction>
                         <CardActions disableActionSpacing >
                           <IconButton
-                            // TODO: get same styling as member page
-                            onClick={(e) => {
-                              if (window.confirm('Are you sure you wish to delete this item?'))
-                                this._onMoreClick(score, e)
-                            }}
-                          >
+                            onClick={() => {
+                              this._onDeleteScore(score, score.title)
+                            }}>
                             <DeleteIcon />
                           </IconButton>
                         </CardActions>
@@ -451,6 +495,9 @@ class Scores extends React.Component {
                 <Card className={classes.card} key={index}
                   elevation={1}>
                   <CardHeader
+                    classes={{
+                      title: classes.title,
+                    }}
                     className={classes.cardHeader}
                     avatar={
                       <Avatar aria-label="Note" className={classes.avatar}>
@@ -459,21 +506,18 @@ class Scores extends React.Component {
                     }
                     action={<div className={classes.actions}>
                       <CardActions disableActionSpacing >
-                        <IconButton
-
-                          // TODO: get same styling as member page
-                          onClick={(e) => {
-                            if (window.confirm('Are you sure you wish to delete this item?'))
-                              this._onMoreClick(score, e)
-                          }}
-
-                        >
+                        <IconButton style={{ flex: 1, float: 'right' }}
+                          onClick={() => {
+                            this._onDeleteScore(score, score.title)
+                          }}>
                           <DeleteIcon />
                         </IconButton>
                       </CardActions>
                     </div>}
-                    title={score.title}
+                    title={<a onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>{score.title}</a>
+                    }
                   />
+
                   <Divider />
                   <div className={classes.cardContent}>
                     <div className={classes.media2}
@@ -496,7 +540,7 @@ class Scores extends React.Component {
                             title={score.title}
                             onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}
                           />
-                          :
+                          : // ternary
                           <CardMedia
                             className={classes.media}
                             image={
@@ -510,20 +554,17 @@ class Scores extends React.Component {
                     {
                       <CardContent className={classes.ellipsis}>
                         <Typography variant='subheading' className={classes.metadata}>
-
                           {score.composer == undefined ? '' : `${'Composer: ' + score.composer}`}
                           {/* Hide the composer and arranger data if these field are not defined when uploading new score */}
                         </Typography>
                         <Typography variant='subheading' className={classes.metadata}>
                           {score.arranger == undefined ? '' : `${'Arranger: ' + score.arranger}`}
                         </Typography>
-                        <Typography variant='subheading'>
-                          Parts: {score.partCount}
+                        <Typography variant='subheading' className={classes.metadata}>
+                          {`Parts: ${score.partCount}`}
                         </Typography>
-
                       </CardContent>
                     }
-                    {/* progress circle while waiting for the correct image to render */}
                   </div>
 
                   <div onClick={this.onExpansionClick} id={index}>
@@ -535,7 +576,6 @@ class Scores extends React.Component {
                       </ExpansionPanelSummary>
                       <ExpansionPanelDetails className={classes.expandedPanel}>
                         <Typography variant='subheading'>
-
                           {this.state.activeScore == index ?
                             <List>
                               {
@@ -550,38 +590,30 @@ class Scores extends React.Component {
                                     <List>
                                       <ListItem key={index} className={classes.partList}>
                                         {this.state.vocalInstruments[instr][0].map((item, vocalIndex) =>
-
                                           < ListItemText key={vocalIndex} className={classes.instrumentstyle} >
                                             {<div onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                                               {item}</div>}
+                                            {/* TODO: open correct score part in expansion panel */}
                                           </ListItemText>
-
-                                        )
-                                        }
-
+                                        )}
                                       </ListItem>
                                     </List>
                                   </ListItem>
-                                )
-                              }
+                                )}
                             </List>
                             : '' //Close the prev expansion panel when activating the next 
-
                           }
                         </Typography>
                       </ExpansionPanelDetails>
                     </ExpansionPanel>
                   </div>
-
                 </Card>
               )}
           </div>
         }
       </div>
-
     </div >
   }
-
 }
 
 export default withStyles(styles)(Scores);

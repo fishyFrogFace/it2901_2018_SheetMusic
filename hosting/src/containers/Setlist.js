@@ -163,7 +163,7 @@ class Setlist extends Component {
                     // for one instriment, or the entire list.
                     await new Promise(async (resolve) => {
                         for(const item of items) {
-                            if(item.type == 'score') {
+                            if(item.type === 'score') {
                                 await item.scoreRef.collection('parts').get().then(async function(querySnapshot) {
                                     for (const part of querySnapshot.docs) {
 
@@ -242,13 +242,14 @@ class Setlist extends Component {
                                     })
                                 }));
                                 break;
+                            // no default
                         }
                     });
                     Promise.all(array).then(function(values) {
                         Promise.all(instrumentPromiseArray).then(function(instrumentArray) {
                             let instIndex = 0;
                             overview.forEach(item => { //Add instrument to overview
-                                if(item.type == 'score') {
+                                if(item.type === 'score') {
                                     item.title += " (" + instrumentArray[instIndex++] + ")";
                                 }
                             });
@@ -263,9 +264,7 @@ class Setlist extends Component {
                             const descspace = 80;            // How much space there is between the top of the page and the description, in pixels
                             const pageNumberY = 612;         // How far down on the page the page numbe is placed, in pixesl
                             let pageNumber = 1;              // Page counter for correct page numbering
-                            let pageDict = {};
                             let totalPartIndex = 0;          // Counter for parts processed, for later indexing
-                            let scoreIndex = 0;
                             const dy = 12;                   // Line space in pixels
                             const a4_size = [595.28, 841.89];// For convenience, specific numbers was found in jsPDF source code
                             doc.setFont('Times');            // Set the fotn, for a list of fonts, do doc.getFontList()
@@ -283,8 +282,8 @@ class Setlist extends Component {
                                         overview[overviewIndex++].page = pageNumber;
                                         
                                         // Check if part is of instrument that should be included in PDF
-                                        if(selectedInstrument == instrumentArray[totalPartIndex] ||
-                                           selectedInstrument == "Everything") { 
+                                        if(selectedInstrument === instrumentArray[totalPartIndex] ||
+                                           selectedInstrument === "Everything") { 
                                             // pageDict[pageNumber] = scoreArray[scoreIndex++];
                                             items.forEach(item => {
                                                 doc.addPage();
@@ -316,7 +315,7 @@ class Setlist extends Component {
                                         //Description
                                         while (desc.length > 0) {
                                             //Remove start of line space
-                                            if(desc[0] == " ") {
+                                            if(desc[0] === " ") {
                                                 desc = desc.substring(1, desc.length);
                                             }
 
@@ -324,7 +323,7 @@ class Setlist extends Component {
                                             desc = desc.substring(linelen, desc.length);
 
                                             //Test if line-break is in the middle of a word
-                                            if(lineToBeAdded[lineToBeAdded.length-1] != " " && desc[0] != " " && desc.length > 0) {
+                                            if(lineToBeAdded[lineToBeAdded.length-1] !== " " && desc[0] !== " " && desc.length > 0) {
                                                 lineToBeAdded += "-";
                                             }
 
@@ -359,12 +358,13 @@ class Setlist extends Component {
 
                                     case('score'):
                                         let currentInstrument = item.title.split("(")[1].split(")")[0];
-                                        if(selectedInstrument == currentInstrument ||
-                                           selectedInstrument == "Everything") { 
+                                        if(selectedInstrument === currentInstrument ||
+                                           selectedInstrument === "Everything") { 
                                             doc.text(item.title + " - " + item.page, leftmargin, y);
                                             y += dy;
                                         }
                                         break;
+                                    // no default
                                 }
                             });
                             doc.save(`${setlist.title}.pdf`);
@@ -372,6 +372,7 @@ class Setlist extends Component {
                         });
                     });
                     break;
+                // no default
             }
         } catch (err) {
             console.log(err);
@@ -502,7 +503,7 @@ class Setlist extends Component {
 
         if (!await this.open()) return;
 
-        const {detail, band} = this.props;
+        const {detail} = this.props;
         
         const [bandId, setlistId] = [detail.slice(0, 20), detail.slice(20)];
 

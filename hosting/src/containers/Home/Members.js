@@ -153,7 +153,6 @@ class Members extends React.Component {
       this.setState({ anchorEl: null });
    };
 
-
    // Accepting a new band member
    _onAccept = async (member) => {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
@@ -188,7 +187,6 @@ class Members extends React.Component {
       // Remove member from pending collection
       await pendingRef.delete();
    }
-
 
    // Rejecting request from new band member
    _onReject = async (member) => {
@@ -226,15 +224,6 @@ class Members extends React.Component {
       })
    };
 
-   // Choosing or changing band type
-   _onChooseBandType = async () => {
-      this.setState({ anchorEl: null });
-      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
-      bandRef.update({
-         bandtype: null
-      })
-   };
-
    // Changing band description
    _onChangeBandDesc = async () => {
       this.setState({ anchorEl: null });
@@ -250,14 +239,22 @@ class Members extends React.Component {
       await bandRef.update({
          description: firebase.firestore.FieldValue.delete()
       })
+   };
 
+   // Choosing or changing band type
+   _onChooseBandType = async () => {
+      this.setState({ anchorEl: null });
+      const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`);
+      bandRef.update({
+         bandtype: null
+      })
    };
 
    // Deleting a band (only possible as band leader)
    _onDeleteBand = async () => {
       this.setState({ anchorEl: null });
 
-      let band = this.props.band;
+      const band = this.props.band;
       const bandRef = firebase.firestore().collection(`bands`).doc(`${band.id}`);
       const userRef = firebase.firestore().doc(`users/${this.state.user}`);
 
@@ -273,32 +270,15 @@ class Members extends React.Component {
 
          // Deleting scores from storage
          if (await band.score && band.score.length > 0) {
-            console.log('Deleting scores not yet implemented')
+            console.log('Deleting scores from storage not yet implemented')
          }
 
          // Deleting unsorted pdfs from storage
          if (await band.pdf && band.pdfs.length > 0) {
-            console.log('Deleting unsorted pdfs not yet implemented')
+            console.log('Deleting unsorted pdfs from storage not yet implemented')
          }
 
-         let members = []
-         for (let member in band.members) {
-            members.push(member)
-         }
-
-         // Deleting the band and all its subcollections
-         await this._onDeleteCollection(bandRef.collection('leader'), 20);
-         await this._onDeleteCollection(bandRef.collection('members'), 50);
-         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
-         await this._onDeleteCollection(bandRef.collection('scores'), 50);
-         await this._onDeleteCollection(bandRef.collection('setlists'), 50);
-         await bandRef.delete();
-
-         // CREATE FUNCTION FOR DELETING BANDREFS OF ALL MEMBERS
-         // const membersRef = firebase.firestore().doc(`users/${this.state.user}`);
-
-
-         // Removing bandRef 
+         // Removing bandRef from user
          let userBandRefs = (await userRef.get()).data().bandRefs || [];
          let filteredRefs = await userBandRefs.filter(ref => ref.id !== bandRef.id);
 
@@ -315,8 +295,37 @@ class Members extends React.Component {
             });
          }
 
-         //window.location.reload();
+         // Removing bandRef from members
+         await band.members.map(item => {
+            let memberRef = firebase.firestore().doc(`users/${item.uid}`);
+            memberRef.get().then(doc => {
+               let memberBandRefs = doc.data().bandRefs || [];
+               let filteredRefs = memberBandRefs.filter(ref => ref.id !== bandRef.id);
+               
+               if (filteredRefs.length > 0) {
+                  memberRef.update({
+                     defaultBandRef: filteredRefs[0],
+                     bandRefs: filteredRefs,
+                  });
+               }
+               else {
+                  memberRef.update({
+                     defaultBandRef: firebase.firestore.FieldValue.delete(),
+                     bandRefs: firebase.firestore.FieldValue.delete(),
+                  });
+               }
+            })
+         })
 
+         window.location.hash = `#/scores`;
+
+         // Deleting the band and all its subcollections
+         await this._onDeleteCollection(bandRef.collection('leader'), 20);
+         await this._onDeleteCollection(bandRef.collection('members'), 50);
+         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
+         await this._onDeleteCollection(bandRef.collection('scores'), 50);
+         await this._onDeleteCollection(bandRef.collection('setlists'), 50);
+         await bandRef.delete();
       }
    }
 
@@ -326,41 +335,41 @@ class Members extends React.Component {
 
       return new Promise((resolve, reject) => {
          this._onDeleteQueryBatch(query, batchSize, resolve, reject);
-       });
+      });
    }
 
    // Deleting the subcollections one by one
    _onDeleteQueryBatch(query, batchSize, resolve, reject) {
       query.get()
-        .then((snapshot) => {
-          // When there are no documents left, we are done
-          if (snapshot.size == 0) {
-            return 0;
-          }
-    
-          // Delete documents in a batch
-          var batch = firebase.firestore().batch();
-          snapshot.docs.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-    
-          return batch.commit().then(() => {
-            return snapshot.size;
-          });
-        }).then((numDeleted) => {
-          if (numDeleted === 0) {
-            resolve();
-            return;
-          }
-    
-          // Recurse on the next process tick, to avoid
-          // exploding the stack.
-          process.nextTick(() => {
-            this._onDeleteQueryBatch(query, batchSize, resolve, reject);
-          });
-        })
-        .catch(reject);
-    }
+         .then((snapshot) => {
+            // When there are no documents left, we are done
+            if (snapshot.size === 0) {
+               return 0;
+            }
+
+            // Delete documents in a batch
+            var batch = firebase.firestore().batch();
+            snapshot.docs.forEach((doc) => {
+               batch.delete(doc.ref);
+            });
+
+            return batch.commit().then(() => {
+               return snapshot.size;
+            });
+         }).then((numDeleted) => {
+            if (numDeleted === 0) {
+               resolve();
+               return;
+            }
+
+            // Recurse on the next process tick, to avoid
+            // exploding the stack.
+            process.nextTick(() => {
+               this._onDeleteQueryBatch(query, batchSize, resolve, reject);
+            });
+         })
+         .catch(reject);
+   }
 
    // Member leaving the band
    _onLeave = async (member) => {
@@ -560,6 +569,11 @@ class Members extends React.Component {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
+      if (this.state.checkedAdmin || this.state.checkedSupervisor || this.state.checkedMembers) {
+         alert("You can't change premissions while filtering is on")
+         return;
+      }
+
       // Confirm modal about promotion to admin
       this.setState({
          title: "Promote to admin",
@@ -572,8 +586,10 @@ class Members extends React.Component {
       });
 
       // Add member to the admin list
-      let admins = (await bandRef.get()).data().admins || [];
-      admins.push(member.uid);
+      let admins = (await bandRef.get()).data().admins || {};
+      if (!admins.includes(member.uid)) {
+         admins.push(member.uid)
+      }
       await bandRef.update({
          admins: admins,
       });
@@ -582,6 +598,11 @@ class Members extends React.Component {
    // Setting member as conductor
    _onMakeSupervisor = async (member) => {
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
+
+      if (this.state.checkedAdmin || this.state.checkedSupervisor || this.state.checkedMembers) {
+         alert("You can't change premissions while filtering is on")
+         return;
+      }
 
       // Confirm modal about promotion to conductor
       this.setState({
@@ -601,6 +622,11 @@ class Members extends React.Component {
    _onDemoteSupervisor = async (member) => {
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
+      if (this.state.checkedAdmin || this.state.checkedSupervisor || this.state.checkedMembers) {
+         alert("You can't change premissions while filtering is on")
+         return;
+      }
+
       // Confirm modal about demoting from conductor
       this.setState({
          title: "Demote conductor",
@@ -618,6 +644,11 @@ class Members extends React.Component {
       const bandRef = firebase.firestore().doc(`bands/${this.props.band.id}`)
       const memberRef = firebase.firestore().doc(`bands/${this.props.band.id}/members/${member.id}`)
 
+      if (this.state.checkedAdmin || this.state.checkedSupervisor || this.state.checkedMembers) {
+         alert("You can't change roles while filtering is on")
+         return;
+      }
+
       // Confirm modal about demoting member as admin
       this.setState({
          title: "Demote admin",
@@ -631,7 +662,7 @@ class Members extends React.Component {
       });
 
       // Removing admin from band adminlist
-      let admins = (await bandRef.get()).data().admins || [];
+      let admins = (await bandRef.get()).data().admins || {};
       let filteredAdmins = await admins.filter(ref => ref !== member.uid);
 
       if (filteredAdmins.length > 0) {
@@ -663,7 +694,7 @@ class Members extends React.Component {
       })
    };
 
-   // Runs whenever an update happens
+   // Runs when changing to another band
    componentDidUpdate(prevProp, prevState) {
       const { band } = this.props;
       if (band.id !== prevProp.band.id) {
@@ -675,7 +706,7 @@ class Members extends React.Component {
          });
 
          firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+            const admins = (snapshot.data() === undefined) ? {} : snapshot.data().admins;
             const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
             for (let i in admins) {
@@ -693,6 +724,7 @@ class Members extends React.Component {
                return;
             }
          });
+
       }
    }
 
@@ -707,7 +739,7 @@ class Members extends React.Component {
       });
 
       firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-         const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+         const admins = (snapshot.data() === undefined) ? {} : snapshot.data().admins;
          const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
          for (let i in admins) {
@@ -747,7 +779,6 @@ class Members extends React.Component {
       const { anchorEl } = this.state;
       const open = Boolean(anchorEl);
       let noneChecked = (!this.state.checkedAdmin && !this.state.checkedMembers && !this.state.checkedSupervisor)
-
 
       if (this.state.isLeader) {
          return <div>
@@ -952,19 +983,20 @@ class Members extends React.Component {
                                     </List>
                                  }
 
-                                 {this.state.checkedAdmin && !this.state.checkedSupervisor &&
-                                    <List>
-                                       {band.admins.map((member, index) =>
-                                          <ListItem key={index} dense >
-                                             <Avatar src={member.user.photoURL} />
-                                             <ListItemText primary={member.user.displayName} />
-                                             {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
-                                             {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                                             {member.supervisor && <Tooltip title="Conductor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                             {member.status === 'member' && !member.supervisor && <Tooltip title="Make conductor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                                             {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                                             {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
-                                          </ListItem>)
+                                 {this.state.checkedAdmin && !this.state.checkedSupervisor && !Array.isArray(band.admins[0]) && band.admins[0].uid !== undefined &&
+                                    < List >
+                                       {
+                                          band.admins.map((member, index) =>
+                                             <ListItem key={index} dense >
+                                                <Avatar src={member.user.photoURL} />
+                                                <ListItemText primary={member.user.displayName} />
+                                                {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                                {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                                {member.supervisor && <Tooltip title="Conductor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                                {member.status === 'member' && !member.supervisor && <Tooltip title="Make conductor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                                {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                                {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                             </ListItem>)
                                        }
                                     </List>
                                  }
@@ -1077,7 +1109,6 @@ class Members extends React.Component {
                            </FormControl>
                         </div>
                      }
-
                      {band.description &&
                         <div>
                            <Typography className={classes.heading}> Band description </Typography>

@@ -76,7 +76,6 @@ const styles = {
         width: '16px',
         height: '16px',
     }
-
 };
 
 class Home extends React.Component {
@@ -90,7 +89,6 @@ class Home extends React.Component {
         bandtypes: [],
         band: {},
         bands: null,
-
         userData: {},
         pdfSelected: false,
         scoreInfo: []
@@ -112,6 +110,7 @@ class Home extends React.Component {
         };
     }
 
+    // Creating and adding score to database
     async createScoreDoc(band, scoreData) {
         const data = {};
 
@@ -155,8 +154,6 @@ class Home extends React.Component {
         const partsSnapshot = await scoreRef.collection('parts').get();
         await Promise.all(partsSnapshot.docs.map(doc => doc.ref.delete()));
 
-        console.log("Depeted");
-
         const pdfRef = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.id}`)
 
         for (let part of parts) {
@@ -167,12 +164,12 @@ class Home extends React.Component {
             });
         }
 
-        console.log("Depeted");
         await pdfRef.delete();
 
         this.setState({ message: null });
     };
 
+    // This function runs after AddPartsDialog is done
     _onAddParts = async (scoreData, parts) => {
         const { band } = this.state;
         this.setState({ message: 'Adding parts...' });
@@ -192,68 +189,41 @@ class Home extends React.Component {
                 instrumentRef: firebase.firestore().doc(`instruments/${part.instrumentId}`),
             });
 
-
             await pdfDoc.ref.delete();
-
-            console.log("Depeted");
         }
 
         this.setState({ message: null, });
-
     };
 
-
-
-    // REMOVING UPLOADED PDF FROM UNSORTED PDFS
+    // Removing uploaded pdf from unsorted pdfs
     _onRemoveUnsortedPdf = async (pdf) => {
         const { band } = this.state;
         this.setState({ message: 'Removing PDF...' });
 
-        if (pdf.type == 'part') {
+        if (pdf.type === 'part') {
             for (let part of pdf.pdfs) {
                 const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${part.id}`).get();
                 await pdfDoc.ref.delete();
-
-                console.log("Depeted");
             }
         } else {
             const pdfDoc = await firebase.firestore().doc(`bands/${band.id}/pdfs/${pdf.pdf.id}`).get();
             await pdfDoc.ref.delete();
-
-            console.log("Depeted");
         }
         this.setState({ message: null });
     };
 
-    _onRemoveScore = async (score) => {
-        const { band } = this.state;
-        this.setState({ message: 'Removing Score...' });
-
-        const fireScore = await firebase.firestore().doc(`bands/${band.id}/scores/${score.id}`).get();
-        await fireScore.ref.delete();
-
-        console.log("Depeted");
-
-        this.setState({ message: null });
-    }
-
+    // Onclick for chaning band
     _onBandClick = e => {
         this.setState({ bandAnchorEl: e.currentTarget })
     };
 
-
     // Creating a band
     _onCreateBand = async () => {
         this.setState({ bandAnchorEl: null });
-
         const { name, } = await this.createDialog.open();
-
         this.setState({ message: 'Creating band...' });
-
         const user = firebase.auth().currentUser;
-
         const userRef = firebase.firestore().doc(`users/${user.uid}`);
-
         const userDoc = await userRef.get();
 
         try {
@@ -289,13 +259,9 @@ class Home extends React.Component {
     // Joining a band
     _onJoinBand = async () => {
         this.setState({ bandAnchorEl: null });
-
         const { code } = await this.joinDialog.open();
-
         const user = firebase.auth().currentUser;
-
         const userRef = firebase.firestore().doc(`users/${user.uid}`);
-
         let bandSnapshot = await firebase.firestore().collection('bands').where('code', '==', code).get();
 
         if (bandSnapshot.docs.length > 0) {
@@ -319,16 +285,11 @@ class Home extends React.Component {
             await new Promise(resolve => setTimeout(resolve, 2000));
             this.setState({ message: null });
         }
-
         this.setState({ message: null });
     };
 
-    _onDeleteBand = async () => {
-
-    }
-
+    // Changing a band
     _onBandSelect = async bandId => {
-
         this.setState({ bandAnchorEl: null });
         const user = firebase.auth().currentUser;
         await firebase.firestore().doc(`users/${user.uid}`).update({
@@ -336,14 +297,11 @@ class Home extends React.Component {
         });
     };
 
-
+    // Creating a setlist
     _onCreateSetlist = async () => {
         const user = firebase.auth().currentUser;
-
         const { band } = this.state;
-
         const { title, date, time } = await this.setlistDialog.open();
-
         this.setState({ message: 'Creating setlist...' });
 
         try {
@@ -353,15 +311,14 @@ class Home extends React.Component {
                 time: time,
                 creatorRef: firebase.firestore().doc(`users/${user.uid}`)
             });
-
             window.location.hash = `#/setlist/${band.id}${setlistRef.id}`;
         } catch (err) {
             console.log(err);
         }
-
         this.setState({ message: null });
     };
 
+    // Changing between pages
     _onNavClick = nameShort => {
         window.location.hash = `/${nameShort}`;
     };
@@ -370,15 +327,11 @@ class Home extends React.Component {
         this.setState({ uploadAnchorEl: e.currentTarget });
     };
 
-
-    // UPLOADING PDF
+    // Uploading a pdf
     _onUploadMenuClick = async type => {
-        const { files, path, accessToken } = await this.uploadDialog.open(type);
-
+        const { files } = await this.uploadDialog.open(type);
         const { band } = this.state;
-
         this.setState({ uploadAnchorEl: null });
-
         let fileNames = [];
 
         for (let i = 0; i < files.length; i++) {
@@ -388,10 +341,9 @@ class Home extends React.Component {
             await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
             console.log(`File ${file.name} uploaded`);
         };
-
         this.setState({ message: null });
+        window.location.hash = `#/pdfs`;
     };
-
 
     _onMenuClose = () => {
         this.setState({ bandAnchorEl: null, uploadAnchorEl: null, accountAnchorEl: null });
@@ -405,14 +357,18 @@ class Home extends React.Component {
         return firebase.auth().signOut();
     }
 
-
-
     async componentDidUpdate(prevProps, prevState) {
+        // Sometimes the user is not fetched in time, therefore we check for user is null and refresh the page if it is
+        setTimeout(() => {
+            if (user === null) {
+                window.location.reload();
+            }
+        }, 2000);
+
         const user = firebase.auth().currentUser;
 
         const { page, loaded } = this.props;
-        const { bands, band, windowSize } = this.state;
-
+        const { bands } = this.state;
 
         if (page !== prevProps.page) {
             this.unsubs.forEach(unsub => unsub());
@@ -430,7 +386,6 @@ class Home extends React.Component {
                     }
 
                     const data = snapshot.data();
-
                     this.setState({ userData: data });
 
                     if (!data.bandRefs) {
@@ -562,13 +517,13 @@ class Home extends React.Component {
                                         snapshot.docs.map(async doc => ({ ...doc.data(), id: doc.id }))
                                     );
                                     item.parts = parts;
-                                    let instr = item.instruments;
                                 });
                             }
                             this.setState({ band: { ...this.state.band, scores: items } });
                         })
                     );
 
+                    // Creating list with setlists
                     this.unsubs.push(
                         data.defaultBandRef.collection('setlists').onSnapshot(async snapshot => {
                             let items = await Promise.all(
@@ -578,6 +533,7 @@ class Home extends React.Component {
                         })
                     );
 
+                    // Creating lists with pdfs 
                     this.unsubs.push(
                         data.defaultBandRef.collection('pdfs').onSnapshot(async snapshot => {
                             let items = await Promise.all(
@@ -642,31 +598,17 @@ class Home extends React.Component {
                             ({ ...(await bandRef.get()).data(), id: bandRef.id })
                         )
                     );
+                    // Setting state for band with all information above included
                     this.setState({ bands: bands });
                 })
             );
 
         }
-
-
-
-
         const options = {
             duration: 200,
             fill: 'both',
             easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)'
         };
-
-        if (!prevState.band.pdfs && band.pdfs ||
-            !prevState.band.scores && band.scores ||
-            !prevState.band.members && band.members ||
-            !prevState.band.setlists && band.setlists) {
-
-            await this.contentEl.animate([
-                { transform: 'translateY(70px)', opacity: 0 },
-                { transform: 'none', opacity: 1 }
-            ], options).finished;
-        }
 
         if (!loaded) {
             if ((prevState.bands || []).length === 0 && (bands && bands.length > 0)) {
@@ -683,23 +625,11 @@ class Home extends React.Component {
     }
 
 
-
-
-
-    _onPDFSelect = selectedPDFs => {
-        this.setState({ pdfSelected: selectedPDFs.size > 0 });
-    };
-
     render() {
-        const { bandAnchorEl, uploadAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData } = this.state;
-
+        const { bandAnchorEl, accountAnchorEl, message, windowSize, band, bands, pdfSelected, userData } = this.state;
         const user = firebase.auth().currentUser;
-
         const { classes, page, loaded } = this.props;
-
-
         let pages = [['Scores', 'scores'], ['Setlists', 'setlists'], [`Your band`, 'members'], ['Unsorted PDFs', 'pdfs']];
-
 
         return <div className={classes.root}>
             {
@@ -712,9 +642,6 @@ class Home extends React.Component {
                 ref={ref => this.appBarContainerEl = ref}>
                 {
                     !pdfSelected &&
-
-
-
                     <AppBar position='static'>
                         <Toolbar style={{ minHeight: 56 }}>
                             {
@@ -765,8 +692,14 @@ class Home extends React.Component {
                             </IconButton>
 
                             <IconButton onClick={this._onAccountCircleClick}>
-                                {loaded &&
+                                {loaded && user !== null ?
                                     <img src={user.photoURL} style={{
+                                        width: "32px",
+                                        height: "32px",
+                                        borderRadius: '50%',
+                                    }}>
+                                    </img> :
+                                    <img src={"https://img.icons8.com/color/100/000000/google-logo.png"} style={{
                                         width: "32px",
                                         height: "32px",
                                         borderRadius: '50%',
@@ -788,13 +721,22 @@ class Home extends React.Component {
                                     paddingRight: 50,
                                     paddingLeft: 10,
                                 }}>
-                                    <img src={user.photoURL} style={{
-                                        width: "46px",
-                                        height: "46px",
-                                        margin: "10px",
-                                        borderRadius: '50%',
-                                    }}>
-                                    </img>
+                                    {user !== null ?
+                                        <img src={user.photoURL} style={{
+                                            width: "46px",
+                                            height: "46px",
+                                            margin: "10px",
+                                            borderRadius: '50%',
+                                        }}>
+                                        </img> :
+                                        <img src={"https://img.icons8.com/color/100/000000/google-logo.png"} style={{
+                                            width: "46px",
+                                            height: "46px",
+                                            margin: "10px",
+                                            borderRadius: '50%',
+                                        }}>
+                                        </img>
+                                    }
                                     <div style={{
                                         display: "flex",
                                         flexDirection: 'column',
@@ -802,10 +744,10 @@ class Home extends React.Component {
                                         marginRight: '30px',
                                     }}>
                                         <Typography variant="body2" style={{ fontSize: "16px", fontWeight: "500" }}>
-                                            {user.displayName}
+                                            {user !== null ? user.displayName : ''}
                                         </Typography>
                                         <Typography variant="body1">
-                                            {user.email}
+                                            {user !== null ? user.email : ''}
                                         </Typography>
                                     </div>
                                 </div>
@@ -934,7 +876,6 @@ class Home extends React.Component {
                         band={band}
                         onAddFullScore={this._onAddFullScore}
                         onAddParts={this._onAddParts}
-                        onSelect={this._onPDFSelect}
                         onRemoveUnsortedPdf={this._onRemoveUnsortedPdf}
                     />
                 }

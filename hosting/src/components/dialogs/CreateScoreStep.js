@@ -4,6 +4,11 @@ import { IconButton, TextField, withStyles } from "material-ui";
 import ChipInput from 'material-ui-chip-input'
 import { ArrowBack, ArrowForward, Done } from "material-ui-icons";
 
+
+// Sets the information in the first step of AddFullScoreDialog.js and AddPartsDialog.js
+// Access from those two Dialogs
+// Used to set composer, arranger, tags, genres and tempo
+
 const styles = {
     chipInput__chipContainer: {
         minHeight: 'unset',
@@ -17,12 +22,14 @@ class CreateScoreStep extends React.Component {
         data: {}
     };
 
+    // Sets state
     componentWillMount() {
         if (this.props.defaultData) {
             this.setState({ data: { ...this.props.data, title: this.props.defaultData.title } });
         }
     }
 
+    // Updates the state when you change title, composer, arranger etc.
     _onDataChange = (type, e) => {
         const val = isNaN(e.target.value) ? e.target.value : Number(e.target.value);
 
@@ -31,21 +38,28 @@ class CreateScoreStep extends React.Component {
         this.setState({ data: newData });
     };
 
+    // Updates before rendering
     componentDidMount = () => {
         const { pdf } = this.props;
 
+        // Checks if the composer and arranger is found from the analysis and sets the state
+        // to the results from the analysis
         if (pdf.composer !== 'No composer detected' && pdf.arranger !== 'No arranger detected') {
             const newData = { ...this.state.data, composer: pdf.composer, arranger: pdf.arranger};
             this.props.onChange(newData);
             this.setState({ data: newData });
         }
 
+        // Checks if the composer is found by the analysis, but the arranger is not.
+        // Updates the composer to one found by the analysis
         else if (pdf.composer !== 'No composer detected' && pdf.arranger === 'No arranger detected') {
             const newData = { ...this.state.data, composer: pdf.composer };
             this.props.onChange(newData);
             this.setState({ data: newData });
         }
-        
+
+        // Checks if the arranger is found by the analysis, but the composer is not.
+        // Updates the arranger to one found by the analysis
         else if (pdf.composer === 'No composer detected' && pdf.arranger !== 'No arranger detected') {
             const newData = { ...this.state.data, arranger: pdf.arranger };
             this.props.onChange(newData);
@@ -53,17 +67,20 @@ class CreateScoreStep extends React.Component {
         }
     }
 
+    // If multiple pages of the pdf. Then jumps to the previous page of the pdf
     _onPrevImageClick = e => {
         const { selectedPage } = this.state;
         this.setState({ selectedPage: selectedPage > 0 ? selectedPage - 1 : 0 })
     };
 
+    // If multiple pages of the pdf. Then jumps to the next page of the pdf
     _onNextImageClick = e => {
         const { pdf } = this.props;
         const { selectedPage } = this.state;
         this.setState({ selectedPage: selectedPage < pdf.pages.length - 1 ? selectedPage + 1 : pdf.pages.length - 1 })
     };
 
+    // Renders the page
     render() {
         const { pdf } = this.props;
         const { classes } = this.props;
@@ -99,18 +116,21 @@ class CreateScoreStep extends React.Component {
                     </div>
                 </div>
             }
+            {/*Updates the title page and sets default title*/}
             <TextField
                 label='Title'
                 style={{ marginBottom: 20 }}
                 defaultValue={pdf.name}
                 onChange={e => this._onDataChange('title', e)}
             />
+            {/*Updates the composer page and sets default composer*/}
             {pdf.composer === 'No composer detected' &&
                 <TextField
                     label='Composer'
                     style={{ marginBottom: 20 }}
                     onChange={e => this._onDataChange('composer', e)}
                 />}
+            {/*Updates the composer page and sets analyzed composer*/}
             {pdf.composer !== 'No composer detected' &&
                 <TextField
                     label='Composer'
@@ -119,12 +139,14 @@ class CreateScoreStep extends React.Component {
                     onChange={e => this._onDataChange('composer', e)}
                     />
             }
+            {/*Updates the arranger page and sets default title*/}
             {pdf.arranger === "No arranger detected" &&
                 <TextField
                     label='Arranger'
                     style={{ marginBottom: 20 }}
                     onChange={e => this._onDataChange('arranger', e)}
                 />}
+            {/*Updates the arranger page and sets analyzed title*/}
             {pdf.arranger !== "No arranger detected" &&
                 <TextField
                     label='Arranger'
@@ -132,6 +154,7 @@ class CreateScoreStep extends React.Component {
                     defaultValue={pdf.arranger}
                     onChange={e => this._onDataChange('arranger', e)}
                 />}
+            {/*Updates the tempo*/}
             <TextField
                 label="Tempo"
                 onChange={e => this._onDataChange('tempo', e)}

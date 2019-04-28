@@ -3,6 +3,10 @@ import React from 'react';
 import { TextField } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
+/**
+ * Component used by Members.js (the band page) to display a dialog for adding or changing the band description.
+ */
+
 class ChangeBandDescDialog extends React.Component {
     data = {};
 
@@ -24,7 +28,7 @@ class ChangeBandDescDialog extends React.Component {
     }
 
     render() {
-        return <AsyncDialog title='Add description' confirmText='Confirm' onRef={ref => this.changeNamedialog = ref}>
+        return <AsyncDialog title='Add Description' confirmText='Confirm' onRef={ref => this.changeNamedialog = ref}>
             <TextField
                 label="Description"
                 multiline
