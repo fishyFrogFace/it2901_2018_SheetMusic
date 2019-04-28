@@ -48,7 +48,6 @@ class Score extends React.Component {
         selectedPart: 0,
         score: {}
     };
-
     unsubs = [];
 
     _onInstrumentSelectChange(e) {
@@ -69,7 +68,6 @@ class Score extends React.Component {
 
     async _onMenuClick(type) {
         this.setState({ anchorEl: null });
-        console.log("Type: " + type);
         const user = firebase.auth().currentUser;
 
         // Switch-case here to ensure that the downloat button
@@ -80,10 +78,8 @@ class Score extends React.Component {
             case 'download':
                 try {
                     const { selectedPart, score } = this.state;
-
                     const part = score.parts[selectedPart];
                     const { } = await this.downloadDialog.open(part.instrument);
-
                     const dateString = new Date().toLocaleDateString();
 
                     // Get image
@@ -102,11 +98,9 @@ class Score extends React.Component {
                         if (i > 0) {
                             doc.addPage();
                         }
-
                         const url = part.pages[i].originalURL;
                         const response = await fetch(url);
                         const blob = await response.blob();
-
                         const imageData = await new Promise((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onloadend = () => resolve(reader.result);
@@ -117,7 +111,6 @@ class Score extends React.Component {
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
                         doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
                     }
-
                     // Download the PDF
                     doc.save(`${score.title}.pdf`);
                 } catch (err) {
@@ -134,11 +127,8 @@ class Score extends React.Component {
 
         if (page !== prevProps.page) {
             const [bandId, scoreId] = [detail.slice(0, 20), detail.slice(20)];
-
             const bandRef = firebase.firestore().doc(`bands/${bandId}`);
-
             const scoreDoc = bandRef.collection('scores').doc(scoreId);
-
             this.unsubs.forEach(unsub => unsub());
 
             this.unsubs.push(
@@ -147,6 +137,7 @@ class Score extends React.Component {
                 })
             );
 
+            // get the score parts from db collection and adding it to score state
             this.unsubs.push(
                 scoreDoc.collection('parts').onSnapshot(async snapshot => {
                     const parts = await Promise.all(
@@ -156,11 +147,8 @@ class Score extends React.Component {
                             instrument: (await doc.data().instrumentRef.get()).data()
                         }))
                     );
-
-
                     const partsSorted = parts
                         .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
-
                     this.setState({ score: { ...this.state.score, parts: partsSorted } });
                 })
             );
@@ -171,7 +159,6 @@ class Score extends React.Component {
 
         const { classes } = this.props;
         const { message, selectedPart, score } = this.state;
-
         const hasParts = Boolean(score.parts && score.parts.length);
 
         return (
@@ -196,7 +183,6 @@ class Score extends React.Component {
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
                                             value={index}>{part.instrument.displayName} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
-
                                         </MenuItem>
                                     )
                                 }
@@ -209,10 +195,10 @@ class Score extends React.Component {
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
-                    {
+                    {// mapping over score parts with the selected parts as index to render the correct image src
                         hasParts &&
                         (score.parts[selectedPart].pages || []).map((page, index) =>
-                            <img key={index} className={classes.sheet} src={page.originalURL} />
+                            <img key={index} className={classes.sheet} src={page.originalURL} alt={'scoreImage'} />
 
                         )
                     }
@@ -222,7 +208,6 @@ class Score extends React.Component {
                     open={false}
                     classes={{ paper: classes.drawer__paper }}
                 >
-                    lol
                 </Drawer>
                 <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref} />
                 <Snackbar
