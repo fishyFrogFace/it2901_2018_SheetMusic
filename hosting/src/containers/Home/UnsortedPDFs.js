@@ -1,14 +1,12 @@
 import React from 'react';
 import {
-    Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText,
-    Paper, Typography
+    Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText, Paper, Typography
 } from "material-ui";
 
-import {withStyles} from "material-ui/styles";
+import { withStyles } from "material-ui/styles";
 
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";
-import PDFTypeDialog from "../../components/dialogs/PDFTypeDialog";
 
 const styles = theme => ({
     checkbox__checked: {
@@ -46,80 +44,199 @@ const styles = theme => ({
     }
 });
 
+/**
+ * React component for the page for uploading of PDFs. Displays unsorted PDFs, i.e PDFs that has been uploaded, but are
+ * not yet given all required information and added to the band's library. The PDFs can either be removed or given all
+ * information through dialogs by clicking "Add parts to score".
+ */
+
+
 class UnsortedPDFs extends React.Component {
-    _onPDFClick = pdfId => {
-        window.location.hash = `/pdf/${this.props.band.id}${pdfId}`
+    state = {
+        bandAnchorEl: null,
+        uploadAnchorEl: null,
+        accountAnchorEl: null,
+        uploadSheetsDialogOpen: false,
+        message: null,
+        windowSize: null,
+        bandtypes: [],
+        band: {},
+        bands: null,
+
+        userData: {},
+        pdfSelected: false,
+        scoreInfo: []
     };
 
     _onAddParts = async pdfs => {
-        const {score, parts} = await this.addPartsDialog.open(pdfs);
-        this.props.onAddParts(score, parts);
+        const { score, parts, tune } = await this.addPartsDialog.open(pdfs);
+        this.props.onAddParts(score, parts, tune);
+    };
+
+    // Add full score
+    _onAddFullScore = async pdf => {
+        const { score, parts } = await this.addFullScoreDialog.open(pdf);
+        this.props.onAddFullScore(score, parts, pdf);
     };
 
     _onRemoveUnsortedPdf = async pdf => {
         this.props.onRemoveUnsortedPdf(pdf);
     };
 
-    _onAddFullScore = async pdf => {
-        const {type} = await this.pdfTypeDialog.open();
-
-        if (type === 0) {
-            const {score, parts} = await this.addFullScoreDialog.open(pdf);
-            this.props.onAddFullScore(score, parts, pdf);
-        }
-    };
 
     render() {
-        const {classes, band} = this.props;
+        const { band } = this.props;
+
+        let hasInstruments = false;
+
+        // Checks if any of the PDFs has instruments
+        if (band.pdfs) {
+            band.pdfs.forEach(pdf => {
+                if (pdf.type === 'full' && pdf.pdf.parts) {
+                    pdf.pdf.parts.map(part => {
+                        if (!part.instrument.length) {
+                            hasInstruments = true;
+                        }
+                    })
+                }
+            })
+        }
+
 
         return <div>
-            <div style={{paddingTop: 20, paddingLeft: 20}}>
+            <div style={{ paddingTop: 20, paddingLeft: 20 }}>
                 {
                     band.pdfs && band.pdfs.map(group => {
                         switch (group.type) {
+
                             case 'full':
-                                return <Paper key={group.pdf.id} style={{marginRight: 20, marginBottom: 20, position: 'relative'}}>
-                                    <div style={{padding: '10px 20px', display: 'flex', alignItems: 'center'}}>
+                                return <Paper key={group.pdf.id}
+                                    style={{
+                                        marginRight: 20,
+                                        marginBottom: 20,
+                                        position: 'relative'
+                                    }}>
+                                    <div style={{
+                                        padding: '10px 20px',
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
                                         <Typography variant='body2'>{group.name}</Typography>
-                                        <div style={{flex: 1}}/>
-                                        <div style={{position: 'relative'}}>
-                                            <Button color='secondary' onClick={() => this._onAddFullScore(group.pdf)} disabled={group.pdf.processing}>Add</Button>
-                                            <Button color='secondary' onClick={() => this._onRemoveUnsortedPdf(group)} disabled={group.pdf.processing}>Remove</Button>
-                                            {group.pdf.processing && <CircularProgress color='secondary' style={{position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12}} size={24}/>}
+                                        <div style={{ flex: 1 }} />
+                                        <div style={{ position: 'relative' }}>
+                                            <Button
+                                                color='secondary'
+                                                onClick={() =>
+                                                    this._onAddFullScore(group.pdf)
+                                                }
+                                                disabled={group.pdf.processing}
+                                            >
+                                                Create full score
+                                            </Button>
+                                            <Button
+                                                color='secondary'
+                                                onClick={() =>
+                                                    this._onRemoveUnsortedPdf(group)
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+
+                                            {group.pdf.processing && <CircularProgress color='secondary'
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '0%',
+                                                    marginTop: -12,
+                                                    marginLeft: -12
+                                                }}
+                                                size={24} />
+                                            }
                                         </div>
                                     </div>
-                                    <Divider/>
-                                    <div style={{display: 'flex', paddingTop: 10, paddingLeft: 10, flexWrap: 'wrap'}}>
+                                    <Divider />
+                                    <div style={{
+                                        display: 'flex',
+                                        paddingTop: 10,
+                                        paddingLeft: 10,
+                                        flexWrap: 'wrap'
+                                    }}
+                                    >
                                         {
-                                            group.pdf.parts && group.pdf.parts.map((part, i) =>
-                                                <Chip key={i} style={{marginRight: 10, marginBottom: 10}}
-                                                      label={part.instruments.map(instr => instr.name).join('/')}/>
+                                            hasInstruments && group.pdf.parts.map((part, i) =>
+                                                <Chip key={i} style={{ marginRight: 10, marginBottom: 10 }}
+                                                    label={'part.instrument'} >
+                                                </Chip>
                                             )
                                         }
                                         {
-                                            !group.pdf.processing && !group.pdf.parts &&
-                                            <Typography style={{marginLeft: 10, marginBottom: 10, color: 'rgba(0,0,0,.54)'}}>No instruments detected.</Typography>
+                                            !hasInstruments && <Typography style={{
+                                                marginLeft: 10,
+                                                marginBottom: 10,
+                                                color: 'rgba(0,0,0,.54)'
+                                            }}
+                                            >
+                                                No instruments detected.
+                                            </Typography>
                                         }
                                     </div>
                                 </Paper>;
+
                             case 'part':
-                                return <Paper key={group.name} style={{marginRight: 20, marginBottom: 20, position: 'relative'}}>
-                                    <div style={{padding: '10px 20px', display: 'flex', alignItems: 'center'}}>
+                                return <Paper key={group.name}
+                                    style={{
+                                        marginRight: 20,
+                                        marginBottom: 20,
+                                        position: 'relative'
+                                    }}
+                                >
+                                    <div style={{
+                                        padding: '10px 20px',
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                    >
                                         <Typography variant='body2'>{group.name}</Typography>
-                                        <div style={{flex: 1}}/>
-                                        <div style={{position: 'relative'}}>
-                                            <Button color='secondary' disabled={group.pdfs.some(pdf => pdf.processing)} onClick={() => this._onAddParts(group.pdfs)}>Add</Button>
-                                            <Button color='secondary' disabled={group.pdfs.some(pdf => pdf.processing)} onClick={() => this._onRemoveUnsortedPdf(group)}>Remove</Button>
-                                            {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary' style={{position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12}} size={24}/>}
+                                        <div style={{ flex: 1 }} />
+                                        <div style={{ position: 'relative' }}>
+                                            <Button color='secondary'
+                                                disabled={group.pdfs.some(pdf => pdf.processing)}
+                                                onClick={() =>
+                                                    this._onAddParts(group.pdfs
+                                                    )}
+                                            >
+                                                Add parts to score
+                                            </Button>
+                                            <Button color='secondary'
+                                                onClick={() =>
+                                                    this._onRemoveUnsortedPdf(group)
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                            {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary'
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '0%',
+                                                    marginTop: -12,
+                                                    marginLeft: -12
+                                                }}
+                                                size={24}
+                                            />}
                                         </div>
                                     </div>
-                                    <Divider/>
+                                    <Divider />
                                     <List>
                                         {
                                             group.pdfs.map(pdf =>
-                                                <ListItem key={pdf.id} style={{height: 40, padding: '10px 20px'}} button
-                                                          disableRipple>
-                                                    <ListItemText primary={pdf.name}/>
+                                                <ListItem key={pdf.id}
+                                                    style={{
+                                                        height: 40,
+                                                        padding: '10px 20px'
+                                                    }}
+                                                >
+                                                    <ListItemText primary={pdf.name} />
                                                 </ListItem>
                                             )
                                         }
@@ -129,28 +246,8 @@ class UnsortedPDFs extends React.Component {
                     })
                 }
             </div>
-            {/*<Typography style={{marginLeft: 20, marginTop: 20, color: 'rgba(0,0,0,.54)'}}*/}
-            {/*variant='body1'>All</Typography>*/}
-            {/*<div className={classes.flexWrapContainer}>*/}
-            {/*{*/}
-            {/*band.pdfs && band.pdfs.map((doc, docIndex) =>*/}
-            {/*<Selectable*/}
-            {/*zoomed*/}
-            {/*key={doc.id}*/}
-            {/*classes={{root: classes.selectable__root}}*/}
-            {/*title={doc.name}*/}
-            {/*imageURL={doc.thumbnailURL}*/}
-            {/*selected={selectedPDFs.has(docIndex)}*/}
-            {/*onClick={e => this._onPDFClick(doc.id)}*/}
-            {/*onSelect={e => this._onPDFSelect(docIndex)}*/}
-            {/*selectMode={selectedPDFs.size > 0}*/}
-            {/*/>*/}
-            {/*)*/}
-            {/*}*/}
-            {/*</div>*/}
-            <PDFTypeDialog onRef={ref => this.pdfTypeDialog = ref}/>
-            <AddPartsDialog band={band} onRef={ref => this.addPartsDialog = ref}/>
-            <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref}/>
+            <AddPartsDialog band={band} onRef={ref => this.addPartsDialog = ref} />
+            <AddFullScoreDialog band={band} onRef={ref => this.addFullScoreDialog = ref} />
         </div>;
     }
 }
