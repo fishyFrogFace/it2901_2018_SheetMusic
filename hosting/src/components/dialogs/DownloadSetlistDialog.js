@@ -1,3 +1,7 @@
+/**
+ * This dialog is used in setlist.js (Sub page setlist)
+ * Makes it possible to download a setlist
+ */
 import React from 'react';
 
 import AsyncDialog from "./AsyncDialog";
@@ -5,13 +9,11 @@ import AsyncDialog from "./AsyncDialog";
 import Select from 'react-virtualized-select';
 import createFilterOptions from 'react-select-fast-filter-options';
 import 'react-select/dist/react-select.css';
-import 'react-virtualized/styles.css'
-import 'react-virtualized-select/styles.css'
+import 'react-virtualized/styles.css';
+import 'react-virtualized-select/styles.css';
 
 import {
-    Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItem, ListItemText, Step,
-    StepLabel, Stepper, SvgIcon, Typography, withStyles, FormControl, InputLabel, FormHelperText, 
-    TextField, MenuItem, Input, Grid
+    DialogContent
 } from "material-ui";
 
 class DownloadSetlistDialog extends React.Component {
