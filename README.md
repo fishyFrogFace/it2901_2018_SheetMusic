@@ -111,3 +111,48 @@ For the download function to work the site has to be setup with CORS. CORS is a 
 Then run “gsutil cors set cors.json gs://<your-cloud-storage-bucket>” to deploy these configurations from the root folder.
 
 If any issues occur with this deployment, check the [official documentation](https://firebase.google.com/docs/storage/web/download-files#cors_configuration) for help.
+
+### Documents rules
+To have a ruleset that avoids some potential errors and security risks the rules for the documents have to be set to the following: 
+```
+// Allow read/write access to all users under any conditions
+// Warning: **NEVER** use this rule set in production; it allows
+// anyone to overwrite your entire database.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if request.auth.uid != null; }
+
+  	// Rules for band data manipulation
+    match /bands/{bandId} {
+    	allow read, write: if /databases/$(database)/documents/bands/$(bandId) in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.bandRefs
+		}
+    match /bands/{bandId}/{anything=**} {
+    	allow read, write: if /databases/$(database)/documents/bands/$(bandId) in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.bandRefs
+		}
+    
+    // Rules for bandtype data manipulation
+    match /bandtype/{bandtypeId} {
+      allow read, write: if true;
+      //allow read, write: if request.auth.uid != null;
+    }
+    
+    // Rules for instrumentcheck data manipulation
+    match /instrumentcheck/{instrumentcheckId} {
+      allow read, write: if true;
+      //allow read, write: if request.auth.uid != null;
+    }
+    
+    // Rules for instruments data manipulation
+    match /instruments/{instrumentID} {
+      allow read, write: if true;
+      //allow read, write: if request.auth.uid != null;
+    }
+    
+    // Rules for users data manipulation
+    match /users/{userId} {
+      allow read, write: if true;
+      //allow read, write: if request.auth.uid != null;
+    }
+  }
+}
+```
