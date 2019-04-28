@@ -2,7 +2,7 @@ import React from 'react';
 import { withStyles } from "material-ui/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
-  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress, Link
+  Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress,
 } from "material-ui";
 import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
@@ -38,7 +38,6 @@ const styles = theme => ({
     width: '65%',
     marginBottom: 20,
     cursor: 'pointer',
-
   },
 
   flex: {
@@ -62,7 +61,6 @@ const styles = theme => ({
     flex: 0.8,
     '&:last-child': {
       paddingBottom: '0px',
-
     }
   },
 
@@ -118,13 +116,9 @@ const styles = theme => ({
     cursor: 'pointer'
   },
 
-
   expandedListItems: {
     paddingBottom: '0px',
     paddingTop: '0px',
-  },
-
-  metadata: {
   },
 
   media: {
@@ -139,17 +133,6 @@ const styles = theme => ({
 
   selectArrangement: {
     padding: '8px'
-  },
-
-  progress: {
-    color: 'black',
-    paddingRight: '150px',
-    margin: '50px',
-    height: '50px',
-  },
-
-  checked: {
-    color: 'green',
   },
 
   cardHeader: {
@@ -170,7 +153,6 @@ const styles = theme => ({
       display: 'grid'
     },
   },
-
 });
 
 class Scores extends React.Component {
@@ -210,12 +192,6 @@ class Scores extends React.Component {
   _onViewListClick = () => {
     window.localStorage.setItem('scoresListView', 'true');
     this.setState({ listView: true });
-  };
-
-  //  not in use atm
-  _onMoreClick = (score) => {
-    this.props.onRemoveScore(score);
-    score = ''
   };
 
   // opens delete modal dialog
@@ -284,8 +260,6 @@ class Scores extends React.Component {
       })
       .catch(reject);
   }
-
-
 
   // closes the active expanded panel when next is activated
   handleChange = panel => (event, expanded) => {
@@ -380,7 +354,6 @@ class Scores extends React.Component {
     this.setState({ chosenComposer: e.target.value })
   };
 
-
   // mounting the instrument alternatives
   componentDidMount = () => {
     const instr = [];
@@ -393,7 +366,6 @@ class Scores extends React.Component {
         })
         for (let elem of instr) {
           allInstruments.push(elem.name)
-
         }
       })
     this.setState({
@@ -438,7 +410,6 @@ class Scores extends React.Component {
           });
         }
       });
-
     }
 
     return <div className={this.state.hidden}>
@@ -493,15 +464,12 @@ class Scores extends React.Component {
                       onClick={() => window.location.hash = `#/score/${band.id}${score.id}`}>
                       <LibraryMusic color='action' />
                       <ListItemText primary={score.title} secondary={`Parts: ${score.partCount}`} />
-                      {console.log('score:', score)}
-
-                      <ListItemSecondaryAction onClick={() => this._onMoreClick}>
+                      <ListItemSecondaryAction>
                         <CardActions disableActionSpacing >
                           <IconButton
                             onClick={() => {
                               this._onDeleteScore(score, score.title)
-                            }}
-                          >
+                            }}>
                             <DeleteIcon />
                           </IconButton>
                         </CardActions>
@@ -541,8 +509,7 @@ class Scores extends React.Component {
                         <IconButton style={{ flex: 1, float: 'right' }}
                           onClick={() => {
                             this._onDeleteScore(score, score.title)
-                          }}
-                        >
+                          }}>
                           <DeleteIcon />
                         </IconButton>
                       </CardActions>
