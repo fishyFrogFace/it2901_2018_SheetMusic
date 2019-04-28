@@ -1,5 +1,6 @@
 /**
- * This dialog is displayed when the user clicks on add an event within a setlist
+ * This dialog is used in setlist.js (Sub page setlist)
+ * It changes the title, description and time of an event
  */
 
 import React from 'react';

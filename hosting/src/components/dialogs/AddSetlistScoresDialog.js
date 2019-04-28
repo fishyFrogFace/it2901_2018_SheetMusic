@@ -1,5 +1,6 @@
 /**
- * This dialog is used in setlist.js
+ * This dialog is used in setlist.js (Sub page setlist)
+ * Makes it possible to add scores to a setlist
  */
 
 import React from 'react';
@@ -32,9 +33,8 @@ class AddSetlistScoresDialog extends React.Component {
 
         if (selectedScores.has(index)) {
             selectedScores.delete(index);
-            
-        console.log("Depeted");
-        } else {
+        } 
+        else {
             selectedScores.add(index);
 
         }
@@ -51,9 +51,9 @@ class AddSetlistScoresDialog extends React.Component {
     render() {
         const {selectedScores} = this.state;
         const {classes, band} = this.props;
-        
         return <AsyncDialog fullscreen title='Add scores to setlist' confirmText='Add Scores' onRef={ref => this.dialog = ref}>
             <List dense>
+            {/*Loops over the scores and align a checkbox to each one */}
             {band && band.scores && band.scores.map((score, index) =>
                 <ListItem style={{padding: 0}} key={index} onClick={e => this._onSelectableClick(index)}>
                     <Checkbox id="scores-checkbox-button" classes={{checked: classes.checkbox__checked}} checked={selectedScores.has(index)}/>

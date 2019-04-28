@@ -1,5 +1,6 @@
 /**
- * This dialog is used in Setlist.js and changes the title and date of the setlist
+ * This dialog is used in Setlist.js (Sub page setlist)
+ * It changes the title, date and time of a setlist
  */
 
 import React from 'react';

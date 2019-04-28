@@ -1,3 +1,11 @@
+/**
+ * This class is called when a user clicks on the setlists tab
+ * It has the following functionality:
+ * Creating and deleting setlists
+ * Sorting setlists
+ * Setlist listview
+ */
+
 import React from 'react';
 import firebase from 'firebase';
 
@@ -32,7 +40,6 @@ class Setlists extends React.Component {
         title: "",
         message: "",
         hasRights: false,
-        isLoaded: true,
     };
 
 
@@ -162,7 +169,6 @@ class Setlists extends React.Component {
         const setlistRef = firebase.firestore().doc(`bands/${band.id}`).collection('setlists').doc(setlistId);
         if (this.state.hasRights) {
             setlistRef.delete().then(() => {
-                console.log("Document succesfully removed");
             }).catch((err) => {
                 console.error("Error removing document", err);
             });
@@ -195,8 +201,7 @@ class Setlists extends React.Component {
     render() {
 
         const { classes, band } = this.props;
-        const { listView, isLoaded } = this.state;
-        //TODO: isLoaded should be removed when the rendering problem is solved
+        const { listView } = this.state;
         const hasSetlists = band.setlists && band.setlists.length > 0;
         let setlists = [];
 
@@ -253,14 +258,14 @@ class Setlists extends React.Component {
                         {setlists.map((setlist, index) =>
                             <Card key={index} className={classes.card} id={"setlist-card"}
                                 elevation={1}>
-                                {isLoaded && <CardMedia
+                                {<CardMedia
                                     className={classes.media}
                                     onClick={() => window.location.hash = `#/setlist/${band.id}${setlist.id}`}
                                     image="https://previews.123rf.com/images/scanrail/scanrail1303/scanrail130300051/18765489-musical-concept-background-macro-view-of-white-score-sheet-music-with-notes-with-selective-focus-eff.jpg"
                                     title=""
 
                                 />}
-                                {isLoaded && <CardContent style={{ position: 'relative' }} id="setlist-card-content">
+                                {<CardContent style={{ position: 'relative' }} id="setlist-card-content">
                                     <Typography variant="headline" component="h2" id="setlist-card-typography">
                                         {setlist.title}
                                         {this.state.hasRights &&

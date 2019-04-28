@@ -1,3 +1,8 @@
+/**
+ * This dialog is used in setlists.js(main setlist page)
+ * Makes it possible to create a setlist with a title, date and time(hours and seconds)
+ */
+
 import React from 'react';
 
 import {TextField, withStyles} from "material-ui";

@@ -1,5 +1,6 @@
 /**
- * This dialog is used in setlist.js
+ * This dialog is used in setlist.js(Sub page setlist)
+ * Makes it possible to create an event with a title, description and time(minutes)
  */
 
 import React from 'react';
