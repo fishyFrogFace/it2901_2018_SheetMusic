@@ -25,6 +25,12 @@ const styles = theme => ({
     }
 });
 
+/**
+ * Search bar component called by Home.js and is hence displayed at all times. The search bar are showing the score and
+ * setlist results on the fly. Clicking them redirect to their detailed pages. The search is performed using approximate
+ * string matching using a fuzzy-search library called fuse.js.
+ */
+
 class SearchBar extends React.Component {
     state = {
         value: '',
@@ -83,6 +89,8 @@ class SearchBar extends React.Component {
                     onChange={this._onInputChange}
                     onFocus={this._onInputFocus}
                 />
+
+                {/*Result list*/}
                 {
                     resultsVisible && results && results.length > 0 &&
                     <Paper style={{ position: 'absolute', top: 48, background: 'white', width: '100%' }}>
