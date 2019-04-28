@@ -47,7 +47,7 @@ const styles = theme => ({
 /**
  * React component for the page for uploading of PDFs. Displays unsorted PDFs, i.e PDFs that has been uploaded, but are
  * not yet given all required information and added to the band's library. The PDFs can either be removed or given all
- * information through dialogs.
+ * information through dialogs by clicking "Add parts to score".
  */
 
 
