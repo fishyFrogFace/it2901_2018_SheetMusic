@@ -9,8 +9,13 @@ import {
 import Dropbox from 'dropbox';
 import { ArrowBack } from "material-ui-icons";
 
+// Dialog for the uploading. Comes from home.js Goes direct to upload and does not creates a dialog__paper
+// Is set up for future possibility of dropbox if wanted
+
+
 const styles = theme => ({});
 
+//Creates a stepicon
 function StepIcon(props) {
     const extraProps = {};
 
@@ -48,15 +53,18 @@ class UploadDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
+    //
     open(provider) {
         return new Promise(async (resolve, reject) => {
             this.__resolve = resolve;
             this.__reject = reject;
 
             switch (provider) {
+                // If a computer - This is ran by default in home.js
                 case 'computer':
                     this.inputRef.click();
                     break;
+                // If dropbox, this does not run but is kept if wanted for the future
                 case 'dropbox':
                     const authUrl = new Dropbox.Dropbox({ clientId: 'tbg7d2wqxr0ngke' }).getAuthenticationUrl('https://scores-bc679.firebaseapp.com/auth');
 
@@ -97,26 +105,31 @@ class UploadDialog extends React.Component {
         });
     }
 
+    //update file input
     _onFileInputChange = e => {
         this.__resolve({ files: e.target.files })
     };
 
+    // Upload button for dialog if the switch case is active
     _onUploadClick = async () => {
         const { selectedPath, accessToken } = this.state;
         this.__resolve({ path: selectedPath, accessToken: accessToken });
         this.setState({ open: false });
     };
 
+    // Resets state for cancel click
     _onCancelClick = () => {
         this.__reject("Dialog canceled");
         this.setState({ open: false });
     };
 
+    // Sets state when going backwards a step
     _onBackClick = () => {
         const { activeStep } = this.state;
         this.setState({ activeStep: activeStep - 1 });
     };
 
+    // Folders for dropbox
     _onEntryClick = async entry => {
         if (entry['.tag'] === 'folder') {
             const response = await this.dropbox.filesListFolder({ path: entry.path_lower });
@@ -124,6 +137,7 @@ class UploadDialog extends React.Component {
         }
     };
 
+    // Sets states when using arrowbackclick
     _onArrowBackClick = async () => {
         const { selectedPath } = this.state;
         const newPath = selectedPath.split('/').slice(0, -1).join('/');
@@ -131,6 +145,7 @@ class UploadDialog extends React.Component {
         this.setState({ entries: response.entries, selectedPath: newPath });
     };
 
+    // Renders the dialog box used when both dropbox and computer is active.
     render() {
         const { activeStep, open, entries, selectedPath } = this.state;
         const { classes } = this.props;

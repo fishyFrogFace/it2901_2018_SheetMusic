@@ -10,6 +10,9 @@ import 'react-virtualized-select/styles.css'
 
 import { DialogContent, } from "material-ui";
 
+// Dialog for downloading a full setlist. Started from setlist.js
+
+
 class DownloadSetlistDialog extends React.Component {
     everything = { value: "Everything", label: "Everything" };
     default = { value: "", label: "" };
