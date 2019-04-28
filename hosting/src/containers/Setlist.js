@@ -1,3 +1,12 @@
+/**
+ * This class is called when a user clicks on a setlist
+ * It has the following functionality:
+ * Edit setlist. 
+ * Create, delete and edit events.
+ * Add and delete scores.
+ * Download setlists.
+ */
+
 import React, { Component } from 'react';
 import { withStyles } from 'material-ui/styles';
 
@@ -22,8 +31,6 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Add, ArrowBack, Edit, FileDownload, MusicNote } from "material-ui-icons";
 
 import jsPDF from 'jspdf';
-import { async } from '@firebase/util';
-import { func } from 'prop-types';
 
 const styles = {
     root: {},
@@ -193,7 +200,6 @@ class Setlist extends Component {
                                 break;
 
                             case('score'):
-                                console.log('item', item)
                                 for(let i = 0; i < item.score.partCount; i++) {
                                     overview.push({ title: item.score.title, page: 0, type: item.type })
                                 }
@@ -588,9 +594,6 @@ class Setlist extends Component {
             items = updatedItems || (setlist.items || []);
         }
 
-        console.log('this.state.band', this.state.band)
-        console.log('this.state.setlist', this.state.setlist)
-
         return (
             <div className={classes.root}>
                 <DragDropContext onDragEnd={this._onDragEnd}>
@@ -630,7 +633,6 @@ class Setlist extends Component {
                         </Toolbar>
                     </AppBar>
                     <div style={{paddingTop: 64 + 20}}>
-                    {/*!setlist.items && <Typography>You have not added any events or scores, click the + button to add some!</Typography>*/}
                     {setlist.items &&
                         <Droppable droppableId="droppable">
                             {(provided, snapshot) =>
