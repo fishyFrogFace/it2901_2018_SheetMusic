@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import {TextField, InputLabel, Input, InputAdornment, FormControl} from "material-ui";
+import { TextField, InputLabel, Input, InputAdornment, FormControl } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
 class AddSetlistEventDialog extends React.Component {
@@ -32,12 +32,12 @@ class AddSetlistEventDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Add Event' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField id="create-event-name" required label='Name' onChange={e => this._onTextFieldChange(e, 'eventTitle')}/>
-            <TextField id="create-event-description" label='Description' onChange={e => this._onTextFieldChange(e, 'description')}/>
+            <TextField id="create-event-name" required label='Name' onChange={e => this._onTextFieldChange(e, 'eventTitle')} />
+            <TextField id="create-event-description" label='Description' onChange={e => this._onTextFieldChange(e, 'description')} />
             <FormControl>
                 <InputLabel> Time </InputLabel>
-                <Input id="create-event-time" type='number' label='Time' onChange={e => this._onTextFieldChange(e, 'time')} endAdornment={<InputAdornment position="end">Min</InputAdornment>}/>
-            </FormControl>            
+                <Input id="create-event-time" type='number' label='Time' onChange={e => this._onTextFieldChange(e, 'time')} endAdornment={<InputAdornment position="end">Min</InputAdornment>} />
+            </FormControl>
         </AsyncDialog>
     }
 }

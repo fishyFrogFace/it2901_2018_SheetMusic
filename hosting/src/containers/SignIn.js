@@ -131,15 +131,15 @@ class SignIn extends Component {
                     <iframe
                         title="Frame"
                         className={classes.iframe}
-                        src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8"/>
+                        src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8" />
                     <div className={classes.overlay}>
                         <div className={classes.overlayContainer}>
                             <Typography variant='display4' className={classes.title}>ScoresButler</Typography>
                             <Paper elevation={1}>
                                 <div className={classes.button} onClick={() => this._onSignIn()}>
                                     <img className={classes.buttonIcon}
-                                         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                                         alt="Google"
+                                        src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                        alt="Google"
                                     />
                                     <Typography variant='body2' className={classes.buttonText}>Sign in with
                                         Google</Typography>
@@ -162,7 +162,7 @@ class SignIn extends Component {
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage}  src={arrangement} alt="arrangement" />
+                            <img className={classes.infoImage} src={arrangement} alt="arrangement" />
 
                             <Typography variant='subheading' className={classes.infoHeader}>Archive</Typography>
                             <Typography variant='body1' className={classes.infoText}>

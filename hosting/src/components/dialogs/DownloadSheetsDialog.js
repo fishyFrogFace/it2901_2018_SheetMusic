@@ -18,14 +18,14 @@ class DownloadSheetsDialog extends React.Component {
 
     // Set states and open the dialog
     async open(instrument) {
-        this.setState({instrument: instrument});
+        this.setState({ instrument: instrument });
         await this.dialog.open();
         return {}
     }
 
     // Renders the dialog
     render() {
-        const {instrument} = this.state;
+        const { instrument } = this.state;
 
         return <AsyncDialog title={`Download sheets for ${instrument && instrument.name}?`} confirmText='Download' onRef={ref => this.dialog = ref}>
         </AsyncDialog>

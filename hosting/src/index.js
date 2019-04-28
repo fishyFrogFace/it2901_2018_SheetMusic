@@ -93,7 +93,7 @@ class App extends React.Component {
             });
         } catch (err) {
             console.log(err);
-            {/* Already imported or doesn't exists */}
+            {/* Already imported or doesn't exists */ }
         }
     }
 
@@ -110,7 +110,7 @@ class App extends React.Component {
 
         if (!Component) return null;
 
-        {/* Renders component based on state, changes in state is triggered by _onHashChange() which is triggered by changes to window.location.hash*/}
+        {/* Renders component based on state, changes in state is triggered by _onHashChange() which is triggered by changes to window.location.hash*/ }
         return <Component {...this.props} page={page} detail={detail} loaded={componentLoaded[this.page2Component[page]]} />
     }
 }

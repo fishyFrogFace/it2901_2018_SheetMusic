@@ -45,7 +45,7 @@ class CreateScoreStep extends React.Component {
         // Checks if the composer and arranger is found from the analysis and sets the state
         // to the results from the analysis
         if (pdf.composer !== 'No composer detected' && pdf.arranger !== 'No arranger detected') {
-            const newData = { ...this.state.data, composer: pdf.composer, arranger: pdf.arranger};
+            const newData = { ...this.state.data, composer: pdf.composer, arranger: pdf.arranger };
             this.props.onChange(newData);
             this.setState({ data: newData });
         }
@@ -85,8 +85,6 @@ class CreateScoreStep extends React.Component {
         const { pdf } = this.props;
         const { classes } = this.props;
         const { selectedPage, data } = this.state;
-
-        console.log('render', this.state.data)
 
         return <div style={{ display: 'flex', flexDirection: 'column' }}>
             {pdf &&
@@ -137,7 +135,7 @@ class CreateScoreStep extends React.Component {
                     style={{ marginBottom: 20 }}
                     defaultValue={pdf.composer}
                     onChange={e => this._onDataChange('composer', e)}
-                    />
+                />
             }
             {/*Updates the arranger page and sets default title*/}
             {pdf.arranger === "No arranger detected" &&

@@ -339,7 +339,6 @@ class Home extends React.Component {
             this.setState({ message: `Uploading file ${i + 1}/${files.length}...` });
             fileNames.push(file.name.replace(/\.[^/.]+$/, ""));
             await firebase.storage().ref(`${band.id}/${file.name}`).put(file);
-            console.log(`File ${file.name} uploaded`);
         };
         this.setState({ message: null });
         window.location.hash = `#/pdfs`;

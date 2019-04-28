@@ -39,7 +39,7 @@ class ChangeBandDescDialog extends React.Component {
                 style={{
                     width: '500px',
                 }}
-            />  
+            />
         </AsyncDialog>
     }
 }

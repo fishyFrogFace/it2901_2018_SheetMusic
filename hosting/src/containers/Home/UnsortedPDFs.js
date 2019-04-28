@@ -73,7 +73,7 @@ class UnsortedPDFs extends React.Component {
         this.props.onAddParts(score, parts, tune);
     };
 
-    // 
+    // Add full score
     _onAddFullScore = async pdf => {
         const { score, parts } = await this.addFullScoreDialog.open(pdf);
         this.props.onAddFullScore(score, parts, pdf);
@@ -111,11 +111,11 @@ class UnsortedPDFs extends React.Component {
 
                             case 'full':
                                 return <Paper key={group.pdf.id}
-                                              style={{
-                                                  marginRight: 20,
-                                                  marginBottom: 20,
-                                                  position: 'relative'
-                                              }}>
+                                    style={{
+                                        marginRight: 20,
+                                        marginBottom: 20,
+                                        position: 'relative'
+                                    }}>
                                     <div style={{
                                         padding: '10px 20px',
                                         display: 'flex',
@@ -123,7 +123,7 @@ class UnsortedPDFs extends React.Component {
                                     }}>
                                         <Typography variant='body2'>{group.name}</Typography>
                                         <div style={{ flex: 1 }} />
-                                        <div style={{position: 'relative' }}>
+                                        <div style={{ position: 'relative' }}>
                                             <Button
                                                 color='secondary'
                                                 onClick={() =>
@@ -143,13 +143,14 @@ class UnsortedPDFs extends React.Component {
                                             </Button>
 
                                             {group.pdf.processing && <CircularProgress color='secondary'
-                                                                                       style={{
-                                                                                           position: 'absolute',
-                                                                                           top: '50%',
-                                                                                           left: '0%',
-                                                                                           marginTop: -12,
-                                                                                           marginLeft: -12 }}
-                                                                                       size={24}/>
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '0%',
+                                                    marginTop: -12,
+                                                    marginLeft: -12
+                                                }}
+                                                size={24} />
                                             }
                                         </div>
                                     </div>
@@ -170,10 +171,10 @@ class UnsortedPDFs extends React.Component {
                                         }
                                         {
                                             !hasInstruments && <Typography style={{
-                                                                                marginLeft: 10,
-                                                                                marginBottom: 10,
-                                                                                color: 'rgba(0,0,0,.54)'
-                                                                            }}
+                                                marginLeft: 10,
+                                                marginBottom: 10,
+                                                color: 'rgba(0,0,0,.54)'
+                                            }}
                                             >
                                                 No instruments detected.
                                             </Typography>
@@ -183,11 +184,11 @@ class UnsortedPDFs extends React.Component {
 
                             case 'part':
                                 return <Paper key={group.name}
-                                              style={{
-                                                  marginRight: 20,
-                                                  marginBottom: 20,
-                                                  position: 'relative'
-                                              }}
+                                    style={{
+                                        marginRight: 20,
+                                        marginBottom: 20,
+                                        position: 'relative'
+                                    }}
                                 >
                                     <div style={{
                                         padding: '10px 20px',
@@ -199,29 +200,29 @@ class UnsortedPDFs extends React.Component {
                                         <div style={{ flex: 1 }} />
                                         <div style={{ position: 'relative' }}>
                                             <Button color='secondary'
-                                                    disabled={group.pdfs.some(pdf => pdf.processing)}
-                                                    onClick={() =>
-                                                        this._onAddParts(group.pdfs
-                                                        )}
+                                                disabled={group.pdfs.some(pdf => pdf.processing)}
+                                                onClick={() =>
+                                                    this._onAddParts(group.pdfs
+                                                    )}
                                             >
                                                 Add parts to score
                                             </Button>
                                             <Button color='secondary'
-                                                    onClick={() =>
-                                                        this._onRemoveUnsortedPdf(group)
-                                                    }
+                                                onClick={() =>
+                                                    this._onRemoveUnsortedPdf(group)
+                                                }
                                             >
                                                 Remove
                                             </Button>
                                             {group.pdfs.some(pdf => pdf.processing) && <CircularProgress color='secondary'
-                                                                                                         style={{
-                                                                                                             position: 'absolute',
-                                                                                                             top: '50%',
-                                                                                                             left: '0%',
-                                                                                                             marginTop: -12,
-                                                                                                             marginLeft: -12
-                                                                                                         }}
-                                                                                                         size={24}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '0%',
+                                                    marginTop: -12,
+                                                    marginLeft: -12
+                                                }}
+                                                size={24}
                                             />}
                                         </div>
                                     </div>
@@ -230,10 +231,10 @@ class UnsortedPDFs extends React.Component {
                                         {
                                             group.pdfs.map(pdf =>
                                                 <ListItem key={pdf.id}
-                                                          style={{
-                                                              height: 40,
-                                                              padding: '10px 20px'
-                                                          }}
+                                                    style={{
+                                                        height: 40,
+                                                        padding: '10px 20px'
+                                                    }}
                                                 >
                                                     <ListItemText primary={pdf.name} />
                                                 </ListItem>
