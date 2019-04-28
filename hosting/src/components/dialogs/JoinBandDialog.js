@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {TextField} from "material-ui";
+import { TextField } from "material-ui";
 import AsyncDialog from "./AsyncDialog";
 
 /**
@@ -29,7 +29,7 @@ class JoinBandDialog extends React.Component {
 
     render() {
         return <AsyncDialog title='Join Band' confirmText='Join' onRef={ref => this.dialog = ref}>
-            <TextField label='Code' onChange={e => this._onTextFieldChange(e, 'code')}/>
+            <TextField label='Code' onChange={e => this._onTextFieldChange(e, 'code')} />
         </AsyncDialog>
     }
 }

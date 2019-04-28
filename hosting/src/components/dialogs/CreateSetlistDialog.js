@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import {TextField, withStyles} from "material-ui";
+import { TextField, withStyles } from "material-ui";
 
 import AsyncDialog from "./AsyncDialog";
 
@@ -38,7 +38,7 @@ class CreateSetlistDialog extends React.Component {
 
     async open() {
         await this.dialog.open();
-        return {title: this.state.title, date: this.state.date, time: this.state.time};
+        return { title: this.state.title, date: this.state.date, time: this.state.time };
     }
 
     _onTitleInputChange = e => {
@@ -46,25 +46,25 @@ class CreateSetlistDialog extends React.Component {
     };
 
     _onDateChange = e => {
-        this.setState({date: e.target.value});
+        this.setState({ date: e.target.value });
     };
 
     _onTimeChange = e => {
-        this.setState({time: e.target.value})
+        this.setState({ time: e.target.value })
     }
 
     render() {
-        const {classes} = this.props;
-        const {title, date,time} = this.state;
-        
+        const { classes } = this.props;
+        const { title, date, time } = this.state;
+
         return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField 
+            <TextField
                 id="create-setlist-title"
-                label='Title' 
-                onChange={this._onTitleInputChange} 
-                style={{marginBottom: 20}} 
-                required 
-                />
+                label='Title'
+                onChange={this._onTitleInputChange}
+                style={{ marginBottom: 20 }}
+                required
+            />
             <form className={classes.container} noValidate>
                 <TextField onChange={this._onDateChange}
                     id="create-setlist-date"
@@ -73,7 +73,7 @@ class CreateSetlistDialog extends React.Component {
                     defaultValue={this.date}
                     className={classes.textField}
                     InputLabelProps={{
-                    shrink: true,
+                        shrink: true,
                     }}
                 />
                 <TextField onChange={this._onTimeChange}
@@ -83,7 +83,7 @@ class CreateSetlistDialog extends React.Component {
                     defaultValue={this.date}
                     className={classes.textField}
                     InputLabelProps={{
-                    shrink: true,
+                        shrink: true,
                     }}
                     inputProps={{
                         step: 300, // 5 min

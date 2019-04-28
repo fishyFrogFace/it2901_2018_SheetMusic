@@ -270,12 +270,14 @@ class Members extends React.Component {
 
          // Deleting scores from storage
          if (await band.score && band.score.length > 0) {
-            console.log('Deleting scores from storage not yet implemented')
+            // Deleting scores from storage not yet implemented
+            // TODO: Implement delete scores from storage function
          }
 
          // Deleting unsorted pdfs from storage
          if (await band.pdf && band.pdfs.length > 0) {
-            console.log('Deleting unsorted pdfs from storage not yet implemented')
+            // Deleting pdfs from storage not yet implemented
+            // TODO: Implement delete pdfs from storage function
          }
 
          // Removing bandRef from user
@@ -301,7 +303,7 @@ class Members extends React.Component {
             memberRef.get().then(doc => {
                let memberBandRefs = doc.data().bandRefs || [];
                let filteredRefs = memberBandRefs.filter(ref => ref.id !== bandRef.id);
-               
+
                if (filteredRefs.length > 0) {
                   memberRef.update({
                      defaultBandRef: filteredRefs[0],

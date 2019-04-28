@@ -69,13 +69,13 @@ class Setlists extends React.Component {
         });
 
         //Looping through members, if a member is an admin or supervisor, the state will be updated
-        bandRef.collection('members').onSnapshot(async snapshot =>{
+        bandRef.collection('members').onSnapshot(async snapshot => {
             const members = await Promise.all(
                 snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
             );
             for (let i in members) {
                 if (currentUser.uid === members[i].uid) {
-                    if(members[i].admin || members[i].supervisor){
+                    if (members[i].admin || members[i].supervisor) {
                         this.setState({
                             hasRights: true
                         });
@@ -109,14 +109,14 @@ class Setlists extends React.Component {
             });
             const bandRef = firebase.firestore().doc(`bands/${band.id}`);
 
-            bandRef.collection('members').onSnapshot(async snapshot =>{
+            bandRef.collection('members').onSnapshot(async snapshot => {
                 const members = await Promise.all(
                     snapshot.docs.map(async doc => ({ ...doc.data(), ref: doc.ref }))
                 );
-                
+
                 for (let i in members) {
                     if (currentUser.uid === members[i].uid) {
-                        if(members[i].admin || members[i].supervisor){
+                        if (members[i].admin || members[i].supervisor) {
                             this.setState({
                                 hasRights: true
                             });
@@ -270,7 +270,7 @@ class Setlists extends React.Component {
                                         {setlist.title}
                                         {this.state.hasRights &&
                                             <IconButton style={{ position: 'absolute', right: '15px' }} id="setlist-delete-button">
-                                                <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)}/>
+                                                <DeleteIcon onClick={() => this._onSetlistDeleteClick(setlist.id, setlist.title)} />
                                             </IconButton>}
                                     </Typography>
                                     <Typography component="p">
@@ -291,9 +291,9 @@ class Setlists extends React.Component {
                 variant="fab"
                 color="secondary"
                 style={{ position: 'absolute', bottom: 32, right: 32 }}
-                
+
             >
-                <PlaylistAdd id="playlist-add-button"/>
+                <PlaylistAdd id="playlist-add-button" />
             </Button>}
             <AsyncDialog title={this.state.title} onRef={ref => this.dialog = ref}>
                 <Typography variant="body1" >{this.state.message}</Typography>
