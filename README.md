@@ -97,7 +97,7 @@ voice: Number
 ### Run the site locally
 To run it through localhost you will have to run npm start from the hosting folder through the command prompt/terminal. This will then open a version of the site from your computer. Only changes performed on the hosting version of the site can be tested here. All changes to functions have to deployed to take effect.
 
-### CORS
+### CORS (Cross-Origin Resource Sharing)
 For the download function to work the site has to be setup with CORS. CORS is a configuration for cross-origin access from your storage bucket. Create a cors.json file with this configuration:
 ```JSON
 [
