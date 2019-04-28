@@ -9,6 +9,8 @@ import CreateScoreStep from "./CreateScoreStep";
 import firebase from 'firebase';
 import ModalImage from 'react-modal-image'
 
+/* Dialog for processing unsorted full pdfs. Inherited from UnsortedPDFs.js */
+
 const styles = {
     selectable: {
         width: '100%',
@@ -24,7 +26,7 @@ const styles = {
         color: 'black'
     }
 };
-
+// Sets design for next icon
 function StepIcon(props) {
     const extraProps = {};
 
@@ -46,6 +48,7 @@ function StepIcon(props) {
 }
 
 class AddFullScoreDialog extends React.Component {
+    //Sets state
     state = {
         parts: [],
         activeStep: 0,
@@ -64,6 +67,7 @@ class AddFullScoreDialog extends React.Component {
         this.props.onRef(undefined)
     }
 
+    // Runs functions for when opened
     async open(pdf) {
         return new Promise(async (resolve, reject) => {
             this.setState({
@@ -72,11 +76,13 @@ class AddFullScoreDialog extends React.Component {
                 scoreData: { title: pdf.name.split('-')[0].trim() }
             });
 
+            //Creates list of instruments from the database
             const snapshot = await firebase.firestore().collection('instruments').get();
             const instruments = snapshot.docs
                 .map(doc => ({ ...doc.data(), id: doc.id }))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
+            // Sets instruments for parts
             const parts = pdf.parts.map(part => {
                 const instr = instruments.find(instrument => instrument.id === part.instrumentId);
                 part.instrument = instr.name;
@@ -91,15 +97,15 @@ class AddFullScoreDialog extends React.Component {
             this.__reject = reject;
         });
     }
-
+    // Sets state for when adding to an old score
     _onScoreClick(scoreId) {
         this.setState({ scoreData: { id: scoreId }, activeStep: 2 });
     }
-
+    // Sets state for when adding a new score instead of adding to an old score
     _onNewScoreClick = () => {
         this.setState({ activeStep: 1 });
     };
-
+    // Performs functionality of setting correct states for different steps of the process
     _onNextClick = () => {
         let { activeStep, scoreData, pdf, parts } = this.state;
 
@@ -110,7 +116,7 @@ class AddFullScoreDialog extends React.Component {
         if (activeStep === 1) {
             this.setState({ scoreCreated: true });
         }
-
+        // Last step, sets information and resets state
         if (activeStep === 2) {
             this.__resolve({
                 score: scoreData,
@@ -128,20 +134,24 @@ class AddFullScoreDialog extends React.Component {
         }
     };
 
+    // Resets state when cancelling the dialog
     _onCancelClick = () => {
         this.__reject("Dialog canceled");
         this.setState({ open: false, parts: [], scoreData: {}, activeStep: 0, scoreCreated: false });
     };
 
+    // Sets state when going backwards based on what step you return to
     _onBackClick = () => {
         const { activeStep, scoreCreated } = this.state;
         this.setState({ activeStep: activeStep === 2 && !scoreCreated ? 0 : activeStep - 1, scoreCreated: false });
     };
 
+    //Updates the state whenever you update information in the first step
     _onScoreDataChange = data => {
         this.setState({ scoreData: data })
     };
 
+    //updates the state whenever performing changes to instrument in the latter steps
     _onSelectChange(pageIndex, e) {
         const parts = [...this.state.parts];
 
@@ -152,11 +162,7 @@ class AddFullScoreDialog extends React.Component {
         this.setState({ parts: parts })
     }
 
-    _onRemovePart = index => {
-        const parts = [...this.state.parts];
-        parts.splice(parts.findIndex(part => part.page === index), 1);
-        this.setState({ parts });
-    };
+
 
     render() {
         const { activeStep, open, pdf, parts, scoreCreated, scoreData, instruments } = this.state;
@@ -208,7 +214,7 @@ class AddFullScoreDialog extends React.Component {
                                 display: 'flex',
                                 marginBottom: 20,
                                 border: '1px solid #E8E8E8',
-                                height: 200
+                                height: 100
                             }}>
                                 <div style={{
                                     flex: 1,
@@ -237,6 +243,7 @@ class AddFullScoreDialog extends React.Component {
                                                         renderValue={() => part.instrument === 'No instruments detected' ? 'Select instrument' : part.instrument}
                                                     >
                                                         {
+                                                            // creates a list of instruments to choose from
                                                             instruments.map(instrument =>
                                                                 <MenuItem key={instrument.id} value={instrument}>{instrument.name}</MenuItem>
                                                             )
