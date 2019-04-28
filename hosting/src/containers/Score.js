@@ -1,20 +1,17 @@
 import React from 'react';
 import { withStyles } from 'material-ui/styles';
-
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
-
-import { Drawer, IconButton, Menu, MenuItem, Select, Snackbar } from "material-ui";
+import { Drawer, IconButton, MenuItem, Select, Snackbar } from "material-ui";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
-import MoreVertIcon from 'material-ui-icons/MoreVert';
-
 import firebase from 'firebase';
 import 'firebase/storage';
-
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
-import { FileDownload, Info, InfoOutline } from "material-ui-icons";
+import { FileDownload } from "material-ui-icons";
 import jsPDF from 'jspdf';
+
+// This is the score which is rendered when clicking on it on the Scores page
 
 import * as cors from 'cors';
 const corsHandler = cors({ origin: true });
@@ -98,7 +95,6 @@ class Score extends React.Component {
 
                     // Make PDF
                     const size_increase = 1.33334;
-                    // const doc = new jsPDF('p', 'px', 'a4'); //[width*size_increase, height*size_increase]);
                     const doc = new jsPDF('p', 'px', [width * size_increase, height * size_increase]);
 
                     // Go through the images in the score and add them and a watermark to the PDF
@@ -132,6 +128,7 @@ class Score extends React.Component {
         }
     }
 
+    // update the part selected 
     componentDidUpdate(prevProps, prevState) {
         const { page, detail } = this.props;
 
@@ -173,10 +170,10 @@ class Score extends React.Component {
     render() {
 
         const { classes } = this.props;
-        const { anchorEl, message, selectedPart, score } = this.state;
+        const { message, selectedPart, score } = this.state;
 
         const hasParts = Boolean(score.parts && score.parts.length);
-        
+
         return (
             <div className={classes.root}>
                 <AppBar>
@@ -195,7 +192,7 @@ class Score extends React.Component {
                                 onChange={e => this._onInstrumentSelectChange(e)}
                                 disableUnderline={true}
                             >
-                                {
+                                {// mapping over score parts to get correct instrument
                                     score.parts.map((part, index) =>
                                         <MenuItem key={index}
                                             value={index}>{part.instrument.displayName} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
