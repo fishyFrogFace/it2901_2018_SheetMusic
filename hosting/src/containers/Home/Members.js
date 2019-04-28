@@ -662,7 +662,7 @@ class Members extends React.Component {
       });
 
       // Removing admin from band adminlist
-      let admins = (await bandRef.get()).data().admins || [];
+      let admins = (await bandRef.get()).data().admins || {};
       let filteredAdmins = await admins.filter(ref => ref !== member.uid);
 
       if (filteredAdmins.length > 0) {
@@ -706,7 +706,7 @@ class Members extends React.Component {
          });
 
          firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-            const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+            const admins = (snapshot.data() === undefined) ? {} : snapshot.data().admins;
             const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
             for (let i in admins) {
@@ -724,6 +724,7 @@ class Members extends React.Component {
                return;
             }
          });
+
       }
    }
 
@@ -738,7 +739,7 @@ class Members extends React.Component {
       });
 
       firebase.firestore().doc(`bands/${band.id}`).get().then(snapshot => {
-         const admins = (snapshot.data() === undefined) ? [] : snapshot.data().admins;
+         const admins = (snapshot.data() === undefined) ? {} : snapshot.data().admins;
          const leader = (snapshot.data() === undefined) ? null : snapshot.data().creatorRef.id;
 
          for (let i in admins) {
@@ -981,20 +982,21 @@ class Members extends React.Component {
                                        }
                                     </List>
                                  }
-                                 {this.state.checkedAdmin && !this.state.checkedSupervisor &&
-                                    <List>
-                                       {band.admins.map((member, index) =>
-                                          <ListItem key={index} dense >
 
-                                             <Avatar src={member.user.photoURL} />
-                                             <ListItemText primary={member.user.displayName} />
-                                             {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
-                                             {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
-                                             {member.supervisor && <Tooltip title="Conductor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
-                                             {member.status === 'member' && !member.supervisor && <Tooltip title="Make conductor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
-                                             {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
-                                             {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
-                                          </ListItem>)
+                                 {this.state.checkedAdmin && !this.state.checkedSupervisor && !Array.isArray(band.admins[0]) && band.admins[0].uid !== undefined &&
+                                    < List >
+                                       {
+                                          band.admins.map((member, index) =>
+                                             <ListItem key={index} dense >
+                                                <Avatar src={member.user.photoURL} />
+                                                <ListItemText primary={member.user.displayName} />
+                                                {member.admin && <Tooltip title="Admin. Click to demote"><IconButton onClick={() => this._onDemoteAdmin(member)}><Star color="secondary" /></IconButton></Tooltip>}
+                                                {member.status === 'member' && !member.admin && <Tooltip title="Make admin"><IconButton onClick={() => this._onMakeAdmin(member)}><Star /></IconButton></Tooltip>}
+                                                {member.supervisor && <Tooltip title="Conductor. Click to demote"><IconButton onClick={() => this._onDemoteSupervisor(member)}><QueueMusic color="secondary" /></IconButton></Tooltip>}
+                                                {member.status === 'member' && !member.supervisor && <Tooltip title="Make conductor"><IconButton onClick={() => this._onMakeSupervisor(member)}><QueueMusic /></IconButton></Tooltip>}
+                                                {member.uid === this.state.user && <Tooltip title="Leave band"><IconButton onClick={() => this._onLeave(member)}><RemoveCircle /></IconButton></Tooltip>}
+                                                {member.status !== 'pending' && member.uid !== this.state.user && <Tooltip title="Remove from band"><IconButton onClick={() => this._onRemove(member)}><Clear /></IconButton></Tooltip>}
+                                             </ListItem>)
                                        }
                                     </List>
                                  }
@@ -1107,7 +1109,6 @@ class Members extends React.Component {
                            </FormControl>
                         </div>
                      }
-
                      {band.description &&
                         <div>
                            <Typography className={classes.heading}> Band description </Typography>
