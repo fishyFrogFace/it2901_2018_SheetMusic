@@ -322,12 +322,21 @@ class Members extends React.Component {
          window.location.hash = `#/scores`;
 
          // Deleting the band and all its subcollections
+         await bandRef.collection(`scores`).get().then(scores => {
+            scores.forEach(score => {
+               this._onDeleteCollection(bandRef.collection(`scores/${score.id}/parts`), 50);
+            })
+         })
+         await this._onDeleteCollection(bandRef.collection('scores'), 50);
+         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
          await this._onDeleteCollection(bandRef.collection('leader'), 20);
          await this._onDeleteCollection(bandRef.collection('members'), 50);
-         await this._onDeleteCollection(bandRef.collection('pdfs'), 50);
-         await this._onDeleteCollection(bandRef.collection('scores'), 50);
          await this._onDeleteCollection(bandRef.collection('setlists'), 50);
          await bandRef.delete();
+
+         if (filteredRefs.length < 1) {
+            location.reload(true)
+         }
       }
    }
 
