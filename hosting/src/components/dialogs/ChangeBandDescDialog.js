@@ -30,6 +30,7 @@ class ChangeBandDescDialog extends React.Component {
     render() {
         return <AsyncDialog title='Add Description' confirmText='Confirm' onRef={ref => this.changeNamedialog = ref}>
             <TextField
+                id="dialog-textfield"
                 label="Description"
                 multiline
                 margin="normal"

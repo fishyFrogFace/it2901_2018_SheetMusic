@@ -335,7 +335,7 @@ class Members extends React.Component {
          await bandRef.delete();
 
          if (filteredRefs.length < 1) {
-            location.reload(true)
+            window.location.reload(true)
          }
       }
    }
