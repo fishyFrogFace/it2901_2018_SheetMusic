@@ -7,7 +7,16 @@ ScoresButler is a sheet music management application for orchestras and bands. I
 ### Installation
 
 After you have configured the database, clone the repo and type
-npm install in hosting and functions. To run the app, run npm start in hosting folder
+npm install in hosting and functions.
+
+```bash
+$ cd functions
+$ npm install
+$ cd ../hosting
+$ npm install
+```
+
+To run the app, run npm start in hosting folder
 
 Create your own firebase project on firebase.google.com and get the service account key. This is found by following the path -> settings next to Project overview -> Service Account -> Generate new key.
 
