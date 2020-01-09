@@ -10,10 +10,10 @@ After you have configured the database, clone the repo and type
 npm install in hosting and functions.
 
 ```bash
-$ cd functions
-$ npm install
-$ cd ../hosting
-$ npm install
+cd functions
+npm install
+cd ../hosting
+npm install
 ```
 
 To run the app, run npm start in hosting folder
