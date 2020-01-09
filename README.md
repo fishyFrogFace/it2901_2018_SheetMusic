@@ -70,10 +70,6 @@ Locations for these are:
 * hosting\src\index.js
 * functions\src\index.ts.
 
-### Hosting from Unix Operating systems
-To host from a machine using a UNIX operating system you will have to run the command chmod 755 -R from the terminal. This command has to be ran from the root folder of the project. The point of this command is to change the access rights for the project and removes an error called EACCESS. This should give you the read, write and execute access as listed below.
-![chmod](/README-images/chmod.png)
-
 ### Hosting:
 
 Firstly, you will have to have node.js installed on the machine performing the deployment.
