@@ -1,13 +1,27 @@
 # ScoresButler
 
-### What is this?
+## What is this?
 
 ScoresButler is a sheet music management application for orchestras and bands. It makes it easier to sort, archive and distribute their sheets. It uses RegEx to extract information from the PDFs for labeling the instruments.
 
-### Installation
+## Requirements
+
+#### Node.js
+
+To deploy and to run the project locally you will have to have Node.js installed. This can be done from the the [Node.js website](https://nodejs.org/en/).
+
+#### Firebase CLI
+To run firebase command tools you will have to install and update via npm
+```
+npm install firebase-functions@latest --save
+npm install firebase-admin@latest --save-exact
+npm install -g firebase-tools
+```
+
+## Installation
 
 After you have configured the database, clone the repo and type
-npm install in hosting and functions.
+npm install in hosting and functions. The commands below will the project packages that are needed.
 
 ```bash
 cd functions
@@ -46,21 +60,6 @@ Lastly you will have to replace all the buckets with your new storagebucket.
 Locations for these are:
 * hosting\src\index.js
 * functions\src\index.ts.
-
-### Node.js
-
-To deploy and to run the project locally you will have to have Node.js installed. This can be done from the the [Node.js website](https://nodejs.org/en/). After this is installed you will have to install the project packages. This must be performed in both the functions and hosting folder of the project. Follow these steps:
-1. Locate the folder hosting or functions within the project through the terminal
-2. run the command npm install from this folder
-3. Replicate 2 from the other folder
-
-### Install firebase CLI
-To run firebase command tools you will have to install and update via npm
-```
-npm install firebase-functions@latest --save
-npm install firebase-admin@latest --save-exact
-npm install -g firebase-tools
-```
 
 ### Hosting from Unix Operating systems
 To host from a machine using a UNIX operating system you will have to run the command chmod 755 -R from the terminal. This command has to be ran from the root folder of the project. The point of this command is to change the access rights for the project and removes an error called EACCESS. This should give you the read, write and execute access as listed below.
