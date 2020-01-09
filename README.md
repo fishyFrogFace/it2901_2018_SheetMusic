@@ -8,7 +8,16 @@ ScoresButler is a sheet music management application for orchestras and bands. I
 
 #### Node.js
 
-To deploy and to run the project locally you will have to have Node.js installed. This can be done from the the [Node.js website](https://nodejs.org/en/).
+To deploy and to run the project locally you will have to have Node.js installed. Installing npm through a version manager like [n](https://github.com/tj/n), is strongly recommended. The project is compatible with node-8-11-3, but might get an upgrade soon.
+
+Node.js can also be installed from the [Node.js website](https://nodejs.org/en/).
+
+#### Python >= v2.5.0 & < v3.0.0
+On Debian/Ubuntu based operating system, you can install the correct version by typing the command below.
+```bash
+sudo apt install python
+```
+For other operating systems, visit the [Python download site](https://www.python.org/downloads/) and choose one of the compatible versions here.
 
 #### Firebase CLI
 To run firebase command tools you will have to install and update via npm
