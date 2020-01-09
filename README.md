@@ -21,7 +21,7 @@ npm install -g firebase-tools
 ## Installation
 
 After you have configured the database, clone the repo and type
-npm install in hosting and functions. The commands below will the project packages that are needed.
+npm install in hosting and functions. The commands below will installTypo the project packages that are needed.
 
 ```bash
 cd functions
