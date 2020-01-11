@@ -114,7 +114,7 @@ exports.convertPDF = functions.storage.object().onFinalize(async (object, contex
         // Create storage bucket
         const inputBucket = storage.bucket(object.bucket);
 
-        const pdfBucket = storage.bucket('gs://scores-bc679.appspot.com');
+        const pdfBucket = storage.bucket('gs://scores-butler-ab2f2.appspot.com');
 
         try {
             // Download to local directory

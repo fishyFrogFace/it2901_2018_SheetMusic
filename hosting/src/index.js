@@ -44,13 +44,14 @@ class App extends React.Component {
         super(props);
 
         // Initialize Firebase
+        // TODO get valid variables from elsewhere
         const config = {
-            apiKey: "AIzaSyCBHe8CK4uabfrJeS-GwyQ3phiQQ2Q73cE",
-            authDomain: "scores-bc679.firebaseapp.com",
-            databaseURL: "https://scores-bc679.firebaseio.com",
-            projectId: "scores-bc679",
-            storageBucket: "scores-bc679.appspot.com",
-            messagingSenderId: "717099268802"
+            apiKey: "TODO",
+            authDomain: "scores-butler-ab2f2.firebaseapp.com",
+            databaseURL: "https://scores-butler-ab2f2.firebaseio.com",
+            projectId: "scores-butler-ab2f2",
+            storageBucket: "scores-butler-ab2f2.appspot.com",
+            messagingSenderId: "1234"
         };
 
         firebase.initializeApp(config);
