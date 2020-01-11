@@ -34,7 +34,7 @@ import {
     QueueMusic,
 } from '@material-ui/icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
-import Tooltip from 'material-ui/Tooltip';
+import Tooltip from '@material-ui/core/Tooltip';
 import ChangeBandNameDialog from '../../components/dialogs/ChangeBandNameDialog';
 import ChangeBandDescDialog from '../../components/dialogs/ChangeBandDescDialog';
 
