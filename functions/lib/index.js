@@ -46,6 +46,7 @@ const storage = new Storage({ keyFilename: 'service-account-key.json' });
 //     }
 // });
 //Converts PDF to images, add images to Storage and add Storage image-urls to Firestore.
+// TODO finish the merge someone didn't complete
 exports.convertPDF = functions.storage.object().onFinalize((object, context) => __awaiter(this, void 0, void 0, function* () {
     const filePath = object.name;
 <<<<<<< HEAD
