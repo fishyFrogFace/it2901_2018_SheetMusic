@@ -24,7 +24,7 @@ import CreateSetlistDialog from '../components/dialogs/CreateSetlistDialog';
 import UnsortedPDFs from './Home/UnsortedPDFs';
 
 import {
-    FileUpload,
+    CloudUpload,
     LibraryBooks,
     LibraryMusic,
     QueueMusic,
@@ -992,7 +992,7 @@ class Home extends React.Component {
                                         this._onUploadMenuClick('computer')
                                     }
                                 >
-                                    <FileUpload />
+                                    <CloudUpload />
                                 </IconButton>
 
                                 <IconButton
