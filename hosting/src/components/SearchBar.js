@@ -2,14 +2,14 @@ import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import { List, ListItem, ListItemText, Paper } from '@material-ui/core';
 import Fuse from 'fuse.js';
-import { LibraryMusic, QueueMusic } from "@material-ui/icons";
+import { LibraryMusic, QueueMusic } from '@material-ui/icons';
 import firebase from 'firebase';
 
 const styles = theme => ({
     root: {
         width: '100%',
         maxWidth: '700px',
-        position: 'relative'
+        position: 'relative',
     },
 
     input: {
@@ -21,8 +21,8 @@ const styles = theme => ({
         height: '36px',
         boxSizing: 'border-box',
         borderRadius: '4px',
-        font: 'normal 16px Roboto'
-    }
+        font: 'normal 16px Roboto',
+    },
 });
 
 /**
@@ -34,7 +34,7 @@ const styles = theme => ({
 class SearchBar extends React.Component {
     state = {
         value: '',
-        resultsVisble: false
+        resultsVisble: false,
     };
 
     constructor(props) {
@@ -56,13 +56,28 @@ class SearchBar extends React.Component {
         if (value !== prevState.value) {
             if (!this.fuse) {
                 const bandRef = firebase.firestore().doc(`bands/${bandId}`);
-                const scores = (await bandRef.collection('scores').get()).docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                const setlists = (await bandRef.collection('setlists').get()).docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                const scores = (
+                    await bandRef.collection('scores').get()
+                ).docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                const setlists = (
+                    await bandRef.collection('setlists').get()
+                ).docs.map(doc => ({ ...doc.data(), id: doc.id }));
 
-                this.fuse = new Fuse([
-                    ...scores.map(s => ({ id: s.id, title: s.title, type: 'score' })),
-                    ...setlists.map(s => ({ id: s.id, title: s.title, type: 'setlist' }))
-                ], { keys: ['title'] })
+                this.fuse = new Fuse(
+                    [
+                        ...scores.map(s => ({
+                            id: s.id,
+                            title: s.title,
+                            type: 'score',
+                        })),
+                        ...setlists.map(s => ({
+                            id: s.id,
+                            title: s.title,
+                            type: 'setlist',
+                        })),
+                    ],
+                    { keys: ['title'] }
+                );
             }
 
             this.setState({ results: this.fuse.search(value) });
@@ -91,22 +106,34 @@ class SearchBar extends React.Component {
                 />
 
                 {/*Result list*/}
-                {
-                    resultsVisible && results && results.length > 0 &&
-                    <Paper style={{ position: 'absolute', top: 48, background: 'white', width: '100%' }}>
+                {resultsVisible && results && results.length > 0 && (
+                    <Paper
+                        style={{
+                            position: 'absolute',
+                            top: 48,
+                            background: 'white',
+                            width: '100%',
+                        }}
+                    >
                         <List>
-                            {
-                                results.slice(0, 5).map((result, index) =>
-                                    <ListItem button key={index} onClick={e => this._onResultClick(result)}>
-                                        {result.type === 'score' && <LibraryMusic />}
-                                        {result.type === 'setlist' && <QueueMusic />}
-                                        <ListItemText primary={result.title} />
-                                    </ListItem>)
-                            }
+                            {results.slice(0, 5).map((result, index) => (
+                                <ListItem
+                                    button
+                                    key={index}
+                                    onClick={e => this._onResultClick(result)}
+                                >
+                                    {result.type === 'score' && (
+                                        <LibraryMusic />
+                                    )}
+                                    {result.type === 'setlist' && (
+                                        <QueueMusic />
+                                    )}
+                                    <ListItemText primary={result.title} />
+                                </ListItem>
+                            ))}
                         </List>
                     </Paper>
-                }
-
+                )}
             </div>
         );
     }

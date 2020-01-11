@@ -12,8 +12,6 @@ import 'firebase/auth';
 import * as cors from 'cors';
 const corsHandler = cors({ origin: true });
 
-
-
 /**
  * The root component of the React app.
  */
@@ -25,7 +23,7 @@ class App extends React.Component {
         score: {},
         pdf: {},
         setlist: {},
-        componentLoaded: {}
+        componentLoaded: {},
     };
 
     _componentLoaded = {};
@@ -37,7 +35,7 @@ class App extends React.Component {
         pdfs: 'Home',
         score: 'Score',
         setlist: 'Setlist',
-        signin: 'SignIn'
+        signin: 'SignIn',
     };
 
     constructor(props) {
@@ -46,20 +44,21 @@ class App extends React.Component {
         // Initialize Firebase
         // TODO get valid variables from elsewhere
         const config = {
-            apiKey: "TODO",
-            authDomain: "scores-butler-ab2f2.firebaseapp.com",
-            databaseURL: "https://scores-butler-ab2f2.firebaseio.com",
-            projectId: "scores-butler-ab2f2",
-            storageBucket: "scores-butler-ab2f2.appspot.com",
-            messagingSenderId: "1234"
+            apiKey: 'TODO',
+            authDomain: 'scores-butler-ab2f2.firebaseapp.com',
+            databaseURL: 'https://scores-butler-ab2f2.firebaseio.com',
+            projectId: 'scores-butler-ab2f2',
+            storageBucket: 'scores-butler-ab2f2.appspot.com',
+            messagingSenderId: '1234',
         };
 
         firebase.initializeApp(config);
 
-        firebase.auth().onAuthStateChanged(user => this._onUserStateChanged(user));
+        firebase
+            .auth()
+            .onAuthStateChanged(user => this._onUserStateChanged(user));
         window.addEventListener('hashchange', () => this._onHashChange());
     }
-
 
     async _onUserStateChanged(user) {
         let hash = (() => {
@@ -73,7 +72,7 @@ class App extends React.Component {
         })();
 
         if (hash === window.location.hash) {
-            window.dispatchEvent(new HashChangeEvent("hashchange"));
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
         } else {
             window.location.hash = hash;
         }
@@ -85,34 +84,52 @@ class App extends React.Component {
         let [page, detail] = hash.split('/').slice(1);
 
         try {
-            const component = (await import(`./containers/${this.page2Component[page]}.js`)).default;
+            const component = (
+                await import(`./containers/${this.page2Component[page]}.js`)
+            ).default;
 
             this.setState({ Component: component }, () => {
-                this.setState({ page: page, detail: detail, componentLoaded: this._componentLoaded }, () => {
-                    this._componentLoaded[this.page2Component[page]] = true;
-                });
+                this.setState(
+                    {
+                        page: page,
+                        detail: detail,
+                        componentLoaded: this._componentLoaded,
+                    },
+                    () => {
+                        this._componentLoaded[this.page2Component[page]] = true;
+                    }
+                );
             });
         } catch (err) {
             console.log(err);
-            {/* Already imported or doesn't exists */ }
+            {
+                /* Already imported or doesn't exists */
+            }
         }
     }
 
     componentDidMount() {
         setTimeout(() => {
-
-            this._onHashChange()
+            this._onHashChange();
         }, 1000);
     }
-
 
     render() {
         const { page, detail, Component, componentLoaded } = this.state;
 
         if (!Component) return null;
 
-        {/* Renders component based on state, changes in state is triggered by _onHashChange() which is triggered by changes to window.location.hash*/ }
-        return <Component {...this.props} page={page} detail={detail} loaded={componentLoaded[this.page2Component[page]]} />
+        {
+            /* Renders component based on state, changes in state is triggered by _onHashChange() which is triggered by changes to window.location.hash*/
+        }
+        return (
+            <Component
+                {...this.props}
+                page={page}
+                detail={detail}
+                loaded={componentLoaded[this.page2Component[page]]}
+            />
+        );
     }
 }
 
@@ -132,23 +149,22 @@ const theme = createMuiTheme({
     overrides: {
         MuiPickersToolbar: {
             toolbar: {
-                backgroundColor: "#448AFF",
+                backgroundColor: '#448AFF',
             },
         },
         MuiPickersDay: {
             day: {
-                color: "black",
+                color: 'black',
             },
             selected: {
-                backgroundColor: "#448AFF",
+                backgroundColor: '#448AFF',
             },
             current: {
-                color: "#448AFF",
+                color: '#448AFF',
             },
         },
-    }
+    },
 });
-
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>

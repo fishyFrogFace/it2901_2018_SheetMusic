@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { TextField } from '@material-ui/core';
-import AsyncDialog from "./AsyncDialog";
+import AsyncDialog from './AsyncDialog';
 
 //Component used by Members.js (the band page) to display a dialog for changing the band name.
 
@@ -13,7 +13,7 @@ class ChangeBandNameDialog extends React.Component {
     }
 
     componentWillUnmount() {
-        this.props.onRef(undefined)
+        this.props.onRef(undefined);
     }
 
     async open() {
@@ -26,17 +26,22 @@ class ChangeBandNameDialog extends React.Component {
     }
 
     render() {
-        return <AsyncDialog title='Change Bandname' confirmText='Confirm' onRef={ref => this.changeNamedialog = ref}>
-            <TextField
-                id='dialog-textfield'
-                label='Name'
-                onChange={e =>
-                    this._onTextFieldChange(e, 'name')}
-                style={{
-                    width: '300px'
-                }}
-            />
-        </AsyncDialog>
+        return (
+            <AsyncDialog
+                title="Change Bandname"
+                confirmText="Confirm"
+                onRef={ref => (this.changeNamedialog = ref)}
+            >
+                <TextField
+                    id="dialog-textfield"
+                    label="Name"
+                    onChange={e => this._onTextFieldChange(e, 'name')}
+                    style={{
+                        width: '300px',
+                    }}
+                />
+            </AsyncDialog>
+        );
     }
 }
 

@@ -5,12 +5,18 @@
 
 import React from 'react';
 
-import { TextField, InputLabel, Input, InputAdornment, FormControl } from '@material-ui/core';
-import AsyncDialog from "./AsyncDialog";
+import {
+    TextField,
+    InputLabel,
+    Input,
+    InputAdornment,
+    FormControl,
+} from '@material-ui/core';
+import AsyncDialog from './AsyncDialog';
 
 class AddSetlistEventDialog extends React.Component {
     data = {
-        description: ''
+        description: '',
     };
 
     componentDidMount() {
@@ -18,7 +24,7 @@ class AddSetlistEventDialog extends React.Component {
     }
 
     componentWillUnmount() {
-        this.props.onRef(undefined)
+        this.props.onRef(undefined);
     }
 
     async open() {
@@ -31,14 +37,37 @@ class AddSetlistEventDialog extends React.Component {
     }
 
     render() {
-        return <AsyncDialog title='Add Event' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField id="create-event-name" required label='Name' onChange={e => this._onTextFieldChange(e, 'eventTitle')} />
-            <TextField id="create-event-description" label='Description' onChange={e => this._onTextFieldChange(e, 'description')} />
-            <FormControl>
-                <InputLabel> Time </InputLabel>
-                <Input id="create-event-time" type='number' label='Time' onChange={e => this._onTextFieldChange(e, 'time')} endAdornment={<InputAdornment position="end">Min</InputAdornment>} />
-            </FormControl>
-        </AsyncDialog>
+        return (
+            <AsyncDialog
+                title="Add Event"
+                confirmText="Create"
+                onRef={ref => (this.dialog = ref)}
+            >
+                <TextField
+                    id="create-event-name"
+                    required
+                    label="Name"
+                    onChange={e => this._onTextFieldChange(e, 'eventTitle')}
+                />
+                <TextField
+                    id="create-event-description"
+                    label="Description"
+                    onChange={e => this._onTextFieldChange(e, 'description')}
+                />
+                <FormControl>
+                    <InputLabel> Time </InputLabel>
+                    <Input
+                        id="create-event-time"
+                        type="number"
+                        label="Time"
+                        onChange={e => this._onTextFieldChange(e, 'time')}
+                        endAdornment={
+                            <InputAdornment position="end">Min</InputAdornment>
+                        }
+                    />
+                </FormControl>
+            </AsyncDialog>
+        );
     }
 }
 

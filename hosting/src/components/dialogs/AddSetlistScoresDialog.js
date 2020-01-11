@@ -6,18 +6,18 @@
 import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
 
-import AsyncDialog from "./AsyncDialog";
+import AsyncDialog from './AsyncDialog';
 import { List, ListItem, Checkbox, ListItemText } from '@material-ui/core';
 
 const styles = theme => ({
     checkbox__checked: {
-        color: theme.palette.secondary.main
-    }
+        color: theme.palette.secondary.main,
+    },
 });
 
 class AddSetlistScoresDialog extends React.Component {
     state = {
-        selectedScores: new Set()
+        selectedScores: new Set(),
     };
 
     componentDidMount() {
@@ -25,7 +25,7 @@ class AddSetlistScoresDialog extends React.Component {
     }
 
     componentWillUnmount() {
-        this.props.onRef(undefined)
+        this.props.onRef(undefined);
     }
 
     _onSelectableClick(index) {
@@ -33,10 +33,8 @@ class AddSetlistScoresDialog extends React.Component {
 
         if (selectedScores.has(index)) {
             selectedScores.delete(index);
-        }
-        else {
+        } else {
             selectedScores.add(index);
-
         }
 
         this.setState({ selectedScores: selectedScores });
@@ -45,25 +43,47 @@ class AddSetlistScoresDialog extends React.Component {
     async open() {
         await this.dialog.open();
 
-        return Array.from(this.state.selectedScores).map(i => this.props.band.scores[i].id);
+        return Array.from(this.state.selectedScores).map(
+            i => this.props.band.scores[i].id
+        );
     }
 
     render() {
         const { selectedScores } = this.state;
         const { classes, band } = this.props;
-        return <AsyncDialog fullscreen title='Add scores to setlist' confirmText='Add Scores' onRef={ref => this.dialog = ref}>
-            <List dense>
-                {/*Loops over the scores and align a checkbox to each one */}
-                {band && band.scores && band.scores.map((score, index) =>
-                    <ListItem style={{ padding: 0 }} key={index} onClick={e => this._onSelectableClick(index)}>
-                        <Checkbox id="scores-checkbox-button" classes={{ checked: classes.checkbox__checked }} checked={selectedScores.has(index)} />
-                        <ListItemText primary={`${score.title} - ${score.composer}`} />
-                    </ListItem>
-                )}
-            </List>
-        </AsyncDialog>
+        return (
+            <AsyncDialog
+                fullscreen
+                title="Add scores to setlist"
+                confirmText="Add Scores"
+                onRef={ref => (this.dialog = ref)}
+            >
+                <List dense>
+                    {/*Loops over the scores and align a checkbox to each one */}
+                    {band &&
+                        band.scores &&
+                        band.scores.map((score, index) => (
+                            <ListItem
+                                style={{ padding: 0 }}
+                                key={index}
+                                onClick={e => this._onSelectableClick(index)}
+                            >
+                                <Checkbox
+                                    id="scores-checkbox-button"
+                                    classes={{
+                                        checked: classes.checkbox__checked,
+                                    }}
+                                    checked={selectedScores.has(index)}
+                                />
+                                <ListItemText
+                                    primary={`${score.title} - ${score.composer}`}
+                                />
+                            </ListItem>
+                        ))}
+                </List>
+            </AsyncDialog>
+        );
     }
 }
-
 
 export default withStyles(styles)(AddSetlistScoresDialog);

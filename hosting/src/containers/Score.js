@@ -3,12 +3,18 @@ import { withStyles } from '@material-ui/core/styles';
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
-import { Drawer, IconButton, MenuItem, Select, Snackbar } from "@material-ui/core";
+import {
+    Drawer,
+    IconButton,
+    MenuItem,
+    Select,
+    Snackbar,
+} from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import firebase from 'firebase';
 import 'firebase/storage';
-import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
-import { FileDownload } from "@material-ui/icons";
+import DownloadSheetsDialog from '../components/dialogs/DownloadSheetsDialog';
+import { FileDownload } from '@material-ui/icons';
 import jsPDF from 'jspdf';
 
 // This is the score which is rendered when clicking on it on the Scores page
@@ -20,24 +26,24 @@ const styles = {
     root: {},
 
     instrumentSelector: {
-        marginLeft: 25
+        marginLeft: 25,
     },
 
     flex: {
-        flex: 1
+        flex: 1,
     },
 
     sheetContainer: {
-        paddingTop: 64
+        paddingTop: 64,
     },
 
     sheet: {
-        width: '100%'
+        width: '100%',
     },
 
     drawer__paper: {
-        width: 250
-    }
+        width: 250,
+    },
 };
 
 class Score extends React.Component {
@@ -46,7 +52,7 @@ class Score extends React.Component {
         selectedPartId: null,
         anchorEl: null,
         selectedPart: 0,
-        score: {}
+        score: {},
     };
     unsubs = [];
 
@@ -79,7 +85,7 @@ class Score extends React.Component {
                 try {
                     const { selectedPart, score } = this.state;
                     const part = score.parts[selectedPart];
-                    const { } = await this.downloadDialog.open(part.instrument);
+                    const {} = await this.downloadDialog.open(part.instrument);
                     const dateString = new Date().toLocaleDateString();
 
                     // Get image
@@ -91,7 +97,10 @@ class Score extends React.Component {
 
                     // Make PDF
                     const size_increase = 1.33334;
-                    const doc = new jsPDF('p', 'px', [width * size_increase, height * size_increase]);
+                    const doc = new jsPDF('p', 'px', [
+                        width * size_increase,
+                        height * size_increase,
+                    ]);
 
                     // Go through the images in the score and add them and a watermark to the PDF
                     for (let i = 0; i < part.pages.length; i++) {
@@ -101,15 +110,25 @@ class Score extends React.Component {
                         const url = part.pages[i].originalURL;
                         const response = await fetch(url);
                         const blob = await response.blob();
-                        const imageData = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blob);
-                        });
+                        const imageData = await new Promise(
+                            (resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(blob);
+                            }
+                        );
 
                         doc.addImage(imageData, 'PNG', 0, 0, width, height);
-                        doc.text(`${dateString}     ${score.title}     Downloaded by: ${user.displayName}     Page: ${i + 1}/${part.pages.length}`, 20, height - 20);
+                        doc.text(
+                            `${dateString}     ${
+                                score.title
+                            }     Downloaded by: ${
+                                user.displayName
+                            }     Page: ${i + 1}/${part.pages.length}`,
+                            20,
+                            height - 20
+                        );
                     }
                     // Download the PDF
                     doc.save(`${score.title}.pdf`);
@@ -121,7 +140,7 @@ class Score extends React.Component {
         }
     }
 
-    // update the part selected 
+    // update the part selected
     componentDidUpdate(prevProps, prevState) {
         const { page, detail } = this.props;
 
@@ -133,7 +152,13 @@ class Score extends React.Component {
 
             this.unsubs.push(
                 scoreDoc.onSnapshot(async snapshot => {
-                    this.setState({ score: { ...this.state.score, ...snapshot.data(), id: snapshot.id } });
+                    this.setState({
+                        score: {
+                            ...this.state.score,
+                            ...snapshot.data(),
+                            id: snapshot.id,
+                        },
+                    });
                 })
             );
 
@@ -144,19 +169,23 @@ class Score extends React.Component {
                         snapshot.docs.map(async doc => ({
                             ...doc.data(),
                             id: doc.id,
-                            instrument: (await doc.data().instrumentRef.get()).data()
+                            instrument: (
+                                await doc.data().instrumentRef.get()
+                            ).data(),
                         }))
                     );
-                    const partsSorted = parts
-                        .sort((a, b) => a.instrument.name.localeCompare(b.instrument.name));
-                    this.setState({ score: { ...this.state.score, parts: partsSorted } });
+                    const partsSorted = parts.sort((a, b) =>
+                        a.instrument.name.localeCompare(b.instrument.name)
+                    );
+                    this.setState({
+                        score: { ...this.state.score, parts: partsSorted },
+                    });
                 })
             );
         }
     }
 
     render() {
-
         const { classes } = this.props;
         const { message, selectedPart, score } = this.state;
         const hasParts = Boolean(score.parts && score.parts.length);
@@ -165,51 +194,66 @@ class Score extends React.Component {
             <div className={classes.root}>
                 <AppBar>
                     <Toolbar>
-                        <IconButton color="inherit" onClick={() => this._onArrowBackButtonClick()}>
+                        <IconButton
+                            color="inherit"
+                            onClick={() => this._onArrowBackButtonClick()}
+                        >
                             <ArrowBackIcon />
                         </IconButton>
                         <Typography variant="title" color="inherit">
                             {score.title}
                         </Typography>
-                        {
-                            hasParts &&
+                        {hasParts && (
                             <Select
                                 className={classes.instrumentSelector}
                                 value={selectedPart}
-                                onChange={e => this._onInstrumentSelectChange(e)}
+                                onChange={e =>
+                                    this._onInstrumentSelectChange(e)
+                                }
                                 disableUnderline={true}
                             >
                                 {// mapping over score parts to get correct instrument
-                                    score.parts.map((part, index) =>
-                                        <MenuItem key={index}
-                                            value={index}>{part.instrument.displayName} {part.instrumentNumber > 0 ? part.instrumentNumber : ''}
-                                        </MenuItem>
-                                    )
-                                }
+                                score.parts.map((part, index) => (
+                                    <MenuItem key={index} value={index}>
+                                        {part.instrument.displayName}{' '}
+                                        {part.instrumentNumber > 0
+                                            ? part.instrumentNumber
+                                            : ''}
+                                    </MenuItem>
+                                ))}
                             </Select>
-                        }
+                        )}
                         <div className={classes.flex} />
-                        <IconButton color='inherit' onClick={e => this._onMenuClick('download')}>
+                        <IconButton
+                            color="inherit"
+                            onClick={e => this._onMenuClick('download')}
+                        >
                             <FileDownload />
                         </IconButton>
                     </Toolbar>
                 </AppBar>
                 <div className={classes.sheetContainer}>
                     {// mapping over score parts with the selected parts as index to render the correct image src
-                        hasParts &&
-                        (score.parts[selectedPart].pages || []).map((page, index) =>
-                            <img key={index} className={classes.sheet} src={page.originalURL} alt={'scoreImage'} />
-
-                        )
-                    }
+                    hasParts &&
+                        (
+                            score.parts[selectedPart].pages || []
+                        ).map((page, index) => (
+                            <img
+                                key={index}
+                                className={classes.sheet}
+                                src={page.originalURL}
+                                alt={'scoreImage'}
+                            />
+                        ))}
                 </div>
                 <Drawer
-                    anchor='right'
+                    anchor="right"
                     open={false}
                     classes={{ paper: classes.drawer__paper }}
-                >
-                </Drawer>
-                <DownloadSheetsDialog onRef={ref => this.downloadDialog = ref} />
+                ></Drawer>
+                <DownloadSheetsDialog
+                    onRef={ref => (this.downloadDialog = ref)}
+                />
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',
@@ -222,6 +266,5 @@ class Score extends React.Component {
         );
     }
 }
-
 
 export default withStyles(styles)(Score);

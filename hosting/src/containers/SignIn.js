@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import firebase from "firebase";
+import firebase from 'firebase';
 import { Paper, Typography } from '@material-ui/core';
 import download from '../images/Sheetmusic_illustrations_logging.svg';
 import setlist from '../images/setlist.svg';
@@ -9,14 +9,14 @@ import sheet from '../images/sheet.svg';
 
 const styles = {
     root: {
-        display: 'block'
+        display: 'block',
     },
 
     videoContainer: {
         position: 'relative',
         background: 'black',
         height: '60vh',
-        overflow: 'hidden'
+        overflow: 'hidden',
     },
 
     iframe: {
@@ -24,7 +24,7 @@ const styles = {
         top: '-50%',
         left: 0,
         width: '100%',
-        height: '200%'
+        height: '200%',
     },
 
     overlay: {
@@ -36,11 +36,11 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.2)'
+        background: 'rgba(0, 0, 0, 0.2)',
     },
 
     title: {
-        color: 'white'
+        color: 'white',
     },
 
     overlayContainer: {
@@ -59,28 +59,28 @@ const styles = {
         alignItems: 'center',
         borderRadius: 2,
         width: 200,
-        cursor: 'pointer'
+        cursor: 'pointer',
     },
 
     buttonIcon: {
         width: '18px',
-        height: '18px'
+        height: '18px',
     },
 
     buttonText: {
         fontSize: '14px',
         color: 'rgba(0, 0, 0, 0.54)',
-        marginLeft: '20px'
+        marginLeft: '20px',
     },
 
     headline: {
         textAlign: 'center',
-        margin: '60px 0'
+        margin: '60px 0',
     },
 
     infoContainer: {
         display: 'flex',
-        margin: 50
+        margin: 50,
     },
 
     info: {
@@ -89,21 +89,21 @@ const styles = {
         alignItems: 'center',
         width: 250,
         margin: '0 auto',
-        height: 250
+        height: 250,
     },
 
     infoHeader: {
         marginTop: 10,
-        marginBottom: 10
+        marginBottom: 10,
     },
 
     infoText: {
-        textAlign: 'center'
+        textAlign: 'center',
     },
 
     infoImage: {
         width: 120,
-    }
+    },
 };
 
 /**
@@ -131,56 +131,120 @@ class SignIn extends Component {
                     <iframe
                         title="Frame"
                         className={classes.iframe}
-                        src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8" />
+                        src="https://www.youtube.com/embed/ImBqC-rGpX8?start=13&end=74&controls=0&showinfo=0&rel=0&autoplay=1&mute=1&loop=1&playlist=ImBqC-rGpX8"
+                    />
                     <div className={classes.overlay}>
                         <div className={classes.overlayContainer}>
-                            <Typography variant='display4' className={classes.title}>ScoresButler</Typography>
+                            <Typography
+                                variant="display4"
+                                className={classes.title}
+                            >
+                                ScoresButler
+                            </Typography>
                             <Paper elevation={1}>
-                                <div className={classes.button} onClick={() => this._onSignIn()}>
-                                    <img className={classes.buttonIcon}
+                                <div
+                                    className={classes.button}
+                                    onClick={() => this._onSignIn()}
+                                >
+                                    <img
+                                        className={classes.buttonIcon}
                                         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                                         alt="Google"
                                     />
-                                    <Typography variant='body2' className={classes.buttonText}>Sign in with
-                                        Google</Typography>
+                                    <Typography
+                                        variant="body2"
+                                        className={classes.buttonText}
+                                    >
+                                        Sign in with Google
+                                    </Typography>
                                 </div>
                             </Paper>
                         </div>
                     </div>
                 </div>
                 <div>
-                    <Typography variant='display1' className={classes.headline}>
+                    <Typography variant="display1" className={classes.headline}>
                         ScoresButler makes managing your sheets easy.
                     </Typography>
                     <div className={classes.infoContainer}>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={sheet} alt="sheet" />
-                            <Typography variant='subheading' className={classes.infoHeader}>Upload</Typography>
-                            <Typography variant='body1' className={classes.infoText}>
-                                Upload your scores, arrange and sort them into instrument
-                                specific documents.
+                            <img
+                                className={classes.infoImage}
+                                src={sheet}
+                                alt="sheet"
+                            />
+                            <Typography
+                                variant="subheading"
+                                className={classes.infoHeader}
+                            >
+                                Upload
+                            </Typography>
+                            <Typography
+                                variant="body1"
+                                className={classes.infoText}
+                            >
+                                Upload your scores, arrange and sort them into
+                                instrument specific documents.
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={arrangement} alt="arrangement" />
+                            <img
+                                className={classes.infoImage}
+                                src={arrangement}
+                                alt="arrangement"
+                            />
 
-                            <Typography variant='subheading' className={classes.infoHeader}>Archive</Typography>
-                            <Typography variant='body1' className={classes.infoText}>
-                                Archive all your bands scores, and access them everywhere.
+                            <Typography
+                                variant="subheading"
+                                className={classes.infoHeader}
+                            >
+                                Archive
+                            </Typography>
+                            <Typography
+                                variant="body1"
+                                className={classes.infoText}
+                            >
+                                Archive all your bands scores, and access them
+                                everywhere.
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={setlist} alt="setlist" />
-                            <Typography variant='subheading' className={classes.infoHeader}>Create</Typography>
-                            <Typography variant='body1' className={classes.infoText}>
-                                Create setlists for your band which contain arrangements
-                                and other events during a set, in a chronological order.
+                            <img
+                                className={classes.infoImage}
+                                src={setlist}
+                                alt="setlist"
+                            />
+                            <Typography
+                                variant="subheading"
+                                className={classes.infoHeader}
+                            >
+                                Create
+                            </Typography>
+                            <Typography
+                                variant="body1"
+                                className={classes.infoText}
+                            >
+                                Create setlists for your band which contain
+                                arrangements and other events during a set, in a
+                                chronological order.
                             </Typography>
                         </div>
                         <div className={classes.info}>
-                            <img className={classes.infoImage} src={download} alt="download" />
-                            <Typography variant='subheading' className={classes.infoHeader}>Download</Typography>
-                            <Typography className={classes.infoText} variant='body1'>
+                            <img
+                                className={classes.infoImage}
+                                src={download}
+                                alt="download"
+                            />
+                            <Typography
+                                variant="subheading"
+                                className={classes.infoHeader}
+                            >
+                                Download
+                            </Typography>
+                            <Typography
+                                className={classes.infoText}
+                                variant="body1"
+                            >
                                 Download your part of the set.
                             </Typography>
                         </div>

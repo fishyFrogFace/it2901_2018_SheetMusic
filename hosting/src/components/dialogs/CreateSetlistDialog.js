@@ -7,7 +7,7 @@ import React from 'react';
 
 import { TextField, withStyles } from '@material-ui/core';
 
-import AsyncDialog from "./AsyncDialog";
+import AsyncDialog from './AsyncDialog';
 
 const styles = theme => ({
     container: {
@@ -33,12 +33,16 @@ class CreateSetlistDialog extends React.Component {
     }
 
     componentWillUnmount() {
-        this.props.onRef(undefined)
+        this.props.onRef(undefined);
     }
 
     async open() {
         await this.dialog.open();
-        return { title: this.state.title, date: this.state.date, time: this.state.time };
+        return {
+            title: this.state.title,
+            date: this.state.date,
+            time: this.state.time,
+        };
     }
 
     _onTitleInputChange = e => {
@@ -50,48 +54,55 @@ class CreateSetlistDialog extends React.Component {
     };
 
     _onTimeChange = e => {
-        this.setState({ time: e.target.value })
-    }
+        this.setState({ time: e.target.value });
+    };
 
     render() {
         const { classes } = this.props;
         const { title, date, time } = this.state;
 
-        return <AsyncDialog title='Create Setlist' confirmText='Create' onRef={ref => this.dialog = ref}>
-            <TextField
-                id="create-setlist-title"
-                label='Title'
-                onChange={this._onTitleInputChange}
-                style={{ marginBottom: 20 }}
-                required
-            />
-            <form className={classes.container} noValidate>
-                <TextField onChange={this._onDateChange}
-                    id="create-setlist-date"
-                    label="Date"
-                    type="date"
-                    defaultValue={this.date}
-                    className={classes.textField}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
+        return (
+            <AsyncDialog
+                title="Create Setlist"
+                confirmText="Create"
+                onRef={ref => (this.dialog = ref)}
+            >
+                <TextField
+                    id="create-setlist-title"
+                    label="Title"
+                    onChange={this._onTitleInputChange}
+                    style={{ marginBottom: 20 }}
+                    required
                 />
-                <TextField onChange={this._onTimeChange}
-                    id="create-setlist-time"
-                    label="Time"
-                    type="time"
-                    defaultValue={this.date}
-                    className={classes.textField}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
-                    inputProps={{
-                        step: 300, // 5 min
-                    }}
-                />
-            </form>
-        </AsyncDialog>
-
+                <form className={classes.container} noValidate>
+                    <TextField
+                        onChange={this._onDateChange}
+                        id="create-setlist-date"
+                        label="Date"
+                        type="date"
+                        defaultValue={this.date}
+                        className={classes.textField}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                    />
+                    <TextField
+                        onChange={this._onTimeChange}
+                        id="create-setlist-time"
+                        label="Time"
+                        type="time"
+                        defaultValue={this.date}
+                        className={classes.textField}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                        inputProps={{
+                            step: 300, // 5 min
+                        }}
+                    />
+                </form>
+            </AsyncDialog>
+        );
     }
 }
 

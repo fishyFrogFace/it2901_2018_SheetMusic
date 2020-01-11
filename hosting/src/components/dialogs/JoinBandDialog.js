@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { TextField } from '@material-ui/core';
-import AsyncDialog from "./AsyncDialog";
+import AsyncDialog from './AsyncDialog';
 
 /**
  * Component used by Home.js (as part of the top bar) to display a dialog for entering the band code needed for joining.
@@ -15,7 +15,7 @@ class JoinBandDialog extends React.Component {
     }
 
     componentWillUnmount() {
-        this.props.onRef(undefined)
+        this.props.onRef(undefined);
     }
 
     async open() {
@@ -28,9 +28,18 @@ class JoinBandDialog extends React.Component {
     }
 
     render() {
-        return <AsyncDialog title='Join Band' confirmText='Join' onRef={ref => this.dialog = ref}>
-            <TextField label='Code' onChange={e => this._onTextFieldChange(e, 'code')} />
-        </AsyncDialog>
+        return (
+            <AsyncDialog
+                title="Join Band"
+                confirmText="Join"
+                onRef={ref => (this.dialog = ref)}
+            >
+                <TextField
+                    label="Code"
+                    onChange={e => this._onTextFieldChange(e, 'code')}
+                />
+            </AsyncDialog>
+        );
     }
 }
 
