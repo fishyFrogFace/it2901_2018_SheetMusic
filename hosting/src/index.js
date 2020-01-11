@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import firebase from 'firebase';
 
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import MuiPickersUtilsProvider from '@material-ui/pickers';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import DateFnsUtils from '@date-io/date-fns';
 
 import 'firebase/firestore';
