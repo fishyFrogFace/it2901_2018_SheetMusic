@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from "material-ui";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@material-ui/core';
 
 /**
  * Component used by various dialogs to display the interactive parts of the dialogs, and handle button clicks

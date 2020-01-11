@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText, Paper, Typography
-} from "material-ui";
+} from '@material-ui/core';
 
 import { withStyles } from "@material-ui/core/styles";
 

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import firebase from "firebase";
-import { Paper, Typography } from "material-ui";
+import { Paper, Typography } from '@material-ui/core';
 import download from '../images/Sheetmusic_illustrations_logging.svg';
 import setlist from '../images/setlist.svg';
 import arrangement from '../images/arrangement.svg';

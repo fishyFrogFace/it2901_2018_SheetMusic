@@ -5,7 +5,7 @@ import {
     Stepper,
     SvgIcon, Typography,
     withStyles
-} from "material-ui";
+} from '@material-ui/core';
 import Dropbox from 'dropbox';
 import { ArrowBack } from "material-ui-icons";
 

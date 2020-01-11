@@ -8,7 +8,7 @@ import Typography from 'material-ui/Typography';
 import {
     Button, CircularProgress, IconButton, List, ListItem, ListItemText, Menu, MenuItem,
     Snackbar, Badge
-} from "material-ui";
+} from '@material-ui/core';
 
 import ExitToApp from 'material-ui-icons/ExitToApp';
 import firebase from 'firebase';

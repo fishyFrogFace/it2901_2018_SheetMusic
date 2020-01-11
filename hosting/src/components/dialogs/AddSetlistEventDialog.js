@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import { TextField, InputLabel, Input, InputAdornment, FormControl } from "material-ui";
+import { TextField, InputLabel, Input, InputAdornment, FormControl } from '@material-ui/core';
 import AsyncDialog from "./AsyncDialog";
 
 class AddSetlistEventDialog extends React.Component {

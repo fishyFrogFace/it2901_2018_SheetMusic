@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { TextField } from "material-ui";
+import { TextField } from '@material-ui/core';
 import AsyncDialog from "./AsyncDialog";
 
 //Component used by Members.js (the band page) to display a dialog for changing the band name.

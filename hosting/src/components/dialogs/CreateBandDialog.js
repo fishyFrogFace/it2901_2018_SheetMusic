@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { TextField, withStyles } from "material-ui";
+import { TextField, withStyles } from '@material-ui/core';
 import AsyncDialog from "./AsyncDialog";
 
 const styles = {};

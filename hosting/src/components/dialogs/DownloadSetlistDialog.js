@@ -8,7 +8,7 @@ import 'react-select/dist/react-select.css';
 import 'react-virtualized/styles.css';
 import 'react-virtualized-select/styles.css';
 
-import { DialogContent, } from "material-ui";
+import { DialogContent, } from '@material-ui/core';
 
 // Dialog for downloading a full setlist. Started from setlist.js
 

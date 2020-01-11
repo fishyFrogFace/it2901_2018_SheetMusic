@@ -14,7 +14,7 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
-import {IconButton, Menu, MenuItem, Card, CardContent} from "material-ui";
+import {IconButton, Menu, MenuItem, Card, CardContent} from '@material-ui/core';
 import DeleteIcon from 'material-ui-icons/Delete';
 
 import firebase from 'firebase';

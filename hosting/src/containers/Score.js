@@ -3,7 +3,7 @@ import { withStyles } from '@material-ui/core/styles';
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
-import { Drawer, IconButton, MenuItem, Select, Snackbar } from "material-ui";
+import { Drawer, IconButton, MenuItem, Select, Snackbar } from "@material-ui/core";
 import ArrowBackIcon from 'material-ui-icons/ArrowBack';
 import firebase from 'firebase';
 import 'firebase/storage';

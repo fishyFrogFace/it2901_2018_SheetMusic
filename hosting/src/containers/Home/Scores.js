@@ -3,7 +3,7 @@ import { withStyles } from "@material-ui/core/styles";
 import {
   Avatar, Card, CardContent, CardMedia, CardActions, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Paper, SvgIcon,
   Typography, CardHeader, Divider, ExpansionPanel, ExpansionPanelDetails, ExpansionPanelSummary, Select, MenuItem, Tooltip, InputLabel, LinearProgress,
-} from "material-ui";
+} from '@material-ui/core';
 import DeleteIcon from 'material-ui-icons/Delete'
 import { LibraryMusic, SortByAlpha, ViewList, ViewModule, MusicNote } from "material-ui-icons";
 import NoteIcon from 'material-ui-icons/MusicNote';

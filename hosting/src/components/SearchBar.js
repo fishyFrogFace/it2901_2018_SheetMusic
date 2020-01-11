@@ -1,6 +1,6 @@
 import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import { List, ListItem, ListItemText, Paper } from "material-ui";
+import { List, ListItem, ListItemText, Paper } from '@material-ui/core';
 import Fuse from 'fuse.js';
 import { LibraryMusic, QueueMusic } from "material-ui-icons";
 import firebase from 'firebase';

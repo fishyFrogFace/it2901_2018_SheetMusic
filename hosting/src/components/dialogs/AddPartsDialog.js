@@ -4,7 +4,7 @@ import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle,
     FormControl, Input, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Step, StepLabel, Stepper, SvgIcon,
     withStyles
-} from "material-ui";
+} from '@material-ui/core';
 import { Add } from "material-ui-icons";
 import CreateScoreStep from "./CreateScoreStep";
 import firebase from "firebase";

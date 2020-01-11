@@ -5,7 +5,7 @@ import { withStyles } from "@material-ui/core/styles";
 import {
    Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader, ExpansionPanel, ExpansionPanelSummary,
    ExpansionPanelDetails, Divider, Checkbox, FormGroup, FormControlLabel, Menu, MenuItem, Button, FormControl, Select,
-} from "material-ui";
+} from '@material-ui/core';
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import MoreVertIcon from 'material-ui-icons/MoreVert';
 import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
