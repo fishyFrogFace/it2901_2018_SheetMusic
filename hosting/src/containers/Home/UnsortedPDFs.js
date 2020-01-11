@@ -3,7 +3,7 @@ import {
     Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText, Paper, Typography
 } from "material-ui";
 
-import { withStyles } from "material-ui/styles";
+import { withStyles } from "@material-ui/core/styles";
 
 import AddPartsDialog from "../../components/dialogs/AddPartsDialog";
 import AddFullScoreDialog from "../../components/dialogs/AddFullScoreDialog";

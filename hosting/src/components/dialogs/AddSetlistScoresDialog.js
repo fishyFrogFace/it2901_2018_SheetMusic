@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { withStyles } from 'material-ui/styles';
+import { withStyles } from '@material-ui/core/styles';
 
 import AsyncDialog from "./AsyncDialog";
 import { List, ListItem, Checkbox, ListItemText } from 'material-ui';

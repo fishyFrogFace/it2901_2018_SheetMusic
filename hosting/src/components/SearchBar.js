@@ -1,5 +1,5 @@
 import React from 'react';
-import { withStyles } from 'material-ui/styles';
+import { withStyles } from '@material-ui/core/styles';
 import { List, ListItem, ListItemText, Paper } from "material-ui";
 import Fuse from 'fuse.js';
 import { LibraryMusic, QueueMusic } from "material-ui-icons";

@@ -9,7 +9,7 @@
 import React from 'react';
 import firebase from 'firebase';
 
-import { withStyles } from "material-ui/styles";
+import { withStyles } from "@material-ui/core/styles";
 import {
     Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper,
     Typography
