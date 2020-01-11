@@ -8,7 +8,16 @@ ScoresButler is a sheet music management application for orchestras and bands. I
 
 #### Node.js
 
-To deploy and to run the project locally you will have to have Node.js installed. This can be done from the the [Node.js website](https://nodejs.org/en/).
+To deploy and to run the project locally you will have to have Node.js installed. Installing npm through a [version manager like n](https://github.com/tj/n), is **strongly recommended**. The project is compatible with node-8-13-0, but might get an upgrade soon.
+
+Node.js can also be installed from the [Node.js website](https://nodejs.org/en/).
+
+#### Python >= v2.5.0 & < v3.0.0
+On Debian/Ubuntu based operating system, you can install the correct version by typing the command below.
+```bash
+sudo apt install python
+```
+For other operating systems, visit the [Python download site](https://www.python.org/downloads/) and choose one of the compatible versions here.
 
 #### Firebase CLI
 To run firebase command tools you will have to install and update via npm
@@ -60,10 +69,6 @@ Lastly you will have to replace all the buckets with your new storagebucket.
 Locations for these are:
 * hosting\src\index.js
 * functions\src\index.ts.
-
-### Hosting from Unix Operating systems
-To host from a machine using a UNIX operating system you will have to run the command chmod 755 -R from the terminal. This command has to be ran from the root folder of the project. The point of this command is to change the access rights for the project and removes an error called EACCESS. This should give you the read, write and execute access as listed below.
-![chmod](/README-images/chmod.png)
 
 ### Hosting:
 
@@ -164,3 +169,5 @@ service cloud.firestore {
   }
 }
 ```
+## Usage
+**TODO** This section is coming soon to a repo near you. Much excite. Wow.
