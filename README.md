@@ -8,7 +8,7 @@ ScoresButler is a sheet music management application for orchestras and bands. I
 
 #### Node.js
 
-To deploy and to run the project locally you will have to have Node.js installed. Installing npm through a [version manager like n](https://github.com/tj/n), is **strongly recommended**. The project is compatible with node-8-13-0, but might get an upgrade soon.
+To deploy and to run the project locally you will have to have Node.js installed. Installing npm through a [version manager like n](https://github.com/tj/n), is **strongly recommended**.
 
 Node.js can also be installed from the [Node.js website](https://nodejs.org/en/).
 
