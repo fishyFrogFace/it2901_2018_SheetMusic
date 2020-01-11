@@ -171,3 +171,9 @@ service cloud.firestore {
 ```
 ## Usage
 **TODO** This section is coming soon to a repo near you. Much excite. Wow.
+
+## Developer notes
+Run prettier with the command below.
+```bash
+prettier --config .prettier.config.js --write './**/*.js'
+```

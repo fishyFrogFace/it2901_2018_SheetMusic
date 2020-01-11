@@ -853,7 +853,8 @@ class Home extends React.Component {
         if (!loaded) {
             if (
                 (prevState.bands || []).length === 0 &&
-                bands && bands.length > 0
+                bands &&
+                bands.length > 0
             ) {
                 await this.navEl.animate(
                     [
