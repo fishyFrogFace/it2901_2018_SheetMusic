@@ -38,7 +38,7 @@ import {
     Add,
     ArrowBack,
     Edit,
-    FileDownload,
+    GetApp,
     MusicNote,
 } from '@material-ui/icons';
 
@@ -832,7 +832,7 @@ class Setlist extends Component {
                                         this._onMenuClick('download')
                                     }
                                 >
-                                    <FileDownload id="menu-download-button" />
+                                    <GetApp id="menu-download-button" />
                                 </IconButton>
                             }
                             {hasRights && (

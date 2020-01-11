@@ -14,7 +14,7 @@ import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import firebase from 'firebase';
 import 'firebase/storage';
 import DownloadSheetsDialog from '../components/dialogs/DownloadSheetsDialog';
-import { FileDownload } from '@material-ui/icons';
+import { GetApp } from '@material-ui/icons';
 import jsPDF from 'jspdf';
 
 // This is the score which is rendered when clicking on it on the Scores page
@@ -228,7 +228,7 @@ class Score extends React.Component {
                             color="inherit"
                             onClick={e => this._onMenuClick('download')}
                         >
-                            <FileDownload />
+                            <GetApp />
                         </IconButton>
                     </Toolbar>
                 </AppBar>
