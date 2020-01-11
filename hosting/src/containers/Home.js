@@ -1174,7 +1174,7 @@ class Home extends React.Component {
                                         {nameShort === 'members' &&
                                             this.state.userData.isAdmin &&
                                             band.pending &&
-                                            band.pending.length == 0 && (
+                                            band.pending.length === 0 && (
                                                 <SupervisorAccount
                                                     style={{ color: color }}
                                                 />

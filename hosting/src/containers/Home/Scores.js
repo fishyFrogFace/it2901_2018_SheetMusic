@@ -286,7 +286,7 @@ class Scores extends React.Component {
             .get()
             .then(snapshot => {
                 // When there are no documents left, we are done
-                if (snapshot.size == 0) {
+                if (snapshot.size === 0) {
                     return 0;
                 }
 
@@ -335,7 +335,7 @@ class Scores extends React.Component {
                 this.props.band.scores !== undefined &&
                 Object.keys(this.props.band).length > 10 &&
                 this.props.band.scores[i].parts !== undefined &&
-                e.target.id == i
+                e.target.id === i
             ) {
                 for (let k = 0; k < this.props.band.scores[i].partCount; k++) {
                     let data = this.props.band.scores[i].parts[k].instrumentRef;
@@ -641,7 +641,7 @@ class Scores extends React.Component {
                                     <div className={classes.cardContent}>
                                         <div className={classes.media2}>
                                             {loaded &&
-                                            score.parts == undefined &&
+                                            score.parts === undefined &&
                                             !isLoaded && ( // display progress bar while waiting for score parts to not be undefined,
                                                     // invokes an update after some second set in componentdidmount to update score.parts state
                                                     <div
@@ -654,7 +654,7 @@ class Scores extends React.Component {
                                                 <CardMedia
                                                     className={classes.media}
                                                     image={
-                                                        score.parts == undefined // if not able to get the correct score part, dispaly default image
+                                                        score.parts === undefined // if not able to get the correct score part, dispaly default image
                                                             ? 'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
                                                             : score.parts[0]
                                                                   .pages[0]
@@ -687,7 +687,7 @@ class Scores extends React.Component {
                                                     variant="subheading"
                                                     className={classes.metadata}
                                                 >
-                                                    {score.composer == undefined
+                                                    {score.composer === undefined
                                                         ? ''
                                                         : `${'Composer: ' +
                                                               score.composer}`}
@@ -697,7 +697,7 @@ class Scores extends React.Component {
                                                     variant="subheading"
                                                     className={classes.metadata}
                                                 >
-                                                    {score.arranger == undefined
+                                                    {score.arranger === undefined
                                                         ? ''
                                                         : `${'Arranger: ' +
                                                               score.arranger}`}
@@ -748,7 +748,7 @@ class Scores extends React.Component {
                                                 }
                                             >
                                                 <Typography variant="subheading">
-                                                    {this.state.activeScore ==
+                                                    {this.state.activeScore ===
                                                     index ? (
                                                         <List>
                                                             {Object.keys(
