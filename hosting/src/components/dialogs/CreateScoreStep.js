@@ -1,8 +1,30 @@
 import React from 'react';
 
 import { IconButton, TextField, withStyles } from '@material-ui/core';
-import ChipInput from 'material-ui-chip-input';
 import { ArrowBack, ArrowForward, Done } from '@material-ui/icons';
+
+//import ChipInput from 'material-ui-chip-input';
+//TODO replace ChipInput with something else, since material-ui packages needs to be downgraded for this one feature
+/* <div style={{ height: 20 }} />
+<ChipInput
+    label="Genres"
+    classes={{
+        chipContainer: classes.chipInput__chipContainer,
+    }}
+    onChange={e =>
+        this._onDataChange('genres', { target: { value: e } })
+    }
+/>
+<div style={{ height: 20 }} />
+<ChipInput
+    label="Tags"
+    classes={{
+        chipContainer: classes.chipInput__chipContainer,
+    }}
+    onChange={e =>
+        this._onDataChange('tags', { target: { value: e } })
+    }
+/> */
 
 // Sets the information in the first step of AddFullScoreDialog.js and AddPartsDialog.js
 // Access from those two Dialogs
@@ -213,26 +235,12 @@ class CreateScoreStep extends React.Component {
                         }
                     }}
                 />
-                <div style={{ height: 20 }} />
-                <ChipInput
-                    label="Genres"
-                    classes={{
-                        chipContainer: classes.chipInput__chipContainer,
-                    }}
-                    onChange={e =>
-                        this._onDataChange('genres', { target: { value: e } })
-                    }
-                />
-                <div style={{ height: 20 }} />
-                <ChipInput
-                    label="Tags"
-                    classes={{
-                        chipContainer: classes.chipInput__chipContainer,
-                    }}
-                    onChange={e =>
-                        this._onDataChange('tags', { target: { value: e } })
-                    }
-                />
+                <div style={{ height: 20 }} >
+                    <p>ChipInput should be here (but under the div)</p>
+                </div>
+                <div style={{ height: 20 }} >
+                    <p>ChipInput should be here (but under the div)</p>
+                </div>
             </div>
         );
     }
