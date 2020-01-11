@@ -2,7 +2,7 @@ import React from 'react';
 
 import { IconButton, TextField, withStyles } from '@material-ui/core';
 import ChipInput from 'material-ui-chip-input'
-import { ArrowBack, ArrowForward, Done } from "material-ui-icons";
+import { ArrowBack, ArrowForward, Done } from "@material-ui/icons";
 
 
 // Sets the information in the first step of AddFullScoreDialog.js and AddPartsDialog.js

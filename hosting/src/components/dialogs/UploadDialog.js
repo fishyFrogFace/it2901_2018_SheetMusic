@@ -7,7 +7,7 @@ import {
     withStyles
 } from '@material-ui/core';
 import Dropbox from 'dropbox';
-import { ArrowBack } from "material-ui-icons";
+import { ArrowBack } from "@material-ui/icons";
 
 // Dialog for the uploading. Comes from home.js Goes direct to upload and does not creates a dialog__paper
 // Is set up for future possibility of dropbox if wanted

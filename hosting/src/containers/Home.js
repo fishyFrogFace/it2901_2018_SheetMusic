@@ -10,12 +10,12 @@ import {
     Snackbar, Badge
 } from '@material-ui/core';
 
-import ExitToApp from 'material-ui-icons/ExitToApp';
+import ExitToApp from '@material-ui/icons/ExitToApp';
 import firebase from 'firebase';
 import CreateSetlistDialog from "../components/dialogs/CreateSetlistDialog";
 import UnsortedPDFs from "./Home/UnsortedPDFs";
 
-import { FileUpload, LibraryBooks, LibraryMusic, QueueMusic, SupervisorAccount } from "material-ui-icons";
+import { FileUpload, LibraryBooks, LibraryMusic, QueueMusic, SupervisorAccount } from "@material-ui/icons";
 import CreateBandDialog from "../components/dialogs/CreateBandDialog";
 import JoinBandDialog from "../components/dialogs/JoinBandDialog";
 import SearchBar from '../components/SearchBar';

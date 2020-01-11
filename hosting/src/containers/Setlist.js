@@ -15,7 +15,7 @@ import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 
 import {IconButton, Menu, MenuItem, Card, CardContent} from '@material-ui/core';
-import DeleteIcon from 'material-ui-icons/Delete';
+import DeleteIcon from '@material-ui/icons/Delete';
 
 import firebase from 'firebase';
 import 'firebase/storage';
@@ -28,7 +28,7 @@ import EditSetlistEventDialog from "../components/dialogs/EditSetlistEventDialog
 import AsyncDialog from '../components/dialogs/AsyncDialog';
 
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { Add, ArrowBack, Edit, FileDownload, MusicNote } from "material-ui-icons";
+import { Add, ArrowBack, Edit, FileDownload, MusicNote } from "@material-ui/icons";
 
 import jsPDF from 'jspdf';
 

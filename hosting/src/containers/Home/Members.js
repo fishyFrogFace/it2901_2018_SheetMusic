@@ -6,9 +6,9 @@ import {
    Avatar, IconButton, List, ListItem, ListItemText, Paper, Typography, ListSubheader, ExpansionPanel, ExpansionPanelSummary,
    ExpansionPanelDetails, Divider, Checkbox, FormGroup, FormControlLabel, Menu, MenuItem, Button, FormControl, Select,
 } from '@material-ui/core';
-import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
-import MoreVertIcon from 'material-ui-icons/MoreVert';
-import { Done, Clear, Star, RemoveCircle, QueueMusic } from 'material-ui-icons';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+import { Done, Clear, Star, RemoveCircle, QueueMusic } from '@material-ui/icons';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 import Tooltip from 'material-ui/Tooltip';
 import ChangeBandNameDialog from '../../components/dialogs/ChangeBandNameDialog';

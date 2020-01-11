@@ -4,11 +4,11 @@ import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 import { Drawer, IconButton, MenuItem, Select, Snackbar } from "@material-ui/core";
-import ArrowBackIcon from 'material-ui-icons/ArrowBack';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import firebase from 'firebase';
 import 'firebase/storage';
 import DownloadSheetsDialog from "../components/dialogs/DownloadSheetsDialog";
-import { FileDownload } from "material-ui-icons";
+import { FileDownload } from "@material-ui/icons";
 import jsPDF from 'jspdf';
 
 // This is the score which is rendered when clicking on it on the Scores page

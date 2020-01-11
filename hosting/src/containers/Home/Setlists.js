@@ -14,8 +14,8 @@ import {
     Button, Card, CardContent, CardMedia, IconButton, List, ListItem, ListItemText, Paper,
     Typography
 } from '@material-ui/core';
-import { PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule } from "material-ui-icons";
-import DeleteIcon from 'material-ui-icons/Delete';
+import { PlaylistAdd, QueueMusic, SortByAlpha, ViewList, ViewModule } from "@material-ui/icons";
+import DeleteIcon from '@material-ui/icons/Delete';
 import AsyncDialog from '../../components/dialogs/AsyncDialog';
 const styles = {
     root: {},
