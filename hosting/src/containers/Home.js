@@ -1001,7 +1001,7 @@ class Home extends React.Component {
                                     {loaded && user !== null ? (
                                         <img
                                             src={user.photoURL}
-                                            alt='User avatar'
+                                            alt="User avatar"
                                             style={{
                                                 width: '32px',
                                                 height: '32px',
@@ -1013,7 +1013,7 @@ class Home extends React.Component {
                                             src={
                                                 'https://img.icons8.com/color/100/000000/google-logo.png'
                                             }
-                                            alt='Google logo'
+                                            alt="Google logo"
                                             style={{
                                                 width: '32px',
                                                 height: '32px',
@@ -1047,7 +1047,7 @@ class Home extends React.Component {
                                         {user !== null ? (
                                             <img
                                                 src={user.photoURL}
-                                                alt='User avatar'
+                                                alt="User avatar"
                                                 style={{
                                                     width: '46px',
                                                     height: '46px',
@@ -1060,7 +1060,7 @@ class Home extends React.Component {
                                                 src={
                                                     'https://img.icons8.com/color/100/000000/google-logo.png'
                                                 }
-                                                alt='Google logo'
+                                                alt="Google logo"
                                                 style={{
                                                     width: '46px',
                                                     height: '46px',

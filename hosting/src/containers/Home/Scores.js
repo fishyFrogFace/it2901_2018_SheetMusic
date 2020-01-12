@@ -654,7 +654,8 @@ class Scores extends React.Component {
                                                 <CardMedia
                                                     className={classes.media}
                                                     image={
-                                                        score.parts === undefined // if not able to get the correct score part, dispaly default image
+                                                        score.parts ===
+                                                        undefined // if not able to get the correct score part, dispaly default image
                                                             ? 'http://personalshopperjapan.com/wp-content/uploads/2017/03/130327musicscore-1024x768.jpg'
                                                             : score.parts[0]
                                                                   .pages[0]
@@ -687,7 +688,8 @@ class Scores extends React.Component {
                                                     variant="subheading"
                                                     className={classes.metadata}
                                                 >
-                                                    {score.composer === undefined
+                                                    {score.composer ===
+                                                    undefined
                                                         ? ''
                                                         : `${'Composer: ' +
                                                               score.composer}`}
@@ -697,7 +699,8 @@ class Scores extends React.Component {
                                                     variant="subheading"
                                                     className={classes.metadata}
                                                 >
-                                                    {score.arranger === undefined
+                                                    {score.arranger ===
+                                                    undefined
                                                         ? ''
                                                         : `${'Arranger: ' +
                                                               score.arranger}`}
