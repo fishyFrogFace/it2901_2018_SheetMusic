@@ -7,6 +7,7 @@ import setlist from '../images/setlist.svg';
 import arrangement from '../images/arrangement.svg';
 import sheet from '../images/sheet.svg';
 
+//TODO locate and move styles to css style sheets
 const styles = {
     root: {
         display: 'block',
@@ -69,13 +70,22 @@ const styles = {
 
     buttonText: {
         fontSize: '14px',
-        color: 'rgba(0, 0, 0, 0.54)',
+        color: '#707070',
         marginLeft: '20px',
+    },
+
+    headlineContainer: {
+        display: 'flex',
+        flexDirection: 'column',
     },
 
     headline: {
         textAlign: 'center',
         margin: '60px 0',
+        fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+        fontWeight: '400',
+        fontSize: '2.5rem',
+        color: '#707070',
     },
 
     infoContainer: {
@@ -162,7 +172,7 @@ class SignIn extends Component {
                         </div>
                     </div>
                 </div>
-                <div>
+                <div className={classes.headlineContainer}>
                     <Typography variant="display1" className={classes.headline}>
                         ScoresButler makes managing your sheets easy.
                     </Typography>
