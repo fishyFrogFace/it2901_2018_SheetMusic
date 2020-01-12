@@ -93,19 +93,18 @@ class UnsortedPDFs extends React.Component {
     render() {
         const { band } = this.props;
 
-        let hasInstruments = false;
-
         // Checks if any of the PDFs has instruments
-        if (band.pdfs) {
-            band.pdfs.forEach(pdf => {
-                if (pdf.type === 'full' && pdf.pdf.parts) {
-                    pdf.pdf.parts.map(part => {
-                        if (!part.instrument.length) {
-                            hasInstruments = true;
-                        }
-                    });
-                }
-            });
+        const hasInstruments = () => {
+            if (band.pdfs) {
+                const instrumentPart = band.pdfs.find(pdf => {
+                  if (pdf.type === 'full' && pdf.pdf.parts) {
+                    return pdf.pdf.parts.find(part => part.instrument && part.instrument.length) !== undefined;
+                  }
+                });
+                return instrumentPart !== undefined;
+              } else {
+                return false;
+            }
         }
 
         return (
