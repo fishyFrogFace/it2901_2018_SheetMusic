@@ -235,10 +235,10 @@ class CreateScoreStep extends React.Component {
                         }
                     }}
                 />
-                <div style={{ height: 20 }} >
+                <div style={{ height: 20 }}>
                     <p>ChipInput should be here (but under the div)</p>
                 </div>
-                <div style={{ height: 20 }} >
+                <div style={{ height: 20 }}>
                     <p>ChipInput should be here (but under the div)</p>
                 </div>
             </div>

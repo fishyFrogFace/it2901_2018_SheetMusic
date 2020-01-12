@@ -89,8 +89,7 @@ class UploadDialog extends React.Component {
                 // If dropbox, this does not run but is kept if wanted for the future
                 case 'dropbox':
                     const authUrl = new Dropbox.Dropbox({
-                        clientId:
-                            'TODO WHY ARE CONFIG FILES NOT USED!!1!!!!',
+                        clientId: 'TODO WHY ARE CONFIG FILES NOT USED!!1!!!!',
                     }).getAuthenticationUrl(
                         'https://scores-butler-ab2f2.firebaseapp.com/auth'
                     );
