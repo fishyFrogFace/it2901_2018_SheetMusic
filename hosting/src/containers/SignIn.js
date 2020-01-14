@@ -42,6 +42,10 @@ const styles = {
 
     title: {
         color: 'white',
+        fontSize: '7rem',
+        fontWeight: '300',
+        fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+        letterSpacing: '-0.3rem',
     },
 
     overlayContainer: {
